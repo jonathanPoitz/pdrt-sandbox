@@ -2,7 +2,8 @@
 
 FLAGS=--prefix=${HOME} --user
 
-SRC=src/Data/*.hs src/Data/DRS/*.hs src/Data/DRS/Input/*.hs src/Data/FOL/*.hs src/Data/PDRS/*.hs src/Data/PDRS/Input/*.hs
+SRC=src/Data/*.hs src/Data/DRS/*.hs src/Data/DRS/Input/*.hs src/Data/FOL/*.hs src/Data/PDRS/*.hs src/Data/PDRS/Input/*.hs src/Data/SDRS/*.hs
+
 
 ### build ###
 
