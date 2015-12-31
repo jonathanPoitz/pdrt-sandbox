@@ -32,7 +32,7 @@
     SDRS [DisVar] [SDRSForm] DisVar
   -- ^ A SDRS (a set of speech act discourse referents, a function assigning
   -- SDRS formulas to referents and the referent last added to the discourse)
-  --deriving (Eq, Read)
+    deriving (Eq,Read)
   
   ---------------------------------------------------------------------------
   -- | Discourse variable denoting a simple or complex speech act discourse  
@@ -44,7 +44,7 @@
   -- | Label of rhetorical relation of two speech act discourse referents
   ---------------------------------------------------------------------------
   type RelLabel = String
-  
+
   ---------------------------------------------------------------------------
   -- | A SDRS formula
   ---------------------------------------------------------------------------
@@ -53,6 +53,8 @@
   -- ^ A DRS
     | RRel RelLabel DisVar DisVar
   -- ^ A rhetorical relation between two speech act discourse referents 
+    deriving (Eq,Read,Show)
+
 
   ---------------------------------------------------------------------------
   -- | A SDRS condition
@@ -64,4 +66,5 @@
   -- | Prop DRSRef SDRSForm   -- ^ A proposition SDRSForm
     | Diamond SDRSForm       -- ^ A possible SDRSForm
     | Box SDRSForm           -- ^ A necessary SDRSForm
+    deriving (Eq,Read,Show)
     
