@@ -1,70 +1,57 @@
-  {- |
-  Module      :  Data.SDRS.DataType
-  Copyright   :  (c) Jonathan Poitz, Harm Brouwer and Noortje Venhuizen
-  License     :  Apache-2.0
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+{- |
+Module      :  Data.SDRS.DataType
+Copyright   :  (c) Jonathan Poitz, Harm Brouwer and Noortje Venhuizen
+License     :  Apache-2.0
 
-  Maintainer  :  jpoitz@coli.uni-saarland.de, me@hbrouwer.eu, n.j.venhuizen@rug.nl
-  Stability   :  provisional
-  Portability :  portable
+Maintainer  :  jonathanpoitz@gmail.com, me@hbrouwer.eu, njvenhuizen@gmail.com
+Stability   :  provisional
+Portability :  portable
 
-  SDRS data type
-  -}
+SDRS data type
+-}
 
-  module Data.SDRS.DataType
-  (
-    SDRS (..)
-    , DisVar  
-    , RelLabel
-    , SDRSForm (..)
-    , SDRSCon (..)
-    ) where
+module Data.SDRS.DataType
+(
+  SDRS (..)
+, module Data.DRS.DataType
+) where
 
-  --import Data.DRS.DataType
+import Data.DRS.DataType
 
-  ---------------------------------------------------------------------------
-  -- * Exported
-  ---------------------------------------------------------------------------
+import Data.List (intercalate)
 
-  ---------------------------------------------------------------------------
-  -- | Segmented Discourse Representation Structure.
-  ---------------------------------------------------------------------------
-  data SDRS =
-    SDRS [DisVar] [SDRSForm] DisVar
-  -- ^ A SDRS (a set of speech act discourse referents, a function assigning
-  -- SDRS formulas to referents and the referent last added to the discourse)
-    deriving (Eq,Read)
-  
-  ---------------------------------------------------------------------------
-  -- | Discourse variable denoting a simple or complex speech act discourse  
-  -- referent (a label or pointer). 
-  ---------------------------------------------------------------------------
-  type DisVar = Int
+---------------------------------------------------------------------------
+-- | Show a 'DRS' in 'Debug' notation.
+--
+-- Note: This is a workaround for bootstrapping the SDRT notations. We will
+-- take care of this in a proper way in the future.
+---------------------------------------------------------------------------
 
-  ---------------------------------------------------------------------------
-  -- | Label of rhetorical relation of two speech act discourse referents
-  ---------------------------------------------------------------------------
-  type RelLabel = String
+instance Show DRS where show d = showDRSDebug d
 
-  ---------------------------------------------------------------------------
-  -- | A SDRS formula
-  ---------------------------------------------------------------------------
-  data SDRSForm =
-    DRS
-  -- ^ A DRS
-    | RRel RelLabel DisVar DisVar
-  -- ^ A rhetorical relation between two speech act discourse referents 
-    deriving (Eq,Read,Show)
+showDRSDebug :: DRS -> String
+showDRSDebug (LambdaDRS l) = "LambdaPDRS" ++ " "  ++ show l
+showDRSDebug (Merge d1 d2) = "Merge"      ++ " (" ++ showDRSDebug d1 ++ ") (" ++ showDRSDebug d2 ++ ")"
+showDRSDebug (DRS u c)     = "DRS"        ++ " "  ++ show u ++ " [" ++ intercalate "," (map showCon c) ++ "]"
+  where showCon :: DRSCon -> String
+        showCon (Rel r d)    = "Rel ("     ++ show r          ++ ")" ++ " " ++ show d
+        showCon (Neg d1)     = "Neg ("     ++ showDRSDebug d1 ++ ")"
+        showCon (Imp d1 d2)  = "Imp ("     ++ showDRSDebug d1 ++ ") (" ++ showDRSDebug d2 ++ ")"
+        showCon (Or d1 d2)   = "Or ("      ++ showDRSDebug d1 ++ ") (" ++ showDRSDebug d2 ++ ")"
+        showCon (Box d1)     = "Box ("     ++ showDRSDebug d1 ++ ")"
+        showCon (Diamond d1) = "Diamond (" ++ showDRSDebug d1 ++ ")"
+        showCon (Prop r d1)  = "Prop ("    ++ show r          ++ ") (" ++ showDRSDebug d1 ++ ")"
 
+---------------------------------------------------------------------------
+-- * Exported
+---------------------------------------------------------------------------
 
-  ---------------------------------------------------------------------------
-  -- | A SDRS condition
-  ---------------------------------------------------------------------------
-  data SDRSCon = 
-    Neg SDRSForm           -- ^ A negated SDRSForm
-    | Imp SDRSForm SDRSForm       -- ^ An implication between two SDRSForms
-    | Or SDRSForm SDRSForm        -- ^ A disjunction between two SDRSForms
-  -- | Prop DRSRef SDRSForm   -- ^ A proposition SDRSForm
-    | Diamond SDRSForm       -- ^ A possible SDRSForm
-    | Box SDRSForm           -- ^ A necessary SDRSForm
-    deriving (Eq,Read,Show)
-    
+---------------------------------------------------------------------------
+-- | Segmented Discourse Representation Structure (DRS)
+---------------------------------------------------------------------------
+
+-- [your code goes here]
+
+data SDRS = SDRS DRS
+  deriving (Show)

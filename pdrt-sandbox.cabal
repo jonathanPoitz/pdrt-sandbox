@@ -43,7 +43,7 @@ cabal-version:       >=1.8
 data-files:          Makefile, README.markdown
 
 library
-  exposed-modules:     Data.DRS, Data.FOL, Data.PDRS, Data.SDRS, Data.DRS.Binding,
+  exposed-modules:     Data.DRS, Data.FOL, Data.PDRS, Data.DRS.Binding,
                        Data.DRS.DataType, Data.DRS.Input, Data.DRS.Input.Boxer,
                        Data.DRS.Input.String, Data.DRS.LambdaCalculus,
                        Data.DRS.Merge, Data.DRS.Properties, Data.DRS.Show,
@@ -55,9 +55,7 @@ library
                        Data.PDRS.ProjectionGraph, Data.PDRS.ProjectionTable,
                        Data.PDRS.Properties, Data.PDRS.Show,
                        Data.PDRS.Structure, Data.PDRS.Translate,
-                       Data.PDRS.Variables
-                       Data.SDRS.DataType
-                       
+                       Data.PDRS.Variables, Data.SDRS, Data.SDRS.DataType
   ghc-options:         -Wall -Werror
   build-depends:       base >=4, containers >=0.3
   hs-source-dirs:      src
