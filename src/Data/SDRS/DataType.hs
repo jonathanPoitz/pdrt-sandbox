@@ -14,12 +14,19 @@ SDRS data type
 module Data.SDRS.DataType
 (
   SDRS (..)
+, SDRSForm (..)
+, SDRSCon (..)
+, DisVar
+, RelLabel
+-- TODO should I export everything by default or be strict about what to export?
+--, sdrsFormulaMapFunction
 , module Data.DRS.DataType
 ) where
 
 import Data.DRS.DataType
 
 import Data.List (intercalate)
+import qualified Data.Map as Map
 
 ---------------------------------------------------------------------------
 -- | Show a 'DRS' in 'Debug' notation.
@@ -48,10 +55,62 @@ showDRSDebug (DRS u c)     = "DRS"        ++ " "  ++ show u ++ " [" ++ intercala
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
--- | Segmented Discourse Representation Structure (DRS)
+-- | Discourse variable denoting a simple or complex speech act discourse  
+-- referent (a label or pointer). 
 ---------------------------------------------------------------------------
+type DisVar = Int
 
--- [your code goes here]
+---------------------------------------------------------------------------
+-- | Label of rhetorical relation of two speech act discourse referents
+---------------------------------------------------------------------------
+type RelLabel = String
 
-data SDRS = SDRS DRS
-  deriving (Show)
+---------------------------------------------------------------------------
+-- | Convenience type to represent the mapping function
+---------------------------------------------------------------------------
+--type SDRSMapper = DisVar -> [SDRSForm] -> Maybe SDRSForm
+
+---------------------------------------------------------------------------
+-- | A SDRS formula
+-- TODO how do I check that the disvars of rrel are admissible?
+---------------------------------------------------------------------------
+data SDRSForm =
+  DRSForm DRS
+-- ^ A DRS
+  | RRel RelLabel DisVar DisVar
+-- ^ A rhetorical relation between two speech act discourse referents
+  | ComplexForm SDRSCon
+  deriving (Show, Eq)
+
+---------------------------------------------------------------------------
+-- | Segmented Discourse Representation Structure.
+---------------------------------------------------------------------------
+--data SDRS =
+--	SDRS SDRSMapper DisVar
+--	-- ^ A SDRS (a set of speech act discourse referents, a function assigning
+--	-- SDRS formulas to referents and the referent last added to the discourse)
+--	deriving (Show)
+
+data SDRS =
+  SDRS (Map.Map DisVar SDRSForm) DisVar
+  -- ^ A SDRS (a set of speech act discourse referents, a function assigning
+  -- SDRS formulas to referents and the referent last added to the discourse)
+  deriving (Show, Eq)
+
+---------------------------------------------------------------------------
+-- | A SDRS condition
+-- If I write Neg (and And) instead of something else like SDRSNeg here,
+-- I'm getting into trouble with the DRS module
+---------------------------------------------------------------------------
+data SDRSCon = 
+  SDRSNeg SDRSForm                  -- ^ A negated SDRSForm
+  | SDRSAnd SDRSForm SDRSForm       -- ^ An conjunction of two SDRSForms
+  deriving (Show, Eq)
+
+
+
+--sdrsFormulaMapFunction :: SDRSMapper
+--sdrsFormulaMapFunction index dus
+--	| index < 0 = Nothing
+--	| index >= length dus = Nothing
+--	| otherwise = Just (dus!!index)
