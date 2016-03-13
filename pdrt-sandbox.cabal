@@ -55,7 +55,8 @@ library
                        Data.PDRS.ProjectionGraph, Data.PDRS.ProjectionTable,
                        Data.PDRS.Properties, Data.PDRS.Show,
                        Data.PDRS.Structure, Data.PDRS.Translate,
-                       Data.PDRS.Variables, Data.SDRS, Data.SDRS.DataType
+                       Data.PDRS.Variables, Data.SDRS, Data.SDRS.DataType,
+                       Data.SDRS.Structure
   ghc-options:         -Wall -Werror
   build-depends:       base >=4, containers >=0.3
   hs-source-dirs:      src

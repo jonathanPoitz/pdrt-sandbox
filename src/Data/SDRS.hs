@@ -1,9 +1,9 @@
 {- |
 Module      :  Data.SDRS
-Copyright   :  (c) Harm Brouwer and Noortje Venhuizen
+Copyright   :  (c) Jonathan Poitz, Harm Brouwer and Noortje Venhuizen
 License     :  Apache-2.0
 
-Maintainer  :  me@hbrouwer.eu, n.j.venhuizen@rug.nl
+Maintainer  :  jonathanpoitz@gmail.com, me@hbrouwer.eu, n.j.venhuizen@rug.nl
 Stability   :  provisional
 Portability :  portable
 
@@ -16,3 +16,4 @@ module Data.SDRS
 ) where
 
 import Data.SDRS.DataType as SDRS
+import Data.SDRS.Structure as SDRS
