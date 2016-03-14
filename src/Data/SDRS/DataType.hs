@@ -17,7 +17,9 @@ module Data.SDRS.DataType
 , SDRSForm (..)
 , SDRSCon (..)
 , DisVar
-, RelLabel
+-- , CoRel (..)
+-- , SubRel (..)
+, RelLabel (..)
 -- TODO should I export everything by default or be strict about what to export?
 --, sdrsFormulaMapFunction
 , module Data.DRS.DataType
@@ -60,19 +62,41 @@ showDRSDebug (DRS u c)     = "DRS"        ++ " "  ++ show u ++ " [" ++ intercala
 ---------------------------------------------------------------------------
 type DisVar = Int
 
----------------------------------------------------------------------------
--- | Label of rhetorical relation of two speech act discourse referents
----------------------------------------------------------------------------
-type RelLabel = String
+-- ---------------------------------------------------------------------------
+-- -- | Coordinating Relations
+-- ---------------------------------------------------------------------------
+-- data CoRel = Narration | Contrast | Result | Parallel | Continuation | Alternation | Conditional
+--   deriving (Show, Eq)
+
+-- ---------------------------------------------------------------------------
+-- -- | Subordinating Relations
+-- ---------------------------------------------------------------------------
+-- data SubRel = Elaboration | EntityElaboration | Comment | Flashback | Background | Goal | Explanation | Attribution
+--   deriving (Show, Eq)
+
+-- data RelLabel = CoRel | SubRel
+--   deriving (Show, Eq)
+
+-- I wanted to do it as above (separate the type RelLabel into two sub types SubRel and CoRel, but I'm not sure it's possible in Haskell)
+data RelLabel = Narration | Contrast | Result | Parallel | Continuation | Alternation
+  | Conditional | Elaboration | EntityElaboration | Comment | Flashback | Background
+  | Goal | Explanation | Attribution
+  deriving (Show, Eq)
+
 
 ---------------------------------------------------------------------------
 -- | Convenience type to represent the mapping function
 ---------------------------------------------------------------------------
 --type SDRSMapper = DisVar -> [SDRSForm] -> Maybe SDRSForm
 
+--instance Show SDRSMapper where show s = showSDRSMap s
+--showSDRSMap :: SDRSMapper -> String
+--showSDRSMap fromList [] = ""
+--showSDRSMap f _ m = "SDRSMap" ++ " " ++ show m
+
 ---------------------------------------------------------------------------
 -- | A SDRS formula
--- TODO how do I check that the disvars of rrel are admissible?
+-- TODO how do I check that the disvars of rrel are (within the set A of discourse variables)?
 ---------------------------------------------------------------------------
 data SDRSForm =
   DRSForm DRS
@@ -109,7 +133,8 @@ data SDRSCon =
 
 
 
---sdrsFormulaMapFunction :: SDRSMapper
+--sdrsFormulaMapFunction :: DisVar -> [SDRSForm] -> Maybe SDRSForm
+--sdrsFormulaMapFunction _ [] = Nothing
 --sdrsFormulaMapFunction index dus
 --	| index < 0 = Nothing
 --	| index >= length dus = Nothing
