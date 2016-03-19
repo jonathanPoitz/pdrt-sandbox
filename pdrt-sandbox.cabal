@@ -56,7 +56,7 @@ library
                        Data.PDRS.Properties, Data.PDRS.Show,
                        Data.PDRS.Structure, Data.PDRS.Translate,
                        Data.PDRS.Variables, Data.SDRS, Data.SDRS.DataType,
-                       Data.SDRS.Structure
+                       Data.SDRS.Structure, Data.SDRS.Binding
   ghc-options:         -Wall -Werror
   build-depends:       base >=4, containers >=0.3
   hs-source-dirs:      src
