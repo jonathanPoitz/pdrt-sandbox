@@ -14,14 +14,9 @@ SDRS data type
 module Data.SDRS.DataType
 (
   SDRS (..)
-, SDRSForm (..)
-, SDRSCon (..)
+, SDRSFormula (..)
 , DisVar
--- , CoRel (..)
--- , SubRel (..)
-, RelLabel (..)
--- TODO should I export everything by default or be strict about what to export?
---, sdrsFormulaMapFunction
+, RelName
 , module Data.DRS.DataType
 ) where
 
@@ -62,80 +57,52 @@ showDRSDebug (DRS u c)     = "DRS"        ++ " "  ++ show u ++ " [" ++ intercala
 ---------------------------------------------------------------------------
 type DisVar = Int
 
--- ---------------------------------------------------------------------------
--- -- | Coordinating Relations
--- ---------------------------------------------------------------------------
--- data CoRel = Narration | Contrast | Result | Parallel | Continuation | Alternation | Conditional
---   deriving (Show, Eq)
-
--- ---------------------------------------------------------------------------
--- -- | Subordinating Relations
--- ---------------------------------------------------------------------------
--- data SubRel = Elaboration | EntityElaboration | Comment | Flashback | Background | Goal | Explanation | Attribution
---   deriving (Show, Eq)
-
--- data RelLabel = CoRel | SubRel
---   deriving (Show, Eq)
-
--- I wanted to do it as above (separate the type RelLabel into two sub types SubRel and CoRel, but I'm not sure it's possible in Haskell)
-data RelLabel = Narration | Contrast | Result | Parallel | Continuation | Alternation
-  | Conditional | Elaboration | EntityElaboration | Comment | Flashback | Background
-  | Goal | Explanation | Attribution
-  deriving (Show, Eq)
-
+---------------------------------------------------------------------------
+-- | Name of a rhetorical relation 
+---------------------------------------------------------------------------
+type RelName = String
 
 ---------------------------------------------------------------------------
--- | Convenience type to represent the mapping function
+-- | A rhetorical relation, which can be either coordinating or subordinating
 ---------------------------------------------------------------------------
---type SDRSMapper = DisVar -> [SDRSForm] -> Maybe SDRSForm
-
---instance Show SDRSMapper where show s = showSDRSMap s
---showSDRSMap :: SDRSMapper -> String
---showSDRSMap fromList [] = ""
---showSDRSMap f _ m = "SDRSMap" ++ " " ++ show m
+--data RelLabel =
+--  CrdRel RelName
+--  | SubRel RelName
+--  deriving (Show, Read Eq)
 
 ---------------------------------------------------------------------------
--- | A SDRS formula
--- TODO how do I check that the disvars of rrel are (within the set A of discourse variables)?
+-- | An SDRS formula
 ---------------------------------------------------------------------------
-data SDRSForm =
-  DRSForm DRS
+data SDRSFormula =
+  Text String
+-- ^ For debugging purposes, allow an SDRSFormula to be a textual
+-- representation of the sentence
+  | Segment DRS
 -- ^ A DRS
-  | RRel RelLabel DisVar DisVar
+  | Relation RelName DisVar DisVar
 -- ^ A rhetorical relation between two speech act discourse referents
-  | ComplexForm SDRSCon
-  deriving (Show, Eq)
+  | And SDRSFormula SDRSFormula
+  | Not SDRSFormula
+  deriving (Show, Read, Eq)
 
 ---------------------------------------------------------------------------
 -- | Segmented Discourse Representation Structure.
 ---------------------------------------------------------------------------
---data SDRS =
---	SDRS SDRSMapper DisVar
---	-- ^ A SDRS (a set of speech act discourse referents, a function assigning
---	-- SDRS formulas to referents and the referent last added to the discourse)
---	deriving (Show)
 
 data SDRS =
-  SDRS (Map.Map DisVar SDRSForm) DisVar
-  -- ^ A SDRS (a set of speech act discourse referents, a function assigning
+  SDRS [DisVar] (Map.Map DisVar SDRSFormula) DisVar
+  -- ^ A SDRS (a set of speech act discourse referents, a map assigning
   -- SDRS formulas to referents and the referent last added to the discourse)
-  deriving (Show, Eq)
+  deriving (Show, Read, Eq)
 
 ---------------------------------------------------------------------------
--- | A SDRS condition
--- If I write Neg (and And) instead of something else like SDRSNeg here,
--- I'm getting into trouble with the DRS module
+-- | Segmented Discourse Representation Structure
+-- alternative version using association lists instead of Data.Map (saves
+-- the fromList() call, but lacks some convenience methods)
 ---------------------------------------------------------------------------
-data SDRSCon = 
-  SDRSNeg SDRSForm                  -- ^ A negated SDRSForm
-  | SDRSAnd SDRSForm SDRSForm       -- ^ An conjunction of two SDRSForms
-  deriving (Show, Eq)
 
-
-
---sdrsFormulaMapFunction :: DisVar -> [SDRSForm] -> Maybe SDRSForm
---sdrsFormulaMapFunction _ [] = Nothing
---sdrsFormulaMapFunction index dus
---	| index < 0 = Nothing
---	| index >= length dus = Nothing
---	| otherwise = Just (dus!!index)
+--data SDRS =
+--  SDRS [DisVar] [(DisVar,SDRSFormula)] DisVar
+---- ^ A SDRS (a set of speech act discourse referents, a function assigning
+---- SDRS formulas to referents and the referent last added to the discourse)
+--  deriving (Show, Read, Eq)
