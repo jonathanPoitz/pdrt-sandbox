@@ -54,10 +54,10 @@ sdrs_danlos_4 = SDRS [0..4] (Map.fromList [(0, Relation "Commentary" 1 2),
                                             (4, Text "This shows that he does love her.")]) 4
 
 sdrs_al07 = SDRS [0..7] (Map.fromList [(0, Relation "Elaboration" 1 6),
-                                       -- (1, Text "John had a great evening last night."),
-                                       -- (2, Text "He had a great meal."),
-                                       -- (3, Text "He ate salmon."),
-                                       -- (4, Text "He devoured lots of cheese."),
-                                       -- (5, Text "He won a dancing competition."),
+                                       (1, Text "John had a great evening last night."),
+                                       (2, Text "He had a great meal."),
+                                       (3, Text "He ate salmon."),
+                                       (4, Text "He devoured lots of cheese."),
+                                       (5, Text "He won a dancing competition."),
                                        (6, And (Relation "Elaboration" 2 7) (Relation "Narration" 2 5)),
                                        (7, Relation "Narration" 3 4)]) 5
