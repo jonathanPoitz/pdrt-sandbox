@@ -12,13 +12,15 @@ Structural operations on SDRSs
 
 module Data.SDRS.Structure
 (
-  sdrsDUs
-, sdrsGetDu
+  listDUs
+, getDu
+, checkOutscopes
 ) where
 
 import Data.SDRS.DataType
---import Data.List (union)
-import Data.Map as Map
+import Data.SDRS.Binding
+import qualified Data.Map as Map
+import qualified Data.List as List
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -27,63 +29,58 @@ import Data.Map as Map
 ---------------------------------------------------------------------------
 -- | Returns the set of discourse units
 ---------------------------------------------------------------------------
-sdrsDUs :: SDRS -> [DisVar]
-sdrsDUs (SDRS m _)     = Map.keys m
+listDUs :: SDRS -> [DisVar]
+listDUs (SDRS _ m _)     = Map.keys m
 
 ---------------------------------------------------------------------------
 -- | Returns a certain discourse unit if present
 ---------------------------------------------------------------------------
-sdrsGetDu :: SDRS -> DisVar -> Maybe SDRSForm
-sdrsGetDu (SDRS m _) i     = Map.lookup i m
+getDu :: SDRS -> DisVar -> Maybe SDRSFormula
+getDu (SDRS _ m _) i     = Map.lookup i m
 
------------------------------------------------------------------------------
----- | Returns whether a 'DRS' is entirely a 'LambdaDRS' (at its top-level).
------------------------------------------------------------------------------
---isLambdaDRS :: DRS -> Bool
---isLambdaDRS (LambdaDRS _) = True
---isLambdaDRS (Merge d1 d2) = isLambdaDRS d1 && isLambdaDRS d2
---isLambdaDRS (DRS _ _)     = False
+---------------------------------------------------------------------------
+-- | Returns, given an 'SDRS' @s@, in what dominance relation two 'DisVar'
+-- @dv@ and @dv'@ stand. This relation is represented by an 'Ordering'.
+-- @dv@ 'GT' @dv'@ if the former outscopes the latter (vice versa for
+-- 'LT'). 'EQ' if no dominance relation is present.
+---------------------------------------------------------------------------
+checkOutscopes :: SDRS -> DisVar -> DisVar -> Bool
+checkOutscopes s@(SDRS a m l) dv dv'
+  | checkNoUnboundVars s = getRelsOutscopes (Map.assocs m) dv dv'
+    where getRelsOutscopes :: [(DisVar, SDRSFormula)] -> DisVar -> DisVar -> Bool
+          getRelsOutscopes [] _ _ = False
+          getRelsOutscopes (dv0, And sf1 sf2):rest dv dv' = getOneRelOutscopes dv0 sf1 dv dv' || getOneRelOutscopes dv0 sf2 dv dv' || getRelsOutscopes rest dv dv'
+          getRelsOutscopes (dv0, Not sf1):rest dv dv' = getOneRelOutscopes dv0 sf1 dv dv' || getRelsOutscopes rest dv dv'
+          getRelsOutscopes (dv0, sf1@(Relation _ _)):rest dv dv' = getOneRelOutscopes dv0 sf1 dv dv' || getRelsOutscopes rest dv dv'
+          -- TODO do i have to pass on dv and dv' here or can i leave it and it's implicit?
+          getRelsOutscopes _:rest = getRelsOutscopes rest
+            where getOneRelOutscopes :: DisVar -> SDRSFormula -> DisVar -> DisVar -> Bool
+                  getOneRelOutscopes dv0 (Relation _ dv1 dv2) dv dv' -- in the following the immediate outscopes cases
+                   | List.sort [dv, dv'] == List.sort [dv1, dv2] = False -- dv and dv' are args of a rel. no outscoping
+                   | dv == dv0 && ( dv' == dv1 || dv' == dv2 ) = True -- dv outscopes dv'
+                   | dv' == dv0 && ( dv == dv1 || dv == dv2 ) = False -- dv' outscopes dv
+                   -- here it gets tricky because I have to find a path along which the two labels lie.
+                   -- TODO
+  | otherwise = Nothing
 
------------------------------------------------------------------------------
----- | Returns whether a 'DRS' is entirely a 'Merge' (at its top-level).
------------------------------------------------------------------------------
---isMergeDRS :: DRS -> Bool
---isMergeDRS (LambdaDRS _) = False
---isMergeDRS (Merge _ _)   = True
---isMergeDRS (DRS _ _)     = False
+-- buildOutscopesStruc :: SDRS -> [[Int]]
+-- buildOutscopesStruc s@(SDRS a m l)
+--   | checkNoUnboundVars s = buildStruc (Map.assocs m)
+--     where buildStruc :: [(DisVar, SDRSFormula)] -> [[Int]]
+--           buildStruc [] = []
+--           buildStruc (dv0, And sf1 sf2):rest = Map.foldlWithKey f [] m 
+--           -- TODO
+--   | otherwise = [[]]
 
------------------------------------------------------------------------------
----- | Returns whether a 'DRS' is resolved (containing no unresolved merges 
----- or lambdas)
------------------------------------------------------------------------------
---isResolvedDRS :: DRS -> Bool
---isResolvedDRS (LambdaDRS _) = False
---isResolvedDRS (Merge _ _)   = False
---isResolvedDRS (DRS u c)     = all isResolvedRef u && all isResolvedCon c
---  where isResolvedRef :: DRSRef -> Bool
---        isResolvedRef (LambdaDRSRef _) = False
---        isResolvedRef (DRSRef _)       = True
---        isResolvedCon :: DRSCon -> Bool
---        isResolvedCon (Rel _ d)    = all isResolvedRef d
---        isResolvedCon (Neg d1)     = isResolvedDRS d1
---        isResolvedCon (Imp d1 d2)  = isResolvedDRS d1 && isResolvedDRS d2
---        isResolvedCon (Or d1 d2)   = isResolvedDRS d1 && isResolvedDRS d2
---        isResolvedCon (Prop r d1)  = isResolvedRef r  && isResolvedDRS d1
---        isResolvedCon (Diamond d1) = isResolvedDRS d1
---        isResolvedCon (Box d1)     = isResolvedDRS d1
+-- f :: [[DisVar]] -> DisVar -> SDRSFormula -> [[DisVar]]
+-- f acc dv0 v@(Relation _ dv1 dv2)
+--   | acc == [] = [[dv0],[dv1, dv2]]
+--   | otherwise = acc.insert
 
------------------------------------------------------------------------------
----- | Returns whether DRS @d1@ is a direct or indirect sub-DRS of DRS @d2@
------------------------------------------------------------------------------
---isSubDRS :: DRS -> DRS -> Bool
---isSubDRS _  (LambdaDRS _) = False
---isSubDRS d1 (Merge d2 d3) = isSubDRS d1 d2 || isSubDRS d1 d3
---isSubDRS d1 d2@(DRS _ c)  = d1 == d2 || any subDRS c
---  where subDRS :: DRSCon -> Bool
---        subDRS (Rel _ _)    = False
---        subDRS (Neg d3)     = isSubDRS d1 d3
---        subDRS (Imp d3 d4)  = isSubDRS d1 d3 || isSubDRS d1 d4
---        subDRS (Or d3 d4)   = isSubDRS d1 d3 || isSubDRS d1 d4
---        subDRS (Prop _ d3)  = isSubDRS d1 d3
---        subDRS (Diamond d3) = isSubDRS d1 d3
---        subDRS (Box d3)     = isSubDRS d1 d3
+-- how two labels can outscope eachother. Pseudo code using Ordering to show outscoping. EQ indicates that they're on the same level
+-- outscoping 1 2:
+-- 1 2 arguments of same relation -> EQ
+-- 1:rel(2,x) -> GT
+-- 2:rel(1,x) -> LT
+-- ^ immediate outscoping
+-- if exists path from 1 to 2 along relations, then 1 GT 2
