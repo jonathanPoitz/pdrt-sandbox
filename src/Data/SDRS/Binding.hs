@@ -43,7 +43,7 @@ checkNoUnboundVars :: SDRS -> Bool
 checkNoUnboundVars (SDRS a m l) = 
   l `elem` a &&
   (Map.keys m) == a &&
-  Set.fromList (getAllLabels (Map.elems m)) `Set.isSubsetOf` Set.fromList a &&
+  Set.fromList (getAllLabels (Map.elems m)) == Set.fromList a &&
   checkNoSelfRefRels (Map.assocs m)
     where getAllLabels :: [SDRSFormula] -> [DisVar]
           getAllLabels []                           = []
