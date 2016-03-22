@@ -14,7 +14,6 @@ module Data.SDRS.Structure
 (
   listDUs
 , getDu
--- , buildOutscopeMap
 , buildOutscopeMap
 ) where
 
@@ -46,24 +45,51 @@ getDu (SDRS _ m _) i     = Map.lookup i m
 -- @dv@ 'GT' @dv'@ if the former outscopes the latter (vice versa for
 -- 'LT'). 'EQ' if no dominance relation is present.
 ---------------------------------------------------------------------------
--- checkOutscopes :: SDRS -> DisVar -> DisVar -> Bool
+-- checkOutscopes :: SDRS -> DisVar -> DisVar -> Maybe Bool
 -- checkOutscopes s@(SDRS a m l) dv dv'
---   | checkNoUnboundVars s = getRelsOutscopes (Map.assocs m) dv dv'
+--   | checkNoUnboundVars s = getRelsOutscopes (Map.assocs $ buildOutscopeMap s) dv dv'
 --   | otherwise = Nothing
---     where getRelsOutscopes :: [(DisVar, SDRSFormula)] -> DisVar -> DisVar -> Bool
---           getRelsOutscopes [] _ _ = False
---           getRelsOutscopes (dv0, And sf1 sf2):rest dv dv' = getOneRelOutscopes dv0 sf1 dv dv' || getOneRelOutscopes dv0 sf2 dv dv' || getRelsOutscopes rest dv dv'
---           getRelsOutscopes (dv0, Not sf1):rest dv dv' = getOneRelOutscopes dv0 sf1 dv dv' || getRelsOutscopes rest dv dv'
---           getRelsOutscopes (dv0, sf1@(Relation _ _)):rest dv dv' = getOneRelOutscopes dv0 sf1 dv dv' || getRelsOutscopes rest dv dv'
---           -- TODO do i have to pass on dv and dv' here or can i leave it and it's implicit?
---           getRelsOutscopes _:rest = getRelsOutscopes rest
---             where getOneRelOutscopes :: DisVar -> SDRSFormula -> DisVar -> DisVar -> Bool
---                   getOneRelOutscopes dv0 (Relation _ dv1 dv2) dv dv' -- in the following the immediate outscopes cases
---                    | List.sort [dv, dv'] == List.sort [dv1, dv2] = False -- dv and dv' are args of a rel. no outscoping
---                    | dv == dv0 && ( dv' == dv1 || dv' == dv2 ) = True -- dv outscopes dv'
---                    | dv' == dv0 && ( dv == dv1 || dv == dv2 ) = False -- dv' outscopes dv
---                    -- here it gets tricky because I have to find a path along which the two labels lie.
---                    -- TODO
+--     where getRelsOutscopes :: [(DisVar, [DisVar]])] -> DisVar -> DisVar -> Bool
+--           getRelsOutscopes [] _ _ = Nothing
+--           getRelsOutscopes allrels@((dv0, dv1s):_) dv dv'
+--             | dv `elem` dv1s && dv' `elem` dv1s = Nothing -- dv and dv' are args of a rel. no outscoping
+--             | dv == dv0 && dv' `elem` dv1s = Just True -- dv immediately outscopes dv'
+--             | dv' == dv0 && dv `elem` dv1s = Just False -- dv' immediately outscopes dv
+--             | dv `elem` (map fst allrels) = findDVFromKeys [dv] allrels True -- dv is labeling a relation, look along its path
+--             | dv' `elem` (map fst allrels) = findDVFromKeys [dv'] allrels False -- dv' is labeling a relation, look along its path
+--             | otherwise = findPathWithoutKey allrels -- neither dv nor dv'
+--               where findDVFromKeys :: [DisVar] -> [(DisVar, [DisVar])] -> DisVar -> Bool -> Maybe Bool
+--                     findDVFromKeys [] _ _ _ = Nothing
+--                     findDVFromKeys dvKey:[] allrels1 dvFind outBool
+--                       -- I want to call the findDVFromKeys method 
+--                       | dvFind `notElem` (Map.lookup dvKey allrels1) = findDVFromKeys (Map.lookup dvKey allrels1) allrels1 dvFind
+--                       | otherwise = Just outBool
+--                     findDVFromKeys dvKey:rest allrels1 dvFind outBool
+
+
+
+
+
+-- checkOutscopes :: SDRS -> DisVar -> DisVar -> Maybe Bool
+-- checkOutscopes s@(SDRS a m l) dv dv'
+--   | checkNoUnboundVars s = getRelsOutscopes (buildOutscopeMap s) dv dv'
+--   | otherwise = Nothing
+--     where getRelsOutscopes :: (Map.Map DisVar [DisVar]) -> DisVar -> DisVar -> Bool
+--           getRelsOutscopes Map.empty _ _ = Nothing
+--           getRelsOutscopes map dv dv'
+--             | dv `elem` (snd(Map.elemAt 0 map)) && dv' `elem` (snd(Map.elemAt 0 map)) = Nothing -- dv and dv' are args of a rel. no outscoping
+--             | dv == fst(Map.elemAt 0 map) = findDVFromKeys [dv] allrels True -- dv is labeling a relation, look along its path
+--             | dv' `elem` (map fst allrels) = findDVFromKeys [dv'] allrels False -- dv' is labeling a relation, look along its path
+--             | otherwise = findPathWithoutKey allrels -- neither dv nor dv'
+--               where findDVFromKeys :: [DisVar] -> [(DisVar, [DisVar])] -> DisVar -> Bool -> Maybe Bool
+--                     findDVFromKeys [] _ _ _ = Nothing
+--                     findDVFromKeys dvKey:[] allrels1 dvFind outBool
+--                       -- I want to call the findDVFromKeys method 
+--                       | dvFind `notElem` (Map.lookup dvKey allrels1) = findDVFromKeys (Map.lookup dvKey allrels1) allrels1 dvFind
+--                       | otherwise = Just outBool
+--                     findDVFromKeys dvKey:rest allrels1 dvFind outBool
+
+            
 
 -- buildOutscopeMap :: SDRS -> (Map.Map DisVar (Set.Set DisVar))
 -- buildOutscopeMap s@(SDRS _ m _)
@@ -81,7 +107,7 @@ buildOutscopeMap s@(SDRS _ m _)
   | otherwise = Map.empty
     where buildOutscopeMapAux :: (Map.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> (Map.Map DisVar [DisVar])
           buildOutscopeMapAux acc dv0 (Relation _ dv1 dv2) = Map.insertWith (List.union) dv0 [dv1,dv2] acc
-          buildOutscopeMapAux acc dv0 (And (Relation _ dv1 dv2) (Relation _ dv3 dv4)) = (Map.insertWith (List.union) dv0 [dv1,dv2]) ((Map.insertWith (List.union) dv0 [dv3,dv4]) acc)
+          buildOutscopeMapAux acc dv0 (And (Relation _ dv1 dv2) (Relation _ dv3 dv4)) = Map.insertWith (List.union) dv0 [dv1,dv2] $ Map.insertWith (List.union) dv0 [dv3,dv4] acc
           buildOutscopeMapAux acc dv0 (Not (Relation _ dv1 dv2)) = Map.insertWith (List.union) dv0 [dv1,dv2] acc
           buildOutscopeMapAux acc _ _ = acc
 
