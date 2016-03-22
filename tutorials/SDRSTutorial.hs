@@ -86,10 +86,14 @@ sdrs_al07 = SDRS [0..7] (Map.fromList [(0, Relation "Elaboration" 1 6),
                                        (7, Relation "Narration" 3 4)]) 5
 
 map_al07 = Map.fromList [(0, Relation "Elaboration" 1 6),
-                                       (1, Text "John had a great evening last night."),
-                                       (2, Text "He had a great meal."),
-                                       (3, Text "He ate salmon."),
-                                       (4, Text "He devoured lots of cheese."),
-                                       (5, Text "He won a dancing competition."),
-                                       (6, And (Relation "Elaboration" 2 7) (Relation "Narration" 2 5)),
-                                       (7, Relation "Narration" 3 4)] :: Map.Map DisVar SDRSFormula
+                         (1, Text "John had a great evening last night."),
+                         (2, Text "He had a great meal."),
+                         (3, Text "He ate salmon."),
+                         (4, Text "He devoured lots of cheese."),
+                         (5, Text "He won a dancing competition."),
+                         (6, And (Relation "Elaboration" 2 7) (Relation "Narration" 2 5)),
+                         (7, Relation "Narration" 3 4)] :: Map.Map DisVar SDRSFormula
+
+outscopes_map = Map.fromList [(0,[1,6]),
+                              (6,[2,7,5]),
+                              (7,[3,4])]
