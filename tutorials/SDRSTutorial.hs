@@ -64,6 +64,7 @@ sdrs_prob_2 = SDRS [0..3] (Map.fromList [(1, And (Relation "Explanation" 1 2) (R
                                             (2, Text "because he didn't sleep well."),
                                             (3, Text "He had nightmares.")]) 3
 
+-- This entry is problematic since it is not deemed infelicitous (although it is, since not all entries are in relations with eachother)
 sdrs_prob_3 = SDRS [0..3] (Map.fromList [(0, Relation "Explanation" 1 2),
                                             (1, Text "Fred went to the supermarket"),
                                             (2, Text "because his fridge is empty."),

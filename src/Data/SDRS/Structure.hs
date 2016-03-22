@@ -14,13 +14,15 @@ module Data.SDRS.Structure
 (
   listDUs
 , getDu
+-- , buildOutscopeMap
 , buildOutscopeMap
 ) where
 
 import Data.SDRS.DataType
 import Data.SDRS.Binding
+import qualified Data.List as List 
 import qualified Data.Map as Map
-import qualified Data.Set as Set
+-- import qualified Data.Set as Set
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -63,14 +65,24 @@ getDu (SDRS _ m _) i     = Map.lookup i m
 --                    -- here it gets tricky because I have to find a path along which the two labels lie.
 --                    -- TODO
 
-buildOutscopeMap :: SDRS -> (Map.Map DisVar (Set.Set DisVar))
+-- buildOutscopeMap :: SDRS -> (Map.Map DisVar (Set.Set DisVar))
+-- buildOutscopeMap s@(SDRS _ m _)
+--   | checkNoUnboundVars s = Map.foldlWithKey buildOutscopeMapAux Map.empty m
+--   | otherwise = Map.empty
+--     where buildOutscopeMapAux :: (Map.Map DisVar (Set.Set DisVar)) -> DisVar -> SDRSFormula -> (Map.Map DisVar (Set.Set DisVar))
+--           buildOutscopeMapAux acc dv0 (Relation _ dv1 dv2) = Map.insertWith (Set.union) dv0 (Set.fromList [dv1,dv2]) acc
+--           buildOutscopeMapAux acc dv0 (And (Relation _ dv1 dv2) (Relation _ dv3 dv4)) = (Map.insertWith (Set.union) dv0 (Set.fromList [dv1,dv2])) ((Map.insertWith (Set.union) dv0 (Set.fromList [dv3,dv4])) acc)
+--           buildOutscopeMapAux acc dv0 (Not (Relation _ dv1 dv2)) = (Map.insertWith (Set.union) dv0 (Set.fromList [dv1,dv2]) acc)
+--           buildOutscopeMapAux acc _ _ = acc
+
+buildOutscopeMap :: SDRS -> (Map.Map DisVar [DisVar])
 buildOutscopeMap s@(SDRS _ m _)
   | checkNoUnboundVars s = Map.foldlWithKey buildOutscopeMapAux Map.empty m
   | otherwise = Map.empty
-    where buildOutscopeMapAux :: (Map.Map DisVar (Set.Set DisVar)) -> DisVar -> SDRSFormula -> (Map.Map DisVar (Set.Set DisVar))
-          buildOutscopeMapAux acc dv0 (Relation _ dv1 dv2) = Map.insertWith (Set.union) dv0 (Set.fromList [dv1,dv2]) acc
-          buildOutscopeMapAux acc dv0 (And (Relation _ dv1 dv2) (Relation _ dv3 dv4)) = (Map.insertWith (Set.union) dv0 (Set.fromList [dv1,dv2])) ((Map.insertWith (Set.union) dv0 (Set.fromList [dv3,dv4])) acc)
-          buildOutscopeMapAux acc dv0 (Not (Relation _ dv1 dv2)) = (Map.insertWith (Set.union) dv0 (Set.fromList [dv1,dv2]) acc)
+    where buildOutscopeMapAux :: (Map.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> (Map.Map DisVar [DisVar])
+          buildOutscopeMapAux acc dv0 (Relation _ dv1 dv2) = Map.insertWith (List.union) dv0 [dv1,dv2] acc
+          buildOutscopeMapAux acc dv0 (And (Relation _ dv1 dv2) (Relation _ dv3 dv4)) = (Map.insertWith (List.union) dv0 [dv1,dv2]) ((Map.insertWith (List.union) dv0 [dv3,dv4]) acc)
+          buildOutscopeMapAux acc dv0 (Not (Relation _ dv1 dv2)) = Map.insertWith (List.union) dv0 [dv1,dv2] acc
           buildOutscopeMapAux acc _ _ = acc
 
 -- how two labels can outscope eachother. Pseudo code using Ordering to show outscoping. EQ indicates that they're on the same level

@@ -14,6 +14,7 @@ module Data.SDRS.Binding
 (
 	listUnboundMapKeys
 , listUnboundDisVars
+, checkNoUnboundVarsDebug
 , checkNoUnboundVars
 ) where
 
@@ -37,14 +38,14 @@ listUnboundDisVars :: SDRS -> [DisVar]
 listUnboundDisVars (SDRS a m _) = a \\ Map.keys m
 
 -----------------------------------------------------------------------------
----- | Checks if all labels are bound in an SDRS
+---- | Checks if all labels are bound in an SDRS (and outputs the preconditions as a list of bools for debugging)
 -----------------------------------------------------------------------------
-checkNoUnboundVars :: SDRS -> Bool
-checkNoUnboundVars (SDRS a m l) = 
-  l `elem` a &&
-  (Map.keys m) == a &&
-  Set.fromList (getAllLabels (Map.elems m)) == Set.fromList a &&
-  checkNoSelfRefRels (Map.assocs m)
+checkNoUnboundVarsDebug :: SDRS -> [Bool]
+checkNoUnboundVarsDebug (SDRS a m l) = 
+  (l `elem` a) :
+  ((Map.keys m) == a) :
+  (Set.fromList ((getAllLabels (Map.elems m)) ++ Map.keys m) == Set.fromList a) :
+  (checkNoSelfRefRels (Map.assocs m)) : []
     where getAllLabels :: [SDRSFormula] -> [DisVar]
           getAllLabels []                           = []
           getAllLabels ((Relation _ dv1 dv2):rest)  = dv1:dv2:getAllLabels rest 
@@ -59,6 +60,31 @@ checkNoUnboundVars (SDRS a m l) =
                   noSelfRef (dv0, And sf1 sf2)           = noSelfRef (dv0,sf1) && noSelfRef (dv0,sf2)
                   noSelfRef (dv0, Not sf1)               = noSelfRef (dv0,sf1)
                   noSelfRef _ = True
+
+-----------------------------------------------------------------------------
+---- | Checks if all labels are bound in an SDRS
+-----------------------------------------------------------------------------
+checkNoUnboundVars :: SDRS -> Bool
+checkNoUnboundVars (SDRS a m l) = 
+  (l `elem` a) &&
+  ((Map.keys m) == a) &&
+  (Set.fromList ((getAllLabels (Map.elems m)) ++ Map.keys m) == Set.fromList a) && -- TODO simplify possibly
+  (checkNoSelfRefRels (Map.assocs m))
+    where getAllLabels :: [SDRSFormula] -> [DisVar]
+          getAllLabels []                           = []
+          getAllLabels ((Relation _ dv1 dv2):rest)  = dv1:dv2:getAllLabels rest 
+          getAllLabels ((And sf1 sf2):rest)         = getAllLabels [sf1] ++ getAllLabels [sf2] ++ getAllLabels rest
+          getAllLabels ((Not sf1):rest)             = getAllLabels [sf1] ++ getAllLabels rest
+          -- Text and Segment constructors are skipped since they don't have labels
+          getAllLabels (_:rest)              = getAllLabels rest
+          checkNoSelfRefRels :: ([(DisVar, SDRSFormula)]) -> Bool
+          checkNoSelfRefRels list = all noSelfRef list
+            where noSelfRef :: (DisVar, SDRSFormula) -> Bool
+                  noSelfRef (dv0, Relation _ dv1 dv2)    = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
+                  noSelfRef (dv0, And sf1 sf2)           = noSelfRef (dv0,sf1) && noSelfRef (dv0,sf2)
+                  noSelfRef (dv0, Not sf1)               = noSelfRef (dv0,sf1)
+                  noSelfRef _ = True
+
 
 
 -- how to make an sdrs unvalid:
