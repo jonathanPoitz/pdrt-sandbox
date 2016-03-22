@@ -78,6 +78,7 @@ getDu (SDRS _ m _) i     = Map.lookup i m
 --           getRelsOutscopes Map.empty _ _ = Nothing
 --           getRelsOutscopes map dv dv'
 --             | dv `elem` (snd(Map.elemAt 0 map)) && dv' `elem` (snd(Map.elemAt 0 map)) = Nothing -- dv and dv' are args of a rel. no outscoping
+--             | -- TODO continue here
 --             | dv == fst(Map.elemAt 0 map) = findDVFromKeys [dv] allrels True -- dv is labeling a relation, look along its path
 --             | dv' `elem` (map fst allrels) = findDVFromKeys [dv'] allrels False -- dv' is labeling a relation, look along its path
 --             | otherwise = findPathWithoutKey allrels -- neither dv nor dv'
