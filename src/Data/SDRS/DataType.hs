@@ -22,7 +22,6 @@ module Data.SDRS.DataType
 
 import Data.DRS.DataType
 
-import Data.List (intercalate)
 import qualified Data.Map as Map
 
 ---------------------------------------------------------------------------
@@ -32,20 +31,20 @@ import qualified Data.Map as Map
 -- take care of this in a proper way in the future.
 ---------------------------------------------------------------------------
 
-instance Show DRS where show d = showDRSDebug d
+--instance Show DRS where show d = showDRSDebug d
 
-showDRSDebug :: DRS -> String
-showDRSDebug (LambdaDRS l) = "LambdaPDRS" ++ " "  ++ show l
-showDRSDebug (Merge d1 d2) = "Merge"      ++ " (" ++ showDRSDebug d1 ++ ") (" ++ showDRSDebug d2 ++ ")"
-showDRSDebug (DRS u c)     = "DRS"        ++ " "  ++ show u ++ " [" ++ intercalate "," (map showCon c) ++ "]"
-  where showCon :: DRSCon -> String
-        showCon (Rel r d)    = "Rel ("     ++ show r          ++ ")" ++ " " ++ show d
-        showCon (Neg d1)     = "Neg ("     ++ showDRSDebug d1 ++ ")"
-        showCon (Imp d1 d2)  = "Imp ("     ++ showDRSDebug d1 ++ ") (" ++ showDRSDebug d2 ++ ")"
-        showCon (Or d1 d2)   = "Or ("      ++ showDRSDebug d1 ++ ") (" ++ showDRSDebug d2 ++ ")"
-        showCon (Box d1)     = "Box ("     ++ showDRSDebug d1 ++ ")"
-        showCon (Diamond d1) = "Diamond (" ++ showDRSDebug d1 ++ ")"
-        showCon (Prop r d1)  = "Prop ("    ++ show r          ++ ") (" ++ showDRSDebug d1 ++ ")"
+--showDRSDebug :: DRS -> String
+--showDRSDebug (LambdaDRS l) = "LambdaPDRS" ++ " "  ++ show l
+--showDRSDebug (Merge d1 d2) = "Merge"      ++ " (" ++ showDRSDebug d1 ++ ") (" ++ showDRSDebug d2 ++ ")"
+--showDRSDebug (DRS u c)     = "DRS"        ++ " "  ++ show u ++ " [" ++ intercalate "," (map showCon c) ++ "]"
+--  where showCon :: DRSCon -> String
+--        showCon (Rel r d)    = "Rel ("     ++ show r          ++ ")" ++ " " ++ show d
+--        showCon (Neg d1)     = "Neg ("     ++ showDRSDebug d1 ++ ")"
+--        showCon (Imp d1 d2)  = "Imp ("     ++ showDRSDebug d1 ++ ") (" ++ showDRSDebug d2 ++ ")"
+--        showCon (Or d1 d2)   = "Or ("      ++ showDRSDebug d1 ++ ") (" ++ showDRSDebug d2 ++ ")"
+--        showCon (Box d1)     = "Box ("     ++ showDRSDebug d1 ++ ")"
+--        showCon (Diamond d1) = "Diamond (" ++ showDRSDebug d1 ++ ")"
+--        showCon (Prop r d1)  = "Prop ("    ++ show r          ++ ") (" ++ showDRSDebug d1 ++ ")"
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -83,7 +82,7 @@ data SDRSFormula =
 -- ^ A rhetorical relation between two speech act discourse referents
   | And SDRSFormula SDRSFormula
   | Not SDRSFormula
-  deriving (Show, Read, Eq)
+  deriving (Read, Eq)
 
 ---------------------------------------------------------------------------
 -- | Segmented Discourse Representation Structure.
@@ -93,7 +92,7 @@ data SDRS =
   SDRS [DisVar] (Map.Map DisVar SDRSFormula) DisVar
   -- ^ A SDRS (a set of speech act discourse referents, a map assigning
   -- SDRS formulas to referents and the referent last added to the discourse)
-  deriving (Show, Read, Eq)
+  deriving (Read, Eq)
 
 ---------------------------------------------------------------------------
 -- | Segmented Discourse Representation Structure
