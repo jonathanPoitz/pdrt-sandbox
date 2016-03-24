@@ -115,7 +115,7 @@ opNot = "\x0021"
 ---------------------------------------------------------------------------
 
 showSDRSBox :: SDRS -> String
-showSDRSBox (SDRS _ f _) = showHorizontalLine l boxTopLeft boxTopRight
+showSDRSBox (SDRS f _) = showHorizontalLine l boxTopLeft boxTopRight
   ++ showContent l vl ++ showHorizontalLine l boxMiddleLeft boxMiddleRight
   ++ showContent l fl ++ showHorizontalLine l boxBottomLeft boxBottomRight
   where vl
@@ -132,7 +132,6 @@ showSDRSBox (SDRS _ f _) = showHorizontalLine l boxTopLeft boxTopRight
 showFunction :: [(DisVar,SDRSFormula)] -> String
 showFunction f = foldr ((++) . showFunc) "" f
   where showFunc :: (DisVar,SDRSFormula) -> String
-        showFunc (_, (Text _))            = "" -- XXX: For debug only
         showFunc (dv,sf@(Segment _))      = showModifier (show dv ++ ":") (modifierPos form) form
           where form = showFormula sf
         showFunc (dv,sf@(Relation _ _ _)) = showModifier (show dv ++ ":") (modifierPos form) form
@@ -143,7 +142,6 @@ showFunction f = foldr ((++) . showFunc) "" f
           where form = showNegation f1
 
 showFormula :: (SDRSFormula) -> String
-showFormula (Text _)             = "" -- XXX: For debug only
 showFormula (Segment d)          = showDRS (DRS.Boxes d)
 showFormula (Relation r dv1 dv2) = r ++ "(" ++ show dv1 ++ "," ++ show dv2 ++")\n"
 showFormula (And f1 f2)          = showConjunction f1 f2 

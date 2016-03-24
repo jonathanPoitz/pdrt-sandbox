@@ -73,10 +73,7 @@ type RelName = String
 -- | An SDRS formula
 ---------------------------------------------------------------------------
 data SDRSFormula =
-  Text String
--- ^ For debugging purposes, allow an SDRSFormula to be a textual
--- representation of the sentence
-  | Segment DRS
+  Segment DRS
 -- ^ A DRS
   | Relation RelName DisVar DisVar
 -- ^ A rhetorical relation between two speech act discourse referents
@@ -89,7 +86,7 @@ data SDRSFormula =
 ---------------------------------------------------------------------------
 
 data SDRS =
-  SDRS [DisVar] (Map.Map DisVar SDRSFormula) DisVar
+  SDRS (Map.Map DisVar SDRSFormula) DisVar
   -- ^ A SDRS (a set of speech act discourse referents, a map assigning
   -- SDRS formulas to referents and the referent last added to the discourse)
   deriving (Read, Eq)
@@ -101,7 +98,7 @@ data SDRS =
 ---------------------------------------------------------------------------
 
 --data SDRS =
---  SDRS [DisVar] [(DisVar,SDRSFormula)] DisVar
+--  SDRS [(DisVar,SDRSFormula)] DisVar
 ---- ^ A SDRS (a set of speech act discourse referents, a function assigning
 ---- SDRS formulas to referents and the referent last added to the discourse)
 --  deriving (Show, Read, Eq)

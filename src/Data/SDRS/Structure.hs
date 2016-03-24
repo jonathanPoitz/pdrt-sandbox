@@ -13,12 +13,12 @@ Structural operations on SDRSs
 module Data.SDRS.Structure
 (
   listDUs
-, getDu
+, lookupDU
 , buildOutscopeMap
+, expandRecursiveFormula
 ) where
 
 import Data.SDRS.DataType
-import Data.SDRS.Binding
 import qualified Data.List as List 
 import qualified Data.Map as Map
 -- import qualified Data.Set as Set
@@ -31,13 +31,13 @@ import qualified Data.Map as Map
 -- | Returns the set of discourse units
 ---------------------------------------------------------------------------
 listDUs :: SDRS -> [DisVar]
-listDUs (SDRS _ m _)     = Map.keys m
+listDUs (SDRS m _)     = Map.keys m
 
 ---------------------------------------------------------------------------
 -- | Returns a certain discourse unit if present
 ---------------------------------------------------------------------------
-getDu :: SDRS -> DisVar -> Maybe SDRSFormula
-getDu (SDRS _ m _) i     = Map.lookup i m
+lookupDU :: SDRS -> DisVar -> Maybe SDRSFormula
+lookupDU (SDRS m _) i     = Map.lookup i m
 
 ---------------------------------------------------------------------------
 -- | Returns, given an 'SDRS' @s@, in what dominance relation two 'DisVar'
@@ -102,15 +102,31 @@ getDu (SDRS _ m _) i     = Map.lookup i m
 --           buildOutscopeMapAux acc dv0 (Not (Relation _ dv1 dv2)) = (Map.insertWith (Set.union) dv0 (Set.fromList [dv1,dv2]) acc)
 --           buildOutscopeMapAux acc _ _ = acc
 
+---------------------------------------------------------------------------
+-- | Returns, given an SDRS, a map that represents which of its discourse 
+-- 
+---------------------------------------------------------------------------
 buildOutscopeMap :: SDRS -> (Map.Map DisVar [DisVar])
-buildOutscopeMap s@(SDRS _ m _)
-  | checkNoUnboundVars s = Map.foldlWithKey buildOutscopeMapAux Map.empty m
-  | otherwise = Map.empty
-    where buildOutscopeMapAux :: (Map.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> (Map.Map DisVar [DisVar])
-          buildOutscopeMapAux acc dv0 (Relation _ dv1 dv2) = Map.insertWith (List.union) dv0 [dv1,dv2] acc
-          buildOutscopeMapAux acc dv0 (And (Relation _ dv1 dv2) (Relation _ dv3 dv4)) = Map.insertWith (List.union) dv0 [dv1,dv2] $ Map.insertWith (List.union) dv0 [dv3,dv4] acc
-          buildOutscopeMapAux acc dv0 (Not (Relation _ dv1 dv2)) = Map.insertWith (List.union) dv0 [dv1,dv2] acc
-          buildOutscopeMapAux acc _ _ = acc
+buildOutscopeMap (SDRS m _) = Map.foldlWithKey build Map.empty m
+  where build :: (Map.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> (Map.Map DisVar [DisVar])
+        build acc dv0 (Relation _ dv1 dv2) = Map.insertWith (List.union) dv0 (List.nub [dv1,dv2]) acc
+        build acc dv0 sf@(And _ _) = buildRecursive acc dv0 $ expandRecursiveFormula sf
+        build acc dv0 sf@(Not _) = buildRecursive acc dv0 $ expandRecursiveFormula sf
+        build acc _ _ = acc
+        buildRecursive :: (Map.Map DisVar [DisVar]) -> DisVar -> [SDRSFormula] -> (Map.Map DisVar [DisVar])
+        -- only add Relations since only they hold discourse variables as arguments
+        buildRecursive acc _ [] = acc
+        buildRecursive acc dv0 ((Relation _ dv1 dv2):rest) = Map.insertWith (List.union) dv0 (List.nub [dv1,dv2]) (buildRecursive acc dv0 rest)
+        buildRecursive acc dv0 (_:rest) = buildRecursive acc dv0 rest
+
+---------------------------------------------------------------------------
+-- | given an SDRSFormula, returns a list of all of its embedded SDRSFormulae 
+---------------------------------------------------------------------------
+expandRecursiveFormula :: SDRSFormula -> [SDRSFormula]
+expandRecursiveFormula (Not sf1) = expandRecursiveFormula sf1
+expandRecursiveFormula (And sf1 sf2) = expandRecursiveFormula sf1 ++ expandRecursiveFormula sf2
+expandRecursiveFormula sf = [sf]
+
 
 -- how two labels can outscope eachother. Pseudo code using Ordering to show outscoping. EQ indicates that they're on the same level
 -- outscoping 1 2:
