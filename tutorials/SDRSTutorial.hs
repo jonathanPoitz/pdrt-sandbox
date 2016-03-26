@@ -55,38 +55,6 @@ sdrs_danlos_4 = SDRS (Map.fromList [(0, Relation "Commentary" 1 2),
                                             (3, Segment drs0),
                                             (4, Segment drs0)]) 4
 
--- has self referencing relation
-prob_selfref1 = SDRS (Map.fromList [(0, And (Relation "Explanation" 1 1) (Relation "Explanation" 2 3)),
-                                            (1, Segment drs0),
-                                            (2, Segment drs0),
-                                            (3, Segment drs0)]) 3
-
--- has self referencing relation
-prob_selfref2 = SDRS (Map.fromList [(0, And (Relation "Explanation" 0 1) (Relation "Explanation" 2 3)),
-                                            (1, Segment drs0),
-                                            (2, Segment drs0),
-                                            (3, Segment drs0)]) 3
-
--- has self referencing relation
-prob_selfref3 = SDRS (Map.fromList [(0, Relation "Explanation" 1 1),
-                                            (1, Segment drs0),
-                                            (2, Segment drs0),
-                                            (3, Segment drs0)]) 3
-
--- This entry is problematic since it is deemed felicitous (although it isn't, since not all entries are in relations with eachother)
-prob_not_enough_rels = SDRS (Map.fromList [(0, Relation "Explanation" 1 2),
-                                            (1, Segment drs0),
-                                            (2, Segment drs0),
-                                            (3, Segment drs0)]) 3
-
--- last is not a valid discourse variable
-prob_last = SDRS (Map.fromList [(0, Relation "Commentary" 1 2),
-                                            (1, Relation "Explanation" 3 4),
-                                            (2, Segment drs0),
-                                            (3, Segment drs0),
-                                            (4, Segment drs0)]) 7
-
-
 sdrs_al07 = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
                                 (1, Segment drs0),
                                 (2, Segment drs0),
@@ -118,9 +86,64 @@ rec_sdrs2 = And (Segment drs0)
                       (Segment drs0)))
                   (Segment drs0))
 
+rec_sdrs2b = And (Segment drs0) (And (Not (And (Segment drs0) (Segment drs0))) (Segment drs0))
+
 rec_sdrs3 = Not (Not (Not $ Segment drs0))
 
 -- for recursion testing only, not felicitous
 sdrs_rec_1 = SDRS (Map.fromList [(0, rec_sdrs1),
                                  (1, rec_sdrs2),
                                  (2, rec_sdrs3)]) 0
+
+
+-- ==============================================================
+-- Malformed SDRSs
+-- ==============================================================
+
+-- has self referencing relation
+prob_selfref1 = SDRS (Map.fromList [(0, And (Relation "Explanation" 1 1) (Relation "Explanation" 2 3)),
+                                            (1, Segment drs0),
+                                            (2, Segment drs0),
+                                            (3, Segment drs0)]) 3
+
+-- has self referencing relation
+prob_selfref2 = SDRS (Map.fromList [(0, And (Relation "Explanation" 0 1) (Relation "Explanation" 2 3)),
+                                            (1, Segment drs0),
+                                            (2, Segment drs0),
+                                            (3, Segment drs0)]) 3
+
+-- has self referencing relation
+prob_selfref3 = SDRS (Map.fromList [(0, Relation "Explanation" 1 1),
+                                            (1, Segment drs0),
+                                            (2, Segment drs0),
+                                            (3, Segment drs0)]) 3
+
+-- This entry is problematic since it is deemed felicitous (although it isn't, since not all entries are in relations with eachother)
+prob_not_enough_rels = SDRS (Map.fromList [(0, Relation "Explanation" 1 2),
+                                            (1, Segment drs0),
+                                            (2, Segment drs0),
+                                            (3, Segment drs0)]) 3
+
+-- the discourse graph is not well formed. TODO find out what rules exactly are broken here
+prob_graph_not_wellformed = SDRS (Map.fromList [(0, Relation "Elaboration" 1 5),
+                                                (1, Segment drs0),
+                                                (2, Segment drs0),
+                                                (3, Segment drs0),
+                                                (4, Segment drs0),
+                                                (5, Segment drs0),
+                                                (6, And (Relation "Elaboration" 2 4) (Relation "Narration" 3 7)),
+                                                (7, Relation "Narration" 4 7)]) 5
+
+-- last is not a valid discourse variable
+prob_last1 = SDRS (Map.fromList [(0, Relation "Commentary" 1 2),
+                                            (1, Relation "Explanation" 3 4),
+                                            (2, Segment drs0),
+                                            (3, Segment drs0),
+                                            (4, Segment drs0)]) 7
+
+-- last is not a segment
+prob_last2 = SDRS (Map.fromList [(0, Relation "Commentary" 1 2),
+                                            (1, Relation "Explanation" 3 4),
+                                            (2, Segment drs0),
+                                            (3, Segment drs0),
+                                            (4, Segment drs0)]) 1

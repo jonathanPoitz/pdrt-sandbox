@@ -67,9 +67,6 @@ lookupDU (SDRS m _) i     = Map.lookup i m
 --                     findDVFromKeys dvKey:rest allrels1 dvFind outBool
 
 
-
-
-
 -- checkOutscopes :: SDRS -> DisVar -> DisVar -> Maybe Bool
 -- checkOutscopes s@(SDRS a m l) dv dv'
 --   | checkNoUnboundVars s = getRelsOutscopes (buildOutscopeMap s) dv dv'
@@ -89,18 +86,6 @@ lookupDU (SDRS m _) i     = Map.lookup i m
 --                       | dvFind `notElem` (Map.lookup dvKey allrels1) = findDVFromKeys (Map.lookup dvKey allrels1) allrels1 dvFind
 --                       | otherwise = Just outBool
 --                     findDVFromKeys dvKey:rest allrels1 dvFind outBool
-
-            
-
--- buildOutscopeMap :: SDRS -> (Map.Map DisVar (Set.Set DisVar))
--- buildOutscopeMap s@(SDRS _ m _)
---   | checkNoUnboundVars s = Map.foldlWithKey buildOutscopeMapAux Map.empty m
---   | otherwise = Map.empty
---     where buildOutscopeMapAux :: (Map.Map DisVar (Set.Set DisVar)) -> DisVar -> SDRSFormula -> (Map.Map DisVar (Set.Set DisVar))
---           buildOutscopeMapAux acc dv0 (Relation _ dv1 dv2) = Map.insertWith (Set.union) dv0 (Set.fromList [dv1,dv2]) acc
---           buildOutscopeMapAux acc dv0 (And (Relation _ dv1 dv2) (Relation _ dv3 dv4)) = (Map.insertWith (Set.union) dv0 (Set.fromList [dv1,dv2])) ((Map.insertWith (Set.union) dv0 (Set.fromList [dv3,dv4])) acc)
---           buildOutscopeMapAux acc dv0 (Not (Relation _ dv1 dv2)) = (Map.insertWith (Set.union) dv0 (Set.fromList [dv1,dv2]) acc)
---           buildOutscopeMapAux acc _ _ = acc
 
 ---------------------------------------------------------------------------
 -- | Returns, given an SDRS, a map that represents which of its discourse 
