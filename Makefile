@@ -4,6 +4,8 @@ FLAGS=--prefix=${HOME} --user
 
 SRC=src/Data/*.hs src/Data/DRS/*.hs src/Data/DRS/Input/*.hs src/Data/FOL/*.hs src/Data/PDRS/*.hs src/Data/PDRS/Input/*.hs src/Data/SDRS/*.hs
 
+SDRT_SRC = src/Data/SDRS.hs src/Data/SDRS/*.hs
+
 ### build ###
 
 all: configure build install
@@ -34,6 +36,11 @@ haddock:
 
 hlint:
 	hlint ${SRC}
+
+### hlint_sdrt ###
+
+hlint_sdrt:
+	hlint ${SDRT_SRC}
 
 ### count ###
 
