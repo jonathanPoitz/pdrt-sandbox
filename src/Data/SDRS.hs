@@ -17,5 +17,6 @@ module Data.SDRS
 
 import Data.SDRS.Binding as SDRS
 import Data.SDRS.DataType as SDRS
+import Data.SDRS.DiscourseGraph as SDRS
 import Data.SDRS.Show as SDRS 
 import Data.SDRS.Structure as SDRS
