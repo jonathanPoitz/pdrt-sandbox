@@ -14,12 +14,16 @@ module Data.SDRS.Structure
 (
   listDUs
 , lookupDU
-, buildOutscopeMap
+, listRelations
+, listSegments
+, relLabels
+, listDRSs
 , expandRecursiveFormula
 ) where
 
+--import Data.DRS.Properties
 import Data.SDRS.DataType
-import qualified Data.List as List 
+--import qualified Data.List as List 
 import qualified Data.Map as Map
 -- import qualified Data.Set as Set
 
@@ -40,69 +44,54 @@ lookupDU :: SDRS -> DisVar -> Maybe SDRSFormula
 lookupDU (SDRS m _) i     = Map.lookup i m
 
 ---------------------------------------------------------------------------
--- | Returns, given an 'SDRS' @s@, in what dominance relation two 'DisVar'
--- @dv@ and @dv'@ stand. This relation is represented by an 'Ordering'.
--- @dv@ 'GT' @dv'@ if the former outscopes the latter (vice versa for
--- 'LT'). 'EQ' if no dominance relation is present.
+-- | Returns all labels that are Arguments of Relations
 ---------------------------------------------------------------------------
--- checkOutscopes :: SDRS -> DisVar -> DisVar -> Maybe Bool
--- checkOutscopes s@(SDRS a m l) dv dv'
---   | checkNoUnboundVars s = getRelsOutscopes (Map.assocs $ buildOutscopeMap s) dv dv'
---   | otherwise = Nothing
---     where getRelsOutscopes :: [(DisVar, [DisVar]])] -> DisVar -> DisVar -> Bool
---           getRelsOutscopes [] _ _ = Nothing
---           getRelsOutscopes allrels@((dv0, dv1s):_) dv dv'
---             | dv `elem` dv1s && dv' `elem` dv1s = Nothing -- dv and dv' are args of a rel. no outscoping
---             | dv == dv0 && dv' `elem` dv1s = Just True -- dv immediately outscopes dv'
---             | dv' == dv0 && dv `elem` dv1s = Just False -- dv' immediately outscopes dv
---             | dv `elem` (map fst allrels) = findDVFromKeys [dv] allrels True -- dv is labeling a relation, look along its path
---             | dv' `elem` (map fst allrels) = findDVFromKeys [dv'] allrels False -- dv' is labeling a relation, look along its path
---             | otherwise = findPathWithoutKey allrels -- neither dv nor dv'
---               where findDVFromKeys :: [DisVar] -> [(DisVar, [DisVar])] -> DisVar -> Bool -> Maybe Bool
---                     findDVFromKeys [] _ _ _ = Nothing
---                     findDVFromKeys dvKey:[] allrels1 dvFind outBool
---                       -- I want to call the findDVFromKeys method 
---                       | dvFind `notElem` (Map.lookup dvKey allrels1) = findDVFromKeys (Map.lookup dvKey allrels1) allrels1 dvFind
---                       | otherwise = Just outBool
---                     findDVFromKeys dvKey:rest allrels1 dvFind outBool
-
-
--- checkOutscopes :: SDRS -> DisVar -> DisVar -> Maybe Bool
--- checkOutscopes s@(SDRS a m l) dv dv'
---   | checkNoUnboundVars s = getRelsOutscopes (buildOutscopeMap s) dv dv'
---   | otherwise = Nothing
---     where getRelsOutscopes :: (Map.Map DisVar [DisVar]) -> DisVar -> DisVar -> Bool
---           getRelsOutscopes Map.empty _ _ = Nothing
---           getRelsOutscopes map dv dv'
---             | dv `elem` (snd(Map.elemAt 0 map)) && dv' `elem` (snd(Map.elemAt 0 map)) = Nothing -- dv and dv' are args of a rel. no outscoping
---             | -- TODO continue here
---             | dv == fst(Map.elemAt 0 map) = findDVFromKeys [dv] allrels True -- dv is labeling a relation, look along its path
---             | dv' `elem` (map fst allrels) = findDVFromKeys [dv'] allrels False -- dv' is labeling a relation, look along its path
---             | otherwise = findPathWithoutKey allrels -- neither dv nor dv'
---               where findDVFromKeys :: [DisVar] -> [(DisVar, [DisVar])] -> DisVar -> Bool -> Maybe Bool
---                     findDVFromKeys [] _ _ _ = Nothing
---                     findDVFromKeys dvKey:[] allrels1 dvFind outBool
---                       -- I want to call the findDVFromKeys method 
---                       | dvFind `notElem` (Map.lookup dvKey allrels1) = findDVFromKeys (Map.lookup dvKey allrels1) allrels1 dvFind
---                       | otherwise = Just outBool
---                     findDVFromKeys dvKey:rest allrels1 dvFind outBool
+relLabels :: [SDRSFormula] -> [DisVar]
+relLabels []                           = []
+relLabels ((Relation _ dv1 dv2):rest)  = dv1:dv2:relLabels rest 
+relLabels ((And sf1 sf2):rest)         = relLabels [sf1] ++ relLabels [sf2] ++ relLabels rest
+relLabels ((Not sf1):rest)             = relLabels [sf1] ++ relLabels rest
+relLabels ((Segment _):rest)              = relLabels rest
 
 ---------------------------------------------------------------------------
--- | Returns, given an SDRS, a map that represents which of its discourse 
--- 
+-- | Lists, given an SDRS, its relations along with each respective label
+-- TODO could I make this generic? Passing along the name of a constructor
+-- and only list the SDRSFormulas using this constructor?
+-- TODO can this be done in an easier way with some sort of filter?
 ---------------------------------------------------------------------------
-buildOutscopeMap :: SDRS -> (Map.Map DisVar [DisVar])
-buildOutscopeMap (SDRS m _) = Map.foldlWithKey build Map.empty m
-  where build :: (Map.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> (Map.Map DisVar [DisVar])
-        build acc dv0 (Relation _ dv1 dv2) = Map.insertWith (List.union) dv0 (List.nub [dv1,dv2]) acc
-        build acc dv0 sf@(And _ _) = buildRecursive acc dv0 $ expandRecursiveFormula sf
-        build acc dv0 sf@(Not _) = buildRecursive acc dv0 $ expandRecursiveFormula sf
-        build acc _ _ = acc
-        buildRecursive :: (Map.Map DisVar [DisVar]) -> DisVar -> [SDRSFormula] -> (Map.Map DisVar [DisVar])
-        -- only add Relations since only they hold discourse variables as arguments
-        buildRecursive acc _ [] = acc
-        buildRecursive acc dv0 ((Relation _ dv1 dv2):rest) = Map.insertWith (List.union) dv0 (List.nub [dv1,dv2]) (buildRecursive acc dv0 rest)
-        buildRecursive acc dv0 (_:rest) = buildRecursive acc dv0 rest
+listRelations :: SDRS -> [(DisVar, SDRSFormula)]
+listRelations (SDRS m _) = formulas (Map.assocs m)
+  where formulas :: [(DisVar, SDRSFormula)] -> [(DisVar, SDRSFormula)]
+        formulas [] = []
+        formulas (t@(_, Relation _ _ _):rest) = t:(formulas rest)
+        formulas ((dv, sf@(And _ _)):rest) = (formulas $ zip (repeat dv) (expandRecursiveFormula sf)) ++ formulas rest
+        formulas ((dv, sf@(Not _)):rest) = (formulas $ zip (repeat dv) (expandRecursiveFormula sf)) ++ formulas rest
+        formulas (_:rest) = formulas rest
+
+---------------------------------------------------------------------------
+-- | Similar to listRelations, lists Segments of an SDRS, along with their
+-- discourse variables.
+---------------------------------------------------------------------------
+listSegments :: SDRS -> [(DisVar, SDRSFormula)]
+listSegments (SDRS m _) = formulas (Map.assocs m)
+  where formulas :: [(DisVar, SDRSFormula)] -> [(DisVar, SDRSFormula)]
+        formulas [] = []
+        formulas (t@(_, Segment _):rest) = t:(formulas rest)
+        formulas ((dv, sf@(And _ _)):rest) = (formulas $ zip (repeat dv) (expandRecursiveFormula sf)) ++ formulas rest
+        formulas ((dv, sf@(Not _)):rest) = (formulas $ zip (repeat dv) (expandRecursiveFormula sf)) ++ formulas rest
+        formulas (_:rest) = formulas rest
+
+---------------------------------------------------------------------------
+-- | Lists all embedded DRSs of an SDRS
+---------------------------------------------------------------------------
+listDRSs :: SDRS -> [DRS]
+listDRSs (SDRS m _) = drss (Map.assocs m)
+  where drss :: [(DisVar, SDRSFormula)] -> [DRS]
+        drss [] = []
+        drss ((_, Segment d):rest) = d:(drss rest)
+        drss ((dv, sf@(And _ _)):rest) = (drss $ zip (repeat dv) (expandRecursiveFormula sf)) ++ drss rest
+        drss ((dv, sf@(Not _)):rest) = (drss $ zip (repeat dv) (expandRecursiveFormula sf)) ++ drss rest
+        drss (_:rest) = drss rest
 
 ---------------------------------------------------------------------------
 -- | given an SDRSFormula, returns a list of all of its embedded SDRSFormulae 
@@ -111,12 +100,3 @@ expandRecursiveFormula :: SDRSFormula -> [SDRSFormula]
 expandRecursiveFormula (Not sf1) = expandRecursiveFormula sf1
 expandRecursiveFormula (And sf1 sf2) = expandRecursiveFormula sf1 ++ expandRecursiveFormula sf2
 expandRecursiveFormula sf = [sf]
-
-
--- how two labels can outscope eachother. Pseudo code using Ordering to show outscoping. EQ indicates that they're on the same level
--- outscoping 1 2:
--- 1 2 arguments of same relation -> EQ
--- 1:rel(2,x) -> GT
--- 2:rel(1,x) -> LT
--- ^ immediate outscoping
--- if exists path from 1 to 2 along relations, then 1 GT 2

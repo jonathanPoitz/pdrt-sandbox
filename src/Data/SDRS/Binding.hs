@@ -20,7 +20,7 @@ module Data.SDRS.Binding
 import Data.SDRS.DataType
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Data.SDRS.Structure (expandRecursiveFormula)
+import Data.SDRS.Structure (expandRecursiveFormula, relLabels)
 
 ---------------------------------------------------------------------------
 -- | Checks if all labels are declared in an SDRS, i.e. that LAST is part 
@@ -33,13 +33,6 @@ noUndeclaredVars (SDRS m l) =
   relVars `Set.isProperSubsetOf` disVars -- the discourse variables used as arguments in relations are declared labels
     where relVars = Set.fromList $ relLabels (Map.elems m)
           disVars = Set.fromList $ Map.keys m
-
-relLabels :: [SDRSFormula] -> [DisVar]
-relLabels []                           = []
-relLabels ((Relation _ dv1 dv2):rest)  = dv1:dv2:relLabels rest 
-relLabels ((And sf1 sf2):rest)         = relLabels [sf1] ++ relLabels [sf2] ++ relLabels rest
-relLabels ((Not sf1):rest)             = relLabels [sf1] ++ relLabels rest
-relLabels ((Segment _):rest)              = relLabels rest
 
 ---------------------------------------------------------------------------
 -- | Returns whether a given SDRS has any self referencing relations
@@ -54,24 +47,21 @@ noSelfRefs (SDRS m _) = all noSelfRef (Map.assocs m)
 
 ---------------------------------------------------------------------------
 -- | Checks whether all Segments (directly labeled and labeled in recursive
--- SDRSFormulas) are bound in a Relation
+-- SDRSFormulas) are bound in a Relation.
+-- FIX: This doesn't produce right results when DRSs are introduced weirdly
+-- within recursive SDRSFormulae
 ---------------------------------------------------------------------------
 allSegmentsBound :: SDRS -> Bool
 allSegmentsBound (SDRS m _) = allSegmentLabels `Set.isSubsetOf` relArgs
   where allSegmentLabels = segmentLabels (Map.assocs m)
         relArgs = Set.fromList $ relLabels (Map.elems m)
-        -- TODO there is probably some Data.Map function the below?
-        segmentLabels :: [(DisVar, SDRSFormula)] -> (Set.Set DisVar)
+        segmentLabels :: [(DisVar, SDRSFormula)] -> Set.Set DisVar
         segmentLabels [] = Set.empty
-        segmentLabels ((dv, (Segment _)):rest) = Set.insert dv $ segmentLabels rest
-        -- there must be an easier way than makeTuple
+        segmentLabels ((dv, Segment _):rest) = Set.insert dv $ segmentLabels rest
         -- the below steps are needed to take care of cases where segments are not labeled directly but are introduced within an And/Not constructor
-        segmentLabels ((dv, sf@(And _ _)):rest) = (segmentLabels $ map (makeTuple dv) (expandRecursiveFormula sf)) `Set.union` (segmentLabels rest)
-        segmentLabels ((dv, sf@(Not _)):rest) = (segmentLabels $ map (makeTuple dv) (expandRecursiveFormula sf)) `Set.union` (segmentLabels rest)
+        segmentLabels ((dv, sf@(And _ _)):rest) = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `Set.union` segmentLabels rest
+        segmentLabels ((dv, sf@(Not _)):rest) = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `Set.union` segmentLabels rest
         segmentLabels ((_, Relation _ _ _):rest) = segmentLabels rest
-        makeTuple :: DisVar -> SDRSFormula -> (DisVar, SDRSFormula)
-        makeTuple dv sf = (dv, sf)
-
 
 -- how to make an sdrs unvalid:
 -- 2. l not in m.keys

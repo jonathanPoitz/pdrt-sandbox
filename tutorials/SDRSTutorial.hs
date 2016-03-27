@@ -1,5 +1,7 @@
 -- This is a tutorial for creating and manipulating SDRSs with PDRT-SANDBOX.
 
+--map (\(x,y) -> (x, hasOnlyFOLDRSs y)) testSDRSs
+
 import qualified Data.Map as Map
 import Data.SDRS
 
@@ -77,6 +79,15 @@ outscopes_map = Map.fromList [(0,[1,6]),
                               (6,[2,7,5]),
                               (7,[3,4])]
 
+--graph_map = Map.fromList [(0,[1,6]),
+--                          (1,[]),
+--                          (6,[2,7,5]),
+--                          (2,[]),
+--                          (5,[]),
+--                          (7,[3,4]),
+--                          (3,[]),
+--                          (4,[])]
+
 rec_sdrs1 = And (Segment drs0) (Not (Segment drs0))
 rec_sdrs2 = And (Segment drs0)
                 (And 
@@ -95,6 +106,14 @@ sdrs_rec_1 = SDRS (Map.fromList [(0, rec_sdrs1),
                                  (1, rec_sdrs2),
                                  (2, rec_sdrs3)]) 0
 
+testSDRSs = [("sdrs_rec_1", sdrs_rec_1),
+             ("sdrs_al07", sdrs_al07),
+             ("sdrs_danlos_4", sdrs_danlos_4),
+             ("sdrs_danlos_3", sdrs_danlos_3),
+             ("sdrs_danlos_2", sdrs_danlos_2),
+             ("sdrs_danlos_1", sdrs_danlos_1),
+             ("sdrs1", sdrs1),
+             ("sdrs2", sdrs2)]
 
 -- ==============================================================
 -- Malformed SDRSs
