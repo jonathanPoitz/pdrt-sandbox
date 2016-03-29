@@ -29,10 +29,8 @@ import qualified Data.Map as Map
 -- * Exported
 ---------------------------------------------------------------------------
 
---type DGraph = Graph
-
 ---------------------------------------------------------------------------
--- | Shows a projection table
+-- | Shows a discourse graph
 ---------------------------------------------------------------------------
 showDGraph :: DGraph -> String
 showDGraph (DGraph graph labels) = show graph ++ "\n" ++ show labels
@@ -41,11 +39,9 @@ instance Show DGraph where
   show dg = '\n' : showDGraph dg
 
 ---------------------------------------------------------------------------
--- | Prints a projection table
+-- | A discourse graph, consisting of the graph structure and the labels
+-- of its edges
 ---------------------------------------------------------------------------
---printDGraph :: PTable -> IO ()
---printDGraph pt = putStrLn $ '\n' : showDGraph pt
-
 data DGraph =
   DGraph Graph [(Vertex, Vertex, EdgeLabel)]
 
@@ -72,8 +68,8 @@ buildOutscopeMap (SDRS m _) buildFullMap = Map.foldlWithKey build initialMap m
                                      else Map.empty
 
 ---------------------------------------------------------------------------
--- | Given an SDRS @s@, builds up a simple Graph structure showing the 
--- immediate outscopings that are in place
+-- | Given an SDRS @s@, builds up a simple labeled Graph structure using 
+-- the immediate outscopings that are in place
 ---------------------------------------------------------------------------
 discourseGraph :: SDRS -> DGraph
 discourseGraph s@(SDRS m _) = DGraph g labels
