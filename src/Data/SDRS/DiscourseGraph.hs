@@ -34,14 +34,22 @@ import qualified Data.Map as Map
 ---------------------------------------------------------------------------
 -- | Shows a projection table
 ---------------------------------------------------------------------------
---showDGraph :: DGraph -> String
---showDGraph (DGraph dg) = 
+showDGraph :: DGraph -> String
+showDGraph (DGraph graph labels) = show graph ++ "\n" ++ show labels
+
+instance Show DGraph where
+  show dg = '\n' : showDGraph dg
 
 ---------------------------------------------------------------------------
 -- | Prints a projection table
 ---------------------------------------------------------------------------
 --printDGraph :: PTable -> IO ()
 --printDGraph pt = putStrLn $ '\n' : showDGraph pt
+
+data DGraph =
+  DGraph Graph [(Vertex, Vertex, EdgeLabel)]
+
+type EdgeLabel = String
 
 ---------------------------------------------------------------------------
 -- | Returns, given an SDRS, a map that from each discourse variable to 
@@ -64,11 +72,30 @@ buildOutscopeMap (SDRS m _) buildFullMap = Map.foldlWithKey build initialMap m
                                      else Map.empty
 
 ---------------------------------------------------------------------------
--- | Given an SDRS @s@, builds up a simple Graph structure
+-- | Given an SDRS @s@, builds up a simple Graph structure showing the 
+-- immediate outscopings that are in place
 ---------------------------------------------------------------------------
-discourseGraph :: SDRS -> (Graph, Vertex -> (DisVar, DisVar, [DisVar]))
-discourseGraph s = graphFromEdges' graph_map
+discourseGraph :: SDRS -> DGraph
+discourseGraph s@(SDRS m _) = DGraph g labels
   where graph_map = map (\(x,y) -> (x,x,y)) (Map.assocs (buildOutscopeMap s True))
+        labels = edgeLabels (map snd (Map.assocs m))
+        g = fst $ graphFromEdges' graph_map
+        edgeLabels :: [SDRSFormula] -> [(Vertex, Vertex, EdgeLabel)]
+        edgeLabels [] = []
+        edgeLabels (Segment {}:rest) = edgeLabels rest
+        edgeLabels (Relation l dv1 dv2:rest) = (dv1, dv2, l):(edgeLabels rest)
+        edgeLabels (And sf1 sf2:rest) = edgeLabels [sf1] ++ edgeLabels [sf2] ++ edgeLabels rest
+        -- should a negated relation be put on the graph as a label?
+        edgeLabels (Not sf1:rest) = edgeLabels [sf1] ++ edgeLabels rest
+
+
+
+---------------------------------------------------------------------------
+-- | Lists all DUs (represented by their labels) in an SDRS that (disregarding
+-- the RFC) are accessible from the given label
+---------------------------------------------------------------------------
+--naiveAccessibleDRSs :: SDRS -> DisVar -> [DisVar]
+--naiveAccessibleDRSs (SDRS m _) dv = reachable g dv `union` 
 
 -----------------------------------------------------------------------------
 ---- | Returns, given an 'SDRS' @s@, if discourse variable @dv@ outscopes 
