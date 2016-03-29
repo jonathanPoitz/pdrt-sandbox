@@ -18,9 +18,11 @@ module Data.SDRS.Binding
 ) where
 
 import Data.SDRS.DataType
+-- import Data.DRS.DataType
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.SDRS.Structure (expandRecursiveFormula, relLabels)
+-- import Data.SDRS.DiscourseGraph
 
 ---------------------------------------------------------------------------
 -- | Checks if all labels are declared in an SDRS, i.e. that LAST is part 
@@ -29,7 +31,7 @@ import Data.SDRS.Structure (expandRecursiveFormula, relLabels)
 ---------------------------------------------------------------------------
 noUndeclaredVars :: SDRS -> Bool
 noUndeclaredVars (SDRS m l) = 
-  (l `elem` disVars) && -- LAST is in the list of discourse variables
+  (l `Set.member` disVars) && -- LAST is in the list of discourse variables
   relVars `Set.isProperSubsetOf` disVars -- the discourse variables used as arguments in relations are declared labels
     where relVars = Set.fromList $ relLabels (Map.elems m)
           disVars = Set.fromList $ Map.keys m
@@ -62,6 +64,13 @@ allSegmentsBound (SDRS m _) = allSegmentLabels `Set.isSubsetOf` relArgs
         segmentLabels ((dv, sf@(And _ _)):rest) = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `Set.union` segmentLabels rest
         segmentLabels ((dv, sf@(Not _)):rest) = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `Set.union` segmentLabels rest
         segmentLabels ((_, Relation _ _ _):rest) = segmentLabels rest
+
+-- ---------------------------------------------------------------------------
+-- -- | Returns the list of all free 'DRSRef's in a 'DRS', given the global
+-- -- SDRS that it is contained in. 
+-- ---------------------------------------------------------------------------
+-- drsFreeRefsSDRS :: DRS -> SDRS -> [DRSRef]
+-- drsFreeRefsSDRS d (SDRS m _) = 
 
 -- how to make an sdrs unvalid:
 -- 2. l not in m.keys
