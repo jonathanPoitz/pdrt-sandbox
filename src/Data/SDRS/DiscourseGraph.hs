@@ -56,14 +56,14 @@ buildOutscopeMap :: SDRS -> Bool -> (M.Map DisVar [DisVar])
 buildOutscopeMap (SDRS m _) buildFullMap = M.foldlWithKey build initialMap m
   where build :: (M.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> (M.Map DisVar [DisVar])
         build acc dv0 (Relation _ dv1 dv2) = M.insertWith (union) dv0 (nub [dv1,dv2]) acc
-        build acc dv0 sf@(And _ _) = buildRecursive acc dv0 $ expandRecursiveFormula sf
-        build acc dv0 sf@(Not _) = buildRecursive acc dv0 $ expandRecursiveFormula sf
-        build acc _ _ = acc
+        build acc dv0 sf@(And _ _)         = buildRecursive acc dv0 $ expandRecursiveFormula sf
+        build acc dv0 sf@(Not _)           = buildRecursive acc dv0 $ expandRecursiveFormula sf
+        build acc _ _                      = acc
         buildRecursive :: (M.Map DisVar [DisVar]) -> DisVar -> [SDRSFormula] -> (M.Map DisVar [DisVar])
         -- only add Relations since only they hold discourse variables as arguments
-        buildRecursive acc _ [] = acc
+        buildRecursive acc _ []                            = acc
         buildRecursive acc dv0 ((Relation _ dv1 dv2):rest) = M.insertWith (union) dv0 (nub [dv1,dv2]) (buildRecursive acc dv0 rest)
-        buildRecursive acc dv0 (_:rest) = buildRecursive acc dv0 rest
+        buildRecursive acc dv0 (_:rest)                    = buildRecursive acc dv0 rest
         initialMap = if buildFullMap then M.fromList $ zip (M.keys m) (repeat [])
                                      else M.empty
 

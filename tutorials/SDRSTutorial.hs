@@ -88,23 +88,26 @@ outscopes_map = Map.fromList [(0,[1,6]),
 --                          (3,[]),
 --                          (4,[])]
 
-rec_sdrs1 = And (Segment drs0) (Not (Segment drs0))
-rec_sdrs2 = And (Segment drs0)
+rec_sf1 = And (Segment drs0) (Not (Segment drs0))
+rec_sf2 = And (Relation "sljs" 2 4)
                 (And 
                   (Not
                     (And 
                       (Segment drs0) 
-                      (Segment drs0)))
+                      (Relation "bla" 3 6)))
                   (Segment drs0))
 
-rec_sdrs2b = And (Segment drs0) (And (Not (And (Segment drs0) (Segment drs0))) (Segment drs0))
+rec_sf2b = And (Segment drs0) (And (Not (And (Segment drs0) (Segment drs0))) (Segment drs0))
 
-rec_sdrs3 = Not (Not (Not $ Segment drs0))
+rec_sf3 = Not (Not (Not $ Segment drs0))
+
+rec_sf4 = Not (Not (Not $ Relation "Explanation" 2 4))
 
 -- for recursion testing only, not felicitous
-sdrs_rec_1 = SDRS (Map.fromList [(0, rec_sdrs1),
-                                 (1, rec_sdrs2),
-                                 (2, rec_sdrs3)]) 0
+sdrs_rec_1 = SDRS (Map.fromList [(0, rec_sf1),
+                                 (1, rec_sf2),
+                                 (2, rec_sf3),
+                                 (3, rec_sf4)]) 0
 
 testSDRSs = [("sdrs_rec_1", sdrs_rec_1),
              ("sdrs_al07", sdrs_al07),

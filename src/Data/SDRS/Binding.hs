@@ -58,11 +58,11 @@ allSegmentsBound (SDRS m _) = allSegmentLabels `isSubsetOf` relArgs
   where allSegmentLabels = segmentLabels (M.assocs m)
         relArgs = fromList $ relLabels (M.elems m)
         segmentLabels :: [(DisVar, SDRSFormula)] -> Set DisVar
-        segmentLabels [] = empty
-        segmentLabels ((dv, Segment _):rest) = insert dv $ segmentLabels rest
+        segmentLabels []                         = empty
+        segmentLabels ((dv, Segment _):rest)     = insert dv $ segmentLabels rest
         -- the below steps are needed to take care of cases where segments are not labeled directly but are introduced within an And/Not constructor
-        segmentLabels ((dv, sf@(And _ _)):rest) = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `union` segmentLabels rest
-        segmentLabels ((dv, sf@(Not _)):rest) = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `union` segmentLabels rest
+        segmentLabels ((dv, sf@(And _ _)):rest)  = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `union` segmentLabels rest
+        segmentLabels ((dv, sf@(Not _)):rest)    = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `union` segmentLabels rest
         segmentLabels ((_, Relation _ _ _):rest) = segmentLabels rest
 
 -- ---------------------------------------------------------------------------
