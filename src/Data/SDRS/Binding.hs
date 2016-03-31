@@ -19,7 +19,7 @@ module Data.SDRS.Binding
 
 import Data.SDRS.DataType
 -- import Data.DRS.DataType
-import qualified Data.Map as Map
+import qualified Data.Map as M
 import qualified Data.Set as Set
 import Data.SDRS.Structure (expandRecursiveFormula, relLabels)
 -- import Data.SDRS.DiscourseGraph
@@ -33,14 +33,14 @@ noUndeclaredVars :: SDRS -> Bool
 noUndeclaredVars (SDRS m l) = 
   (l `Set.member` disVars) && -- LAST is in the list of discourse variables
   relVars `Set.isProperSubsetOf` disVars -- the discourse variables used as arguments in relations are declared labels
-    where relVars = Set.fromList $ relLabels (Map.elems m)
-          disVars = Set.fromList $ Map.keys m
+    where relVars = Set.fromList $ relLabels (M.elems m)
+          disVars = Set.fromList $ M.keys m
 
 ---------------------------------------------------------------------------
 -- | Returns whether a given SDRS has any self referencing relations
 ---------------------------------------------------------------------------
 noSelfRefs :: SDRS -> Bool
-noSelfRefs (SDRS m _) = all noSelfRef (Map.assocs m)
+noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
   where noSelfRef :: (DisVar, SDRSFormula) -> Bool
         noSelfRef (dv0, Relation _ dv1 dv2)    = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
         noSelfRef (dv0, And sf1 sf2)           = noSelfRef (dv0,sf1) && noSelfRef (dv0,sf2)
@@ -55,8 +55,8 @@ noSelfRefs (SDRS m _) = all noSelfRef (Map.assocs m)
 ---------------------------------------------------------------------------
 allSegmentsBound :: SDRS -> Bool
 allSegmentsBound (SDRS m _) = allSegmentLabels `Set.isSubsetOf` relArgs
-  where allSegmentLabels = segmentLabels (Map.assocs m)
-        relArgs = Set.fromList $ relLabels (Map.elems m)
+  where allSegmentLabels = segmentLabels (M.assocs m)
+        relArgs = Set.fromList $ relLabels (M.elems m)
         segmentLabels :: [(DisVar, SDRSFormula)] -> Set.Set DisVar
         segmentLabels [] = Set.empty
         segmentLabels ((dv, Segment _):rest) = Set.insert dv $ segmentLabels rest

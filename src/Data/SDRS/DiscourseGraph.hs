@@ -22,7 +22,7 @@ import Data.SDRS.DataType
 import Data.SDRS.Structure (expandRecursiveFormula)
 import Data.Graph (graphFromEdges', Graph, Vertex)
 import qualified Data.List as List 
-import qualified Data.Map as Map
+import qualified Data.Map as M
 --import qualified Data.Set as Set
 
 ---------------------------------------------------------------------------
@@ -52,20 +52,20 @@ type EdgeLabel = String
 -- those that it outscopes. If @fullMap@ is set to False, the returned list
 -- only contains the discourse variables that outscope others.
 ---------------------------------------------------------------------------
-buildOutscopeMap :: SDRS -> Bool -> (Map.Map DisVar [DisVar])
-buildOutscopeMap (SDRS m _) buildFullMap = Map.foldlWithKey build initialMap m
-  where build :: (Map.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> (Map.Map DisVar [DisVar])
-        build acc dv0 (Relation _ dv1 dv2) = Map.insertWith (List.union) dv0 (List.nub [dv1,dv2]) acc
+buildOutscopeMap :: SDRS -> Bool -> (M.Map DisVar [DisVar])
+buildOutscopeMap (SDRS m _) buildFullMap = M.foldlWithKey build initialMap m
+  where build :: (M.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> (M.Map DisVar [DisVar])
+        build acc dv0 (Relation _ dv1 dv2) = M.insertWith (List.union) dv0 (List.nub [dv1,dv2]) acc
         build acc dv0 sf@(And _ _) = buildRecursive acc dv0 $ expandRecursiveFormula sf
         build acc dv0 sf@(Not _) = buildRecursive acc dv0 $ expandRecursiveFormula sf
         build acc _ _ = acc
-        buildRecursive :: (Map.Map DisVar [DisVar]) -> DisVar -> [SDRSFormula] -> (Map.Map DisVar [DisVar])
+        buildRecursive :: (M.Map DisVar [DisVar]) -> DisVar -> [SDRSFormula] -> (M.Map DisVar [DisVar])
         -- only add Relations since only they hold discourse variables as arguments
         buildRecursive acc _ [] = acc
-        buildRecursive acc dv0 ((Relation _ dv1 dv2):rest) = Map.insertWith (List.union) dv0 (List.nub [dv1,dv2]) (buildRecursive acc dv0 rest)
+        buildRecursive acc dv0 ((Relation _ dv1 dv2):rest) = M.insertWith (List.union) dv0 (List.nub [dv1,dv2]) (buildRecursive acc dv0 rest)
         buildRecursive acc dv0 (_:rest) = buildRecursive acc dv0 rest
-        initialMap = if buildFullMap then Map.fromList $ zip (Map.keys m) (repeat [])
-                                     else Map.empty
+        initialMap = if buildFullMap then M.fromList $ zip (M.keys m) (repeat [])
+                                     else M.empty
 
 ---------------------------------------------------------------------------
 -- | Given an SDRS @s@, builds up a simple labeled Graph structure using 
@@ -73,8 +73,8 @@ buildOutscopeMap (SDRS m _) buildFullMap = Map.foldlWithKey build initialMap m
 ---------------------------------------------------------------------------
 discourseGraph :: SDRS -> DGraph
 discourseGraph s@(SDRS m _) = DGraph g labels
-  where graph_map = map (\(x,y) -> (x,x,y)) (Map.assocs (buildOutscopeMap s True))
-        labels = edgeLabels (map snd (Map.assocs m))
+  where graph_map = map (\(x,y) -> (x,x,y)) (M.assocs (buildOutscopeMap s True))
+        labels = edgeLabels (map snd (M.assocs m))
         g = fst $ graphFromEdges' graph_map
         edgeLabels :: [SDRSFormula] -> [(Vertex, Vertex, EdgeLabel)]
         edgeLabels [] = []

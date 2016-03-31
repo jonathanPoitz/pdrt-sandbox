@@ -22,7 +22,7 @@ module Data.SDRS.DataType
 
 import Data.DRS.DataType
 
-import qualified Data.Map as Map
+import qualified Data.Map as M
 
 ---------------------------------------------------------------------------
 -- | Show a 'DRS' in 'Debug' notation.
@@ -86,7 +86,7 @@ data SDRSFormula =
 ---------------------------------------------------------------------------
 
 data SDRS =
-  SDRS (Map.Map DisVar SDRSFormula) DisVar
+  SDRS (M.Map DisVar SDRSFormula) DisVar
   -- ^ A SDRS (a set of speech act discourse referents, a map assigning
   -- SDRS formulas to referents and the referent last added to the discourse)
   deriving (Read, Eq)

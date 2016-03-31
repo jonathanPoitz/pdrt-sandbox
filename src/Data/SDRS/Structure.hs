@@ -24,7 +24,7 @@ module Data.SDRS.Structure
 --import Data.DRS.Properties
 import Data.SDRS.DataType
 --import qualified Data.List as List 
-import qualified Data.Map as Map
+import qualified Data.Map as M
 -- import qualified Data.Set as Set
 
 ---------------------------------------------------------------------------
@@ -35,13 +35,13 @@ import qualified Data.Map as Map
 -- | Returns the set of discourse units
 ---------------------------------------------------------------------------
 listDUs :: SDRS -> [DisVar]
-listDUs (SDRS m _)     = Map.keys m
+listDUs (SDRS m _)     = M.keys m
 
 ---------------------------------------------------------------------------
 -- | Returns a certain discourse unit if present
 ---------------------------------------------------------------------------
 lookupDU :: SDRS -> DisVar -> Maybe SDRSFormula
-lookupDU (SDRS m _) i     = Map.lookup i m
+lookupDU (SDRS m _) i     = M.lookup i m
 
 ---------------------------------------------------------------------------
 -- | Returns all labels that are Arguments of Relations
@@ -60,7 +60,7 @@ relLabels ((Segment _):rest)              = relLabels rest
 -- TODO can this be done in an easier way with some sort of filter?
 ---------------------------------------------------------------------------
 listRelations :: SDRS -> [(DisVar, SDRSFormula)]
-listRelations (SDRS m _) = formulas (Map.assocs m)
+listRelations (SDRS m _) = formulas (M.assocs m)
   where formulas :: [(DisVar, SDRSFormula)] -> [(DisVar, SDRSFormula)]
         formulas [] = []
         formulas (t@(_, Relation _ _ _):rest) = t:(formulas rest)
@@ -73,7 +73,7 @@ listRelations (SDRS m _) = formulas (Map.assocs m)
 -- discourse variables.
 ---------------------------------------------------------------------------
 listSegments :: SDRS -> [(DisVar, SDRSFormula)]
-listSegments (SDRS m _) = formulas (Map.assocs m)
+listSegments (SDRS m _) = formulas (M.assocs m)
   where formulas :: [(DisVar, SDRSFormula)] -> [(DisVar, SDRSFormula)]
         formulas [] = []
         formulas (t@(_, Segment _):rest) = t:(formulas rest)
@@ -85,7 +85,7 @@ listSegments (SDRS m _) = formulas (Map.assocs m)
 -- | Lists all embedded DRSs of an SDRS
 ---------------------------------------------------------------------------
 listDRSs :: SDRS -> [DRS]
-listDRSs (SDRS m _) = drss (Map.assocs m)
+listDRSs (SDRS m _) = drss (M.assocs m)
   where drss :: [(DisVar, SDRSFormula)] -> [DRS]
         drss [] = []
         drss ((_, Segment d):rest) = d:(drss rest)
