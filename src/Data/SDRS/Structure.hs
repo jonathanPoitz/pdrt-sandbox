@@ -18,7 +18,6 @@ module Data.SDRS.Structure
 , segments
 , relLabels
 , drss
-, expandRecursiveFormula
 ) where
 
 import Data.SDRS.DataType
@@ -86,11 +85,3 @@ drss (SDRS m _) = drss' (map snd $ M.assocs m)
         drss' (And sf1 sf2:rest) = drss' [sf1] ++ drss' [sf2] ++ drss' rest
         drss' (Not sf1:rest)     = drss' [sf1] ++ drss' rest
         drss' (_:rest)           = drss' rest
-
----------------------------------------------------------------------------
--- | given an SDRSFormula, returns a list of all of its embedded SDRSFormulae 
----------------------------------------------------------------------------
-expandRecursiveFormula :: SDRSFormula -> [SDRSFormula]
-expandRecursiveFormula (Not sf1) = expandRecursiveFormula sf1
-expandRecursiveFormula (And sf1 sf2) = expandRecursiveFormula sf1 ++ expandRecursiveFormula sf2
-expandRecursiveFormula sf = [sf]
