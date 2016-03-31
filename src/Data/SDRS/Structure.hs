@@ -21,11 +21,8 @@ module Data.SDRS.Structure
 , expandRecursiveFormula
 ) where
 
---import Data.DRS.Properties
 import Data.SDRS.DataType
---import qualified Data.List as List 
 import qualified Data.Map as M
--- import qualified Data.Set as Set
 
 ---------------------------------------------------------------------------
 -- * Exported
