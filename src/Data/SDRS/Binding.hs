@@ -21,7 +21,7 @@ import Data.SDRS.DataType
 -- import Data.DRS.DataType
 import qualified Data.Map as M
 import Data.Set
-import Data.SDRS.Structure (expandRecursiveFormula, relLabels)
+import Data.SDRS.Structure (relLabels)
 -- import Data.SDRS.DiscourseGraph
 
 ---------------------------------------------------------------------------
@@ -61,8 +61,8 @@ allSegmentsBound (SDRS m _) = allSegmentLabels `isSubsetOf` relArgs
         segmentLabels []                         = empty
         segmentLabels ((dv, Segment _):rest)     = insert dv $ segmentLabels rest
         -- the below steps are needed to take care of cases where segments are not labeled directly but are introduced within an And/Not constructor
-        segmentLabels ((dv, sf@(And _ _)):rest)  = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `union` segmentLabels rest
-        segmentLabels ((dv, sf@(Not _)):rest)    = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `union` segmentLabels rest
+        segmentLabels ((dv, And sf1 sf2):rest)   = segmentLabels [(dv, sf1)] `union` segmentLabels [(dv, sf2)] `union` segmentLabels rest
+        segmentLabels ((dv, Not sf1):rest)       =  segmentLabels [(dv, sf1)] `union` segmentLabels rest
         segmentLabels ((_, Relation _ _ _):rest) = segmentLabels rest
 
 -- ---------------------------------------------------------------------------
