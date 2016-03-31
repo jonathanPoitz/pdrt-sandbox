@@ -43,6 +43,9 @@ import qualified Data.Map as Map
 instance Show SDRS where
   show s = '\n' : showSDRS (Boxes s)
 
+instance Show SDRSFormula where
+  show sf = '\n' : showFormula sf
+
 ---------------------------------------------------------------------------
 -- | Typeclass for 'showablSDRS's, that are unresolved.
 ---------------------------------------------------------------------------
@@ -163,8 +166,11 @@ showConjunction f1 f2
         lf2 = length (lines form2)
 
 showNegation :: SDRSFormula -> String
-showNegation f = showModifier opNot (modifierPos form) form
+showNegation f
+  | mpos == 0 = showModifier opNot mpos (showConcat (showModifier "(" mpos form) ")\n")
+  | otherwise = showModifier opNot mpos (showConcat (showModifier "(" mpos form) (DRS.showPadding ")\n"))
   where form = showFormula f
+        mpos = modifierPos form
 
 ---------------------------------------------------------------------------
 -- | Shows the discourse variables @dvs$ of a 'SDRS', using 'String' @d@ 
