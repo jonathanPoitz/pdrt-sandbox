@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE FlexibleInstances #-}
 {- |
 Module      :  Data.SDRS.Show
 Copyright   :  (c) Harm Brouwer, Jonathan Poitz and Noortje Venhuizen
@@ -43,9 +44,19 @@ import qualified Data.Map as Map
 instance Show SDRS where
   show s = '\n' : showSDRS (Boxes s)
 
-instance Show SDRSFormula where
-  show sf = '\n' : showFormula sf
-
+-- DEBUG // DEBUG // DEBUG --
+-- XXX: This is for DEBUGGING only (for now)
+instance {-# OVERLAPPING #-} (Show a) => Show [(a,SDRSFormula)] where
+  show [] = ""
+  show ((l,f):ts)
+    | mpos == 0 = '\n' : showConcat (showModifier ("( " ++ show l ++ " ,") mpos form) ")\n" ++ show ts
+    | otherwise = '\n' : showConcat (showModifier ("( " ++ show l ++ " ,") mpos form) (DRS.showPadding ")\n") ++ show ts
+    where form = showFormula f
+          mpos = modifierPos form
+instance {-# OVERLAPPING #-} Show [SDRSFormula] where
+  show fs = '\n' : unlines (map showFormula fs)
+-- DEBUG // DEBUG // DEBUG --
+--
 ---------------------------------------------------------------------------
 -- | Typeclass for 'showablSDRS's, that are unresolved.
 ---------------------------------------------------------------------------
@@ -144,7 +155,7 @@ showFunction f = foldr ((++) . showFunc) "" f
         showFunc (dv,(Not f1))            = showModifier (show dv ++ ":") (modifierPos form) form
           where form = showNegation f1
 
-showFormula :: (SDRSFormula) -> String
+showFormula :: SDRSFormula -> String
 showFormula (Segment d)          = showDRS (DRS.Boxes d)
 showFormula (Relation r dv1 dv2) = r ++ "(" ++ show dv1 ++ "," ++ show dv2 ++")\n"
 showFormula (And f1 f2)          = showConjunction f1 f2 
