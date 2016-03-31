@@ -20,7 +20,7 @@ module Data.SDRS.Binding
 import Data.SDRS.DataType
 -- import Data.DRS.DataType
 import qualified Data.Map as M
-import qualified Data.Set as Set
+import Data.Set
 import Data.SDRS.Structure (expandRecursiveFormula, relLabels)
 -- import Data.SDRS.DiscourseGraph
 
@@ -31,10 +31,10 @@ import Data.SDRS.Structure (expandRecursiveFormula, relLabels)
 ---------------------------------------------------------------------------
 noUndeclaredVars :: SDRS -> Bool
 noUndeclaredVars (SDRS m l) = 
-  (l `Set.member` disVars) && -- LAST is in the list of discourse variables
-  relVars `Set.isProperSubsetOf` disVars -- the discourse variables used as arguments in relations are declared labels
-    where relVars = Set.fromList $ relLabels (M.elems m)
-          disVars = Set.fromList $ M.keys m
+  (l `member` disVars) && -- LAST is in the list of discourse variables
+  relVars `isProperSubsetOf` disVars -- the discourse variables used as arguments in relations are declared labels
+    where relVars = fromList $ relLabels (M.elems m)
+          disVars = fromList $ M.keys m
 
 ---------------------------------------------------------------------------
 -- | Returns whether a given SDRS has any self referencing relations
@@ -54,15 +54,15 @@ noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
 -- within recursive SDRSFormulae
 ---------------------------------------------------------------------------
 allSegmentsBound :: SDRS -> Bool
-allSegmentsBound (SDRS m _) = allSegmentLabels `Set.isSubsetOf` relArgs
+allSegmentsBound (SDRS m _) = allSegmentLabels `isSubsetOf` relArgs
   where allSegmentLabels = segmentLabels (M.assocs m)
-        relArgs = Set.fromList $ relLabels (M.elems m)
-        segmentLabels :: [(DisVar, SDRSFormula)] -> Set.Set DisVar
-        segmentLabels [] = Set.empty
-        segmentLabels ((dv, Segment _):rest) = Set.insert dv $ segmentLabels rest
+        relArgs = fromList $ relLabels (M.elems m)
+        segmentLabels :: [(DisVar, SDRSFormula)] -> Set DisVar
+        segmentLabels [] = empty
+        segmentLabels ((dv, Segment _):rest) = insert dv $ segmentLabels rest
         -- the below steps are needed to take care of cases where segments are not labeled directly but are introduced within an And/Not constructor
-        segmentLabels ((dv, sf@(And _ _)):rest) = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `Set.union` segmentLabels rest
-        segmentLabels ((dv, sf@(Not _)):rest) = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `Set.union` segmentLabels rest
+        segmentLabels ((dv, sf@(And _ _)):rest) = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `union` segmentLabels rest
+        segmentLabels ((dv, sf@(Not _)):rest) = segmentLabels (zip (repeat dv) (expandRecursiveFormula sf)) `union` segmentLabels rest
         segmentLabels ((_, Relation _ _ _):rest) = segmentLabels rest
 
 -- ---------------------------------------------------------------------------
