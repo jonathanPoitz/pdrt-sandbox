@@ -15,14 +15,16 @@ module Data.SDRS.Binding
   noUndeclaredVars
 , noSelfRefs
 , allSegmentsBound
+, properDRS
 ) where
 
 import Data.SDRS.DataType
--- import Data.DRS.DataType
+import Data.DRS.Properties
+import Data.DRS.Merge
 import qualified Data.Map as M
-import Data.Set
+import Data.Set hiding (map)
 import Data.SDRS.Structure (relLabels)
--- import Data.SDRS.DiscourseGraph
+import Data.SDRS.DiscourseGraph
 
 ---------------------------------------------------------------------------
 -- | Checks if all labels are declared in an SDRS, i.e. that LAST is part 
@@ -63,14 +65,23 @@ allSegmentsBound (SDRS m _) = allSegmentLabels `isSubsetOf` relArgs
         -- the below steps are needed to take care of cases where segments are not labeled directly but are introduced within an And/Not constructor
         segmentLabels ((dv, And sf1 sf2):rest)   = segmentLabels [(dv, sf1)] `union` segmentLabels [(dv, sf2)] `union` segmentLabels rest
         segmentLabels ((dv, Not sf1):rest)       =  segmentLabels [(dv, sf1)] `union` segmentLabels rest
-        segmentLabels ((_, Relation _ _ _):rest) = segmentLabels rest
+        segmentLabels ((_, Relation {}):rest) = segmentLabels rest
 
--- ---------------------------------------------------------------------------
--- -- | Returns the list of all free 'DRSRef's in a 'DRS', given the global
--- -- SDRS that it is contained in. 
--- ---------------------------------------------------------------------------
--- drsFreeRefsSDRS :: DRS -> SDRS -> [DRSRef]
--- drsFreeRefsSDRS d (SDRS m _) = 
+---------------------------------------------------------------------------
+-- | Checks, given the global SDRS, if an embedded DRS is proper, i.e., 
+-- that it doesn't have any unbound variables
+---------------------------------------------------------------------------
+properDRS :: SDRS -> DisVar -> DRS -> Bool
+properDRS s@(SDRS m _) dv d = isProperDRS (d <<+>> mergedAccDRSs)
+  where graph = buildDGraph s
+        accDisVars = accessibleNodes graph dv
+        accDUs = map (\i -> m M.! i) accDisVars
+        accDRSs = [ drs | (Segment drs) <- accDUs]
+        recMerge :: [DRS] -> DRS
+        recMerge []        = DRS [] [] -- ugly. but ghc says I have to be exhaustive in my pattern matches. workaround?
+        recMerge (d':[])   = d'
+        recMerge (d':rest) = d' <<+>> recMerge rest
+        mergedAccDRSs = recMerge accDRSs
 
 -- how to make an sdrs unvalid:
 -- 2. l not in m.keys
