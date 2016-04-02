@@ -74,11 +74,11 @@ _al07_5 = DRS [DRSRef "x4", DRSRef "t"]
 map1 = Map.fromList [(1,"a"),(2,"b"),(3,"c"),(4,"d")]
 
 mapal07 = Map.fromList [(0, Relation "Elaboration" 1 6),
-                         (1, Segment drs0),
-                         (2, Segment drs0),
-                         (3, Segment drs0),
-                         (4, Segment drs0),
-                         (5, Segment drs0),
+                         (1, Segment _al07_1),
+                         (2, Segment _al07_2),
+                         (3, Segment _al07_3),
+                         (4, Segment _al07_4),
+                         (5, Segment _al07_5),
                          (6, And (Relation "Elaboration" 2 7) (Relation "Narration" 2 5)),
                          (7, Relation "Narration" 3 4)] :: Map.Map DisVar SDRSFormula
 
@@ -160,7 +160,7 @@ sdrsal07 = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
                                 (6, And (Relation "Elaboration" 2 7) (Relation "Narration" 2 5)),
                                 (7, Relation "Narration" 3 4)]) 5
 
-sdrsal07full = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
+sdrsfullal07 = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
                                 (1, Segment _al07_1),
                                 (2, Segment _al07_2),
                                 (3, Segment _al07_3),

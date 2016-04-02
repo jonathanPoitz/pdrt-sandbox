@@ -16,6 +16,7 @@ module Data.SDRS.Binding
 , noSelfRefs
 , allSegmentsBound
 , properDRS
+, sdrsProperDRSs
 ) where
 
 import Data.SDRS.DataType
@@ -23,7 +24,7 @@ import Data.DRS.Properties
 import Data.DRS.Merge
 import qualified Data.Map as M
 import Data.Set hiding (map)
-import Data.SDRS.Structure (relLabels)
+import Data.SDRS.Structure (relLabels, segments)
 import Data.SDRS.DiscourseGraph
 
 ---------------------------------------------------------------------------
@@ -82,6 +83,32 @@ properDRS s@(SDRS m _) dv d = isProperDRS (d <<+>> mergedAccDRSs)
         recMerge (d':[])   = d'
         recMerge (d':rest) = d' <<+>> recMerge rest
         mergedAccDRSs = recMerge accDRSs
+
+-- ---------------------------------------------------------------------------
+-- -- | Debug version printing out all booleans
+-- ---------------------------------------------------------------------------
+-- sdrsProperDRSs :: SDRS -> [Bool]
+-- sdrsProperDRSs s = proper $ segments s
+--   where proper :: [(DisVar, SDRSFormula)] -> [Bool]
+--         proper []                    = []
+--         proper ((dv,Segment d):rest) = (properDRS s dv d) : proper rest
+--         proper ((_,_):rest)          = proper rest
+
+---------------------------------------------------------------------------
+-- | Checks, given an 'SDRS', whether each embedded 'DRS' @d@ is /proper/,
+-- where: ['DRS' @d@ is pure /iff/]
+--
+--  * @d@ does not contain any otiose declarations of discourse referents
+--    (i.e., @d@ does not contain any unbound, duplicate uses of referents).
+---------------------------------------------------------------------------
+sdrsProperDRSs :: SDRS -> Bool
+sdrsProperDRSs s = proper $ segments s
+  where proper :: [(DisVar, SDRSFormula)] -> Bool
+        proper []                    = True
+        proper ((dv,Segment d):rest) = (properDRS s dv d) && proper rest
+        proper ((_,_):rest)          = proper rest
+
+
 
 -- how to make an sdrs unvalid:
 -- 2. l not in m.keys
