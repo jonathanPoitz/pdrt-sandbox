@@ -15,17 +15,12 @@ module Data.SDRS.Binding
   noUndeclaredVars
 , noSelfRefs
 , allSegmentsBound
-, properDRS
-, sdrsProperDRSs
 ) where
 
 import Data.SDRS.DataType
-import Data.DRS.Properties
-import Data.DRS.Merge
 import qualified Data.Map as M
 import Data.Set hiding (map)
-import Data.SDRS.Structure (relLabels, segments)
-import Data.SDRS.DiscourseGraph
+import Data.SDRS.Structure (relLabels)
 
 ---------------------------------------------------------------------------
 -- | Checks if all labels are declared in an SDRS, i.e. that LAST is part 
@@ -45,10 +40,10 @@ noUndeclaredVars (SDRS m l) =
 noSelfRefs :: SDRS -> Bool
 noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
   where noSelfRef :: (DisVar, SDRSFormula) -> Bool
-        noSelfRef (dv0, Relation _ dv1 dv2)    = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
-        noSelfRef (dv0, And sf1 sf2)           = noSelfRef (dv0,sf1) && noSelfRef (dv0,sf2)
-        noSelfRef (dv0, Not sf1)               = noSelfRef (dv0,sf1)
-        noSelfRef _ = True  
+        noSelfRef (dv0, Relation _ dv1 dv2) = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
+        noSelfRef (dv0, And sf1 sf2)        = noSelfRef (dv0,sf1) && noSelfRef (dv0,sf2)
+        noSelfRef (dv0, Not sf1)            = noSelfRef (dv0,sf1)
+        noSelfRef _                         = True  
 
 ---------------------------------------------------------------------------
 -- | Checks whether all Segments (directly labeled and labeled in recursive
@@ -61,54 +56,11 @@ allSegmentsBound (SDRS m _) = allSegmentLabels `isSubsetOf` relArgs
   where allSegmentLabels = segmentLabels (M.assocs m)
         relArgs = fromList $ relLabels (M.elems m)
         segmentLabels :: [(DisVar, SDRSFormula)] -> Set DisVar
-        segmentLabels []                         = empty
-        segmentLabels ((dv, Segment _):rest)     = insert dv $ segmentLabels rest
-        -- the below steps are needed to take care of cases where segments are not labeled directly but are introduced within an And/Not constructor
-        segmentLabels ((dv, And sf1 sf2):rest)   = segmentLabels [(dv, sf1)] `union` segmentLabels [(dv, sf2)] `union` segmentLabels rest
-        segmentLabels ((dv, Not sf1):rest)       =  segmentLabels [(dv, sf1)] `union` segmentLabels rest
-        segmentLabels ((_, Relation {}):rest) = segmentLabels rest
-
----------------------------------------------------------------------------
--- | Checks, given the global SDRS, if an embedded DRS is proper, i.e., 
--- that it doesn't have any unbound variables
----------------------------------------------------------------------------
-properDRS :: SDRS -> DisVar -> DRS -> Bool
-properDRS s@(SDRS m _) dv d = isProperDRS (d <<+>> mergedAccDRSs)
-  where graph = buildDGraph s
-        accDisVars = accessibleNodes graph dv
-        accDUs = map (\i -> m M.! i) accDisVars
-        accDRSs = [ drs | (Segment drs) <- accDUs]
-        recMerge :: [DRS] -> DRS
-        recMerge []        = DRS [] [] -- ugly. but ghc says I have to be exhaustive in my pattern matches. workaround?
-        recMerge (d':[])   = d'
-        recMerge (d':rest) = d' <<+>> recMerge rest
-        mergedAccDRSs = recMerge accDRSs
-
--- ---------------------------------------------------------------------------
--- -- | Debug version printing out all booleans
--- ---------------------------------------------------------------------------
--- sdrsProperDRSs :: SDRS -> [Bool]
--- sdrsProperDRSs s = proper $ segments s
---   where proper :: [(DisVar, SDRSFormula)] -> [Bool]
---         proper []                    = []
---         proper ((dv,Segment d):rest) = (properDRS s dv d) : proper rest
---         proper ((_,_):rest)          = proper rest
-
----------------------------------------------------------------------------
--- | Checks, given an 'SDRS', whether each embedded 'DRS' @d@ is /proper/,
--- where: ['DRS' @d@ is pure /iff/]
---
---  * @d@ does not contain any otiose declarations of discourse referents
---    (i.e., @d@ does not contain any unbound, duplicate uses of referents).
----------------------------------------------------------------------------
-sdrsProperDRSs :: SDRS -> Bool
-sdrsProperDRSs s = proper $ segments s
-  where proper :: [(DisVar, SDRSFormula)] -> Bool
-        proper []                    = True
-        proper ((dv,Segment d):rest) = (properDRS s dv d) && proper rest
-        proper ((_,_):rest)          = proper rest
-
-
+        segmentLabels []                       = empty
+        segmentLabels ((dv, Segment _):rest)   = insert dv $ segmentLabels rest
+        segmentLabels ((dv, And sf1 sf2):rest) = segmentLabels [(dv, sf1)] `union` segmentLabels [(dv, sf2)] `union` segmentLabels rest
+        segmentLabels ((dv, Not sf1):rest)     =  segmentLabels [(dv, sf1)] `union` segmentLabels rest
+        segmentLabels ((_, Relation {}):rest)  = segmentLabels rest
 
 -- how to make an sdrs unvalid:
 -- 2. l not in m.keys
