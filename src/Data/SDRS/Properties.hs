@@ -16,13 +16,16 @@ module Data.SDRS.Properties
 , sdrsProperDRSs
 , pureDRS
 , sdrsPureDRSs
+, isPureSDRS
 ) where
 
 import Data.SDRS.DataType
 import Data.DRS.Properties
 import Data.DRS.Merge
+import Data.DRS.Structure
 import qualified Data.Map as M
-import Data.SDRS.Structure (segments)
+import Data.List (nub)
+import Data.SDRS.Structure (segments, drss)
 import Data.SDRS.DiscourseGraph
 
 ---------------------------------------------------------------------------
@@ -91,3 +94,21 @@ sdrsPureDRSs s = pure' $ segments s
 --        pure' []                    = []
 --        pure' ((dv,Segment d):rest) = (pureDRS s dv d) : pure' rest
 --        pure' ((_,_):rest)          = pure' rest
+
+---------------------------------------------------------------------------
+-- | Checks if the 'SDRS' @s@ is /pure/, where:
+-- ['SDRS' @s@ is pure /iff/]
+--
+--  * no embedded 'DRS' declares 'DRSRef's that are declared in any other
+-- embedded 'DRS' of @s@. 
+---------------------------------------------------------------------------
+isPureSDRS :: SDRS -> Bool
+isPureSDRS s = universes == nub universes
+  where universes = concat $ map drsUniverse (drss s)
+
+
+
+
+
+
+

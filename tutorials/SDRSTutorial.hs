@@ -68,6 +68,25 @@ _al07_5 = DRS [DRSRef "x4", DRSRef "t"]
                 ,Rel (DRSRel "win") [DRSRef "x4", DRSRef "t"]]
 
 ---------------------------------------------------------------------------
+-- | malformed DRSs
+---------------------------------------------------------------------------
+-- double DRSRef declaration
+_al07_2b = DRS [DRSRef "x1", DRSRef "z", DRSRef "x1"]
+                [Rel (DRSRel "=") [DRSRef "x1", DRSRef "x"]
+                ,Rel (DRSRel "meal") [DRSRef "z"]
+                ,Rel (DRSRel "great") [DRSRef "z"]
+                ,Rel (DRSRel "have") [DRSRef "x1", DRSRef "z"]]
+
+-- unnecessary declaration of y
+_al07_2c = DRS [DRSRef "x1", DRSRef "z", DRSRef "y"]
+                [Rel (DRSRel "=") [DRSRef "x1", DRSRef "x"]
+                ,Rel (DRSRel "meal") [DRSRef "z"]
+                ,Rel (DRSRel "great") [DRSRef "z"]
+                ,Rel (DRSRel "have") [DRSRef "x1", DRSRef "z"]]
+
+
+
+---------------------------------------------------------------------------
 -- | misc structures
 ---------------------------------------------------------------------------
 
