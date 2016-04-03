@@ -17,6 +17,10 @@ module Data.SDRS.Properties
 , pureDRS
 , sdrsPureDRSs
 , isPureSDRS
+, isSDRTRelation
+, isCrdRelation
+, isSubRelation
+, allRelationsValid
 ) where
 
 import Data.SDRS.DataType
@@ -27,6 +31,7 @@ import qualified Data.Map as M
 import Data.List (nub)
 import Data.SDRS.Structure (segments, drss)
 import Data.SDRS.DiscourseGraph
+import Data.Char (toLower)
 
 ---------------------------------------------------------------------------
 -- | Checks, given the global SDRS, if an embedded 'DRS' @d@ is /proper/,
@@ -106,9 +111,75 @@ isPureSDRS :: SDRS -> Bool
 isPureSDRS s = universes == nub universes
   where universes = concat $ map drsUniverse (drss s)
 
+---------------------------------------------------------------------------
+-- | Checks whether a given 'SDRSFormula' is a Relation and if so, if it is
+-- a valid relation. If the given 'SDRSFormula' is recursively defined,
+-- it checks whether all of the subformulae are SDRT relations.
+---------------------------------------------------------------------------
+isSDRTRelation :: SDRSFormula -> Bool
+isSDRTRelation (Segment _)      = False
+isSDRTRelation (Relation r _ _) = (filter (/=' ') (map toLower r)) `elem` relations
+  where relations = ["narration",
+                    "contrast",
+                    "result",
+                    "parallel",
+                    "continuation",
+                    "alternation",
+                    "conditional",
+                    "elaboration",
+                    "entityElaboration",
+                    "comment",
+                    "flashback",
+                    "background",
+                    "goal",
+                    "explanation",
+                    "attribution"]
+isSDRTRelation (And sf1 sf2)    = isSDRTRelation sf1 && isSDRTRelation sf2
+isSDRTRelation (Not sf1)        = isSDRTRelation sf1
 
+---------------------------------------------------------------------------
+-- | Checks, given an 'SDRS', whether all embedded relations are valid in SDRT
+---------------------------------------------------------------------------
+allRelationsValid :: SDRS -> Bool
+allRelationsValid (SDRS m _) = all isSDRTRelation allRelations
+  where allSDRSFormulae = map snd $ M.assocs m
+        allRelations = [ r | r@(Relation {}) <- allSDRSFormulae]
 
+---------------------------------------------------------------------------
+-- | Checks whether a given 'SDRSFormula' is a Relation and if so, if it is
+-- a valid coordinating relation. If the given 'SDRSFormula' is recursively
+-- defined, it checks whether all of the subformulae are coordinating relations.
+---------------------------------------------------------------------------
+isCrdRelation :: SDRSFormula -> Bool
+isCrdRelation (Segment _)      = False
+isCrdRelation (Relation r _ _) = (filter (/=' ') (map toLower r)) `elem` relations
+  where relations = ["narration",
+                    "contrast",
+                    "result",
+                    "parallel",
+                    "continuation",
+                    "alternation",
+                    "conditional"]
+isCrdRelation (And sf1 sf2)    = isCrdRelation sf1 && isCrdRelation sf2
+isCrdRelation (Not sf1)        = isCrdRelation sf1
 
-
+---------------------------------------------------------------------------
+-- | Checks whether a given 'SDRSFormula' is a Relation and if so, if it is
+-- a valid subordinating relation. If the given 'SDRSFormula' is recursively
+-- defined, it checks whether all of the subformulae are subordinating relations.
+---------------------------------------------------------------------------
+isSubRelation :: SDRSFormula -> Bool
+isSubRelation (Segment _)      = False
+isSubRelation (Relation r _ _) = (filter (/=' ') (map toLower r)) `elem` relations
+  where relations = ["elaboration",
+                    "entityElaboration",
+                    "comment",
+                    "flashback",
+                    "background",
+                    "goal",
+                    "explanation",
+                    "attribution"]
+isSubRelation (And sf1 sf2)    = isSubRelation sf1 && isSubRelation sf2
+isSubRelation (Not sf1)        = isSubRelation sf1
 
 
