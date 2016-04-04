@@ -14,12 +14,16 @@ module Data.SDRS.DiscourseGraph
 ( 
   buildDGraph
 , accessibleNodes
+, rf
+, Label
+, DGraph
+, isCrdRelation'
 ) where
 
 import Data.SDRS.DataType
 import qualified Data.Map as M
 import Data.List (union, nub)
---import Data.Char (toLower)
+import Data.Char (toLower)
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -53,7 +57,6 @@ buildDGraph (SDRS m l) = (M.foldlWithKey build M.empty m, l)
 ---------------------------------------------------------------------------
 -- | Given a graph structure (as produced by buildDGraph) and a discourse
 -- variable, lists the accessible variables from this variable
--- TODO to be simplified!
 ---------------------------------------------------------------------------
 accessibleNodes :: DGraph -> DisVar -> [DisVar]
 accessibleNodes g dv1 = walkEdges [dv1]
@@ -65,37 +68,27 @@ accessibleNodes g dv1 = walkEdges [dv1]
         keys dv2 = nub (M.keys (M.filter (findKey dv2) m))
         findKey :: DisVar -> [(DisVar, Label)] -> Bool
         findKey _ [] = False
-        -- findKey _ ([]:_) = False -- not so sure about this one
-        findKey dv ((dv',_):[]) 
-          | dv' == dv = True -- simple relation
         findKey dv ((dv',_):rest)
           | dv' == dv = True
           | otherwise = findKey dv rest
 
 ---------------------------------------------------------------------------
--- | computes the right frontier of a graph. TO BE CONTINUED AND SIMPLIFIED!!!
+-- | computes the right frontier of a graph. 
 ---------------------------------------------------------------------------
---rf :: DGraph -> [DisVar]
---rf g = walkEdges [l]
---  where l = snd g
---        m = fst g
---        walkEdges :: [DisVar] -> [DisVar]
---        walkEdges [] = []
---        walkEdges (v:rest) = [v] `union` (rfKeys v) `union` walkEdges (rfKeys v) `union` (walkEdges rest) -- v = value
---        keys :: DisVar -> [DisVar]
---        keys dv2 = nub (M.keys (M.filter (findKey dv2) m))
---        rfKeys :: [DisVar] -> [DisVar]
---        rfKeys v = notCrdRel (keys v)
---        notCrdRel :: DisVar -> [DisVar]
---        notCrdRel v k = filter (\(v', label) -> v' == v && not isCrdRelation' label) (m M.! k)
---        findKey :: DisVar -> [(DisVar, Label)] -> Bool
---        findKey _ [] = False
---        -- findKey _ ([]:_) = False -- not so sure about this one
---        findKey dv ((dv',_):[]) 
---          | dv' == dv = True -- simple relation
---        findKey dv ((dv',_):rest)
---          | dv' == dv = True
---          | otherwise = findKey dv rest
+rf :: DGraph -> [DisVar]
+rf g = walkEdges [l]
+  where l = snd g
+        m = fst g
+        walkEdges :: [DisVar] -> [DisVar]
+        walkEdges [] = []
+        walkEdges (v:rest) = [v] `union` (keys v) `union` walkEdges (keys v) `union` (walkEdges rest) -- v = value
+        keys :: DisVar -> [DisVar]
+        keys dv = nub (M.keys (M.filterWithKey (isOnRF dv) m))
+        isOnRF :: DisVar -> DisVar -> [(DisVar, Label)] -> Bool
+        isOnRF _ _ [] = False
+        isOnRF dv key ((dv',label):rest)
+          | dv' == dv && not (isCrdRelation' label) = True
+          | otherwise = isOnRF dv key rest
 
 ---------------------------------------------------------------------------
 -- * Private
@@ -118,12 +111,12 @@ accessibleNodes g dv1 = walkEdges [dv1]
 ---------------------------------------------------------------------------
 -- | simple version working on strings instead of SDRSFormulae
 ---------------------------------------------------------------------------
---isCrdRelation' :: String -> Bool
---isCrdRelation' label = (filter (/=' ') (map toLower label)) `elem` relations
---  where relations = ["narration",
---                    "contrast",
---                    "result",
---                    "parallel",
---                    "continuation",
---                    "alternation",
---                    "conditional"]
+isCrdRelation' :: String -> Bool
+isCrdRelation' label = (filter (/=' ') (map toLower label)) `elem` relations
+  where relations = ["narration",
+                    "contrast",
+                    "result",
+                    "parallel",
+                    "continuation",
+                    "alternation",
+                    "conditional"]
