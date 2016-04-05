@@ -12,7 +12,7 @@ SDRS discourse graph
 
 module Data.SDRS.DiscourseGraph
 ( 
-  buildDGraph
+  discourseGraph
 , accessibleNodes
 , rf
 , Label
@@ -40,14 +40,14 @@ import Data.Char (toLower)
 
 type Label = String
 
-type DGraph = (M.Map DisVar [(DisVar, Label)], DisVar)
+type DGraph = M.Map DisVar [(DisVar, Label)]
 
 ---------------------------------------------------------------------------
 -- | Given an SDRS, build a labeled graph structure, consisting of a tuple
 -- of the graph itself and the last node
 ---------------------------------------------------------------------------
-buildDGraph :: SDRS -> DGraph
-buildDGraph (SDRS m l) = (M.foldlWithKey build M.empty m, l)
+discourseGraph :: SDRS -> DGraph
+discourseGraph (SDRS m _) = M.foldlWithKey build M.empty m
   where build :: (M.Map DisVar [(DisVar, Label)]) -> DisVar -> SDRSFormula -> M.Map DisVar [(DisVar, Label)]
         build acc dv0 (Relation label dv1 dv2) = M.insertWith (union) dv1 [(dv2,label)] (M.insertWith (union) dv0 [(dv1,""),(dv2,"")] acc)
         build acc dv0 (And sf1 sf2)        = build (build acc dv0 sf1) dv0 sf2
@@ -55,17 +55,17 @@ buildDGraph (SDRS m l) = (M.foldlWithKey build M.empty m, l)
         build acc _ _                      = acc
 
 ---------------------------------------------------------------------------
--- | Given a graph structure (as produced by buildDGraph) and a discourse
--- variable, lists the accessible variables from this variable
+-- | Given an 'SDRS' and a discourse variable, lists the accessible
+-- variables from this variable
 ---------------------------------------------------------------------------
-accessibleNodes :: DGraph -> DisVar -> [DisVar]
-accessibleNodes g dv1 = walkEdges [dv1]
-  where m = fst g
+accessibleNodes :: SDRS -> DisVar -> [DisVar]
+accessibleNodes s dv1 = walkEdges [dv1]
+  where g = discourseGraph s
         walkEdges :: [DisVar] -> [DisVar]
         walkEdges [] = []
         walkEdges (k:rest) = (keys k) `union` walkEdges (keys k) `union` (walkEdges rest)
         keys :: DisVar -> [DisVar]
-        keys dv2 = nub (M.keys (M.filter (findKey dv2) m))
+        keys dv2 = nub (M.keys (M.filter (findKey dv2) g))
         findKey :: DisVar -> [(DisVar, Label)] -> Bool
         findKey _ [] = False
         findKey dv ((dv',_):rest)
@@ -73,17 +73,16 @@ accessibleNodes g dv1 = walkEdges [dv1]
           | otherwise = findKey dv rest
 
 ---------------------------------------------------------------------------
--- | computes the right frontier of a graph. 
+-- | computes the right frontier of an 'SDRS' 
 ---------------------------------------------------------------------------
-rf :: DGraph -> [DisVar]
-rf g = walkEdges [l]
-  where l = snd g
-        m = fst g
+rf :: SDRS -> [DisVar]
+rf s@(SDRS _ l) = walkEdges [l]
+  where g = discourseGraph s
         walkEdges :: [DisVar] -> [DisVar]
         walkEdges [] = []
         walkEdges (v:rest) = [v] `union` (keys v) `union` walkEdges (keys v) `union` (walkEdges rest) -- v = value
         keys :: DisVar -> [DisVar]
-        keys dv = nub (M.keys (M.filterWithKey (isOnRF dv) m))
+        keys dv = nub (M.keys (M.filterWithKey (isOnRF dv) g))
         isOnRF :: DisVar -> DisVar -> [(DisVar, Label)] -> Bool
         isOnRF _ _ [] = False
         isOnRF dv key ((dv',label):rest)

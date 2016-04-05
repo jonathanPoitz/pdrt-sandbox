@@ -41,8 +41,7 @@ import Data.Char (toLower)
 ---------------------------------------------------------------------------
 properDRS :: SDRS -> DisVar -> DRS -> Bool
 properDRS s@(SDRS m _) dv d = isProperDRS (d <<+>> (foldl (<<+>>) (DRS [] []) accDRSs)) -- is merging with empty DRS the only way for this?
-  where graph = buildDGraph s
-        accDisVars = accessibleNodes graph dv
+  where accDisVars = accessibleNodes s dv
         accDUs = map (\i -> m M.! i) accDisVars
         accDRSs = [ drs | (Segment drs) <- accDUs]
 
@@ -75,8 +74,7 @@ sdrsProperDRSs s = proper $ segments s
 ---------------------------------------------------------------------------
 pureDRS :: SDRS -> DisVar -> DRS -> Bool
 pureDRS s@(SDRS m _) dv d = isPureDRS (d <<+>> (foldl (<<+>>) (DRS [] []) accDRSs)) -- is merging with empty DRS the only way for this?
-  where graph = buildDGraph s
-        accDisVars = accessibleNodes graph dv
+  where accDisVars = accessibleNodes s dv
         accDUs = map (\i -> m M.! i) accDisVars
         accDRSs = [ drs | (Segment drs) <- accDUs]
 
@@ -127,7 +125,7 @@ isSDRTRelation (Relation r _ _) = (filter (/=' ') (map toLower r)) `elem` relati
                     "alternation",
                     "conditional",
                     "elaboration",
-                    "entityElaboration",
+                    "entityelaboration",
                     "comment",
                     "flashback",
                     "background",
