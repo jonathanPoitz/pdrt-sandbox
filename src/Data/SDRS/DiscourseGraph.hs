@@ -17,13 +17,11 @@ module Data.SDRS.DiscourseGraph
 , rf
 , Label
 , DGraph
-, isCrdRelation'
 ) where
 
 import Data.SDRS.DataType
 import qualified Data.Map as M
 import Data.List (union, nub)
-import Data.Char (toLower)
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -38,9 +36,7 @@ import Data.Char (toLower)
 --instance Show DGraph where
   --show dg = '\n' : showDGraph dg
 
-type Label = String
 
-type DGraph = M.Map DisVar [(DisVar, Label)]
 
 ---------------------------------------------------------------------------
 -- | Given an SDRS, build a labeled graph structure, consisting of a tuple
@@ -56,14 +52,16 @@ discourseGraph (SDRS m _) = M.foldlWithKey build M.empty m
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' and a discourse variable, lists the accessible
--- variables from this variable
+-- variables from this variable in order of proximity to local discourse
+-- variable, with the first entry being the farthest and the last the closest
+-- TODO might be simplified. currently a lot of steps, maybe rec can be simplified.
 ---------------------------------------------------------------------------
 accessibleNodes :: SDRS -> DisVar -> [DisVar]
 accessibleNodes s dv1 = walkEdges [dv1]
   where g = discourseGraph s
         walkEdges :: [DisVar] -> [DisVar]
         walkEdges [] = []
-        walkEdges (k:rest) = (keys k) `union` walkEdges (keys k) `union` (walkEdges rest)
+        walkEdges (k:rest) = (walkEdges rest) `union` walkEdges (keys k) `union` (keys k)
         keys :: DisVar -> [DisVar]
         keys dv2 = nub (M.keys (M.filter (findKey dv2) g))
         findKey :: DisVar -> [(DisVar, Label)] -> Bool
@@ -73,49 +71,19 @@ accessibleNodes s dv1 = walkEdges [dv1]
           | otherwise = findKey dv rest
 
 ---------------------------------------------------------------------------
--- | computes the right frontier of an 'SDRS' 
+-- | computes the right frontier of an 'SDRS', also in order
+-- TODO might be simplified. currently a lot of steps, maybe rec can be simplified.
 ---------------------------------------------------------------------------
 rf :: SDRS -> [DisVar]
 rf s@(SDRS _ l) = walkEdges [l]
   where g = discourseGraph s
         walkEdges :: [DisVar] -> [DisVar]
         walkEdges [] = []
-        walkEdges (v:rest) = [v] `union` (keys v) `union` walkEdges (keys v) `union` (walkEdges rest) -- v = value
+        walkEdges (v:rest) = (walkEdges rest) `union` walkEdges (keys v) `union` (keys v) `union` [v]
         keys :: DisVar -> [DisVar]
         keys dv = nub (M.keys (M.filterWithKey (isOnRF dv) g))
         isOnRF :: DisVar -> DisVar -> [(DisVar, Label)] -> Bool
         isOnRF _ _ [] = False
         isOnRF dv key ((dv',label):rest)
-          | dv' == dv && not (isCrdRelation' label) = True
+          | dv' == dv && not (isCrdRelation label) = True
           | otherwise = isOnRF dv key rest
-
----------------------------------------------------------------------------
--- * Private
----------------------------------------------------------------------------
-
------------------------------------------------------------------------------
----- | simple version working on strings instead of SDRSFormulae
------------------------------------------------------------------------------
---isSubRelation' :: String -> Bool
---isSubRelation' label = (filter (/=' ') (map toLower label)) `elem` relations
---  where relations = ["elaboration",
---                    "entityElaboration",
---                    "comment",
---                    "flashback",
---                    "background",
---                    "goal",
---                    "explanation",
---                    "attribution"]
-
----------------------------------------------------------------------------
--- | simple version working on strings instead of SDRSFormulae
----------------------------------------------------------------------------
-isCrdRelation' :: String -> Bool
-isCrdRelation' label = (filter (/=' ') (map toLower label)) `elem` relations
-  where relations = ["narration",
-                    "contrast",
-                    "result",
-                    "parallel",
-                    "continuation",
-                    "alternation",
-                    "conditional"]
