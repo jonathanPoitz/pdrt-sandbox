@@ -85,11 +85,12 @@ allRelationsValid (SDRS m _) = all isRelation allRelationLabels
 ---------------------------------------------------------------------------
 validLast :: SDRS -> Bool
 validLast s@(SDRS m l) = isSegment (m M.! l) &&
-                         any (\(Relation _ dv dv') -> dv /= l && dv' == l) (map snd $ relations s)
+                         any (\(Relation _ _ dv') -> dv' == l) allRelations &&
+                         not (any (\(Relation _ dv _) -> dv == l) allRelations) -- why doesn't "not $ any (\(Relation _ dv _) -> dv == l) allRelations" work?
   where isSegment :: SDRSFormula -> Bool
         isSegment (Segment _) = True
         isSegment _           = False -- isn't there an easier way? but idk how to pattern match on Segment when not in a function. note, this also ignores the possibility that the last node is introduced in a rec. SDRSFormula
-
+        allRelations = map snd $ relations s
 
 
 
