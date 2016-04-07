@@ -12,11 +12,9 @@ SDRS properties
 
 module Data.SDRS.Properties
 (
-  properDRS
-, sdrsProperDRSs
-, pureDRS
+  sdrsProperDRSs
 , sdrsPureDRSs
-, isPureSDRS
+, sdrsAllDRSRefUnique
 , allRelationsValid
 ) where
 
@@ -30,69 +28,35 @@ import Data.SDRS.Structure (segments, drss)
 import Data.SDRS.DiscourseGraph
 
 ---------------------------------------------------------------------------
--- | Checks, given the global SDRS, if an embedded 'DRS' @d@ is /proper/,
--- where: ['DRS' @d@ is proper /iff/]
---
---  * @d@ does not contain any free variables
+-- | Checks, given an 'SDRS', whether all embedded DRSs are proper
 ---------------------------------------------------------------------------
-properDRS :: SDRS -> DisVar -> DRS -> Bool
-properDRS s@(SDRS m _) dv d = isProperDRS (d <<+>> (foldl (<<+>>) (DRS [] []) accDRSs)) -- is merging with empty DRS the only way for this?
-  where accDisVars = accessibleNodes s dv
-        accDUs = map (\i -> m M.! i) accDisVars
-        accDRSs = [ drs | (Segment drs) <- accDUs]
-
--- ---------------------------------------------------------------------------
--- -- | Checks, given an 'SDRS', whether all embedded DRSs are proper
--- ---------------------------------------------------------------------------
--- sdrsProperDRSs :: SDRS -> Bool
--- sdrsProperDRSs s = proper $ segments s
---   where proper :: [(DisVar, SDRSFormula)] -> Bool
---         proper []                    = True
---         proper ((dv,Segment d):rest) = (properDRS s dv d) && proper rest
---         proper ((_,_):rest)          = proper rest
+sdrsProperDRSs :: SDRS -> Bool
+sdrsProperDRSs s@(SDRS m _) = proper $ segments s
+ where proper :: [(DisVar, SDRSFormula)] -> Bool
+       proper []                    = True
+       proper ((dv,Segment d):rest) = (properDRS dv d) && proper rest
+       proper ((_,_):rest)          = proper rest
+       properDRS :: DisVar -> DRS -> Bool
+       properDRS dv d = isProperDRS ((foldl (<<+>>) (DRS [] []) accDRSs) <<+>> d) -- is merging with empty DRS the only way for this?
+         where accDisVars = accessibleNodes s dv
+               accDUs = map (\i -> m M.! i) accDisVars
+               accDRSs = [ drs | (Segment drs) <- accDUs]
+       
 
 ---------------------------------------------------------------------------
--- | Debug version printing out all booleans
----------------------------------------------------------------------------
-sdrsProperDRSs :: SDRS -> [Bool]
-sdrsProperDRSs s = proper $ segments s
-  where proper :: [(DisVar, SDRSFormula)] -> [Bool]
-        proper []                    = []
-        proper ((dv,Segment d):rest) = (properDRS s dv d) : proper rest
-        proper ((_,_):rest)          = proper rest
-
----------------------------------------------------------------------------
--- | Checks, given the global SDRS, if an embedded 'DRS' @d@ is /pure/,
--- where: ['DRS' @d@ is pure /iff/]
---
---  * @d@ does not contain any otiose declarations of discourse referents
---    (i.e., @d@ does not contain any unbound, duplicate uses of referents).
----------------------------------------------------------------------------
-pureDRS :: SDRS -> DisVar -> DRS -> Bool
-pureDRS s@(SDRS m _) dv d = isPureDRS (d <<+>> (foldl (<<+>>) (DRS [] []) accDRSs)) -- is merging with empty DRS the only way for this?
-  where accDisVars = accessibleNodes s dv
-        accDUs = map (\i -> m M.! i) accDisVars
-        accDRSs = [ drs | (Segment drs) <- accDUs]
-
----------------------------------------------------------------------------
--- | Checks, given an 'SDRS', whether all embedded DRSs are pure
+-- | Checks, given an 'SDRS', whether all embedded 'DRS's are pure
 ---------------------------------------------------------------------------
 sdrsPureDRSs :: SDRS -> Bool
-sdrsPureDRSs s = pure' $ segments s
+sdrsPureDRSs s@(SDRS m _) = pure' $ segments s
   where pure' :: [(DisVar, SDRSFormula)] -> Bool
         pure' []                    = True
-        pure' ((dv,Segment d):rest) = (pureDRS s dv d) && pure' rest
+        pure' ((dv,Segment d):rest) = (pureDRS dv d) && pure' rest
         pure' ((_,_):rest)          = pure' rest
-
------------------------------------------------------------------------------
----- | Debug version of normal function
------------------------------------------------------------------------------
---sdrsPureDRSs :: SDRS -> [Bool]
---sdrsPureDRSs s = pure' $ segments s
---  where pure' :: [(DisVar, SDRSFormula)] -> [Bool]
---        pure' []                    = []
---        pure' ((dv,Segment d):rest) = (pureDRS s dv d) : pure' rest
---        pure' ((_,_):rest)          = pure' rest
+        pureDRS :: DisVar -> DRS -> Bool
+        pureDRS dv d = isPureDRS ((foldl (<<+>>) (DRS [] []) accDRSs) <<+>> d) -- is merging with empty DRS the only way for this?
+          where accDisVars = accessibleNodes s dv
+                accDUs = map (\i -> m M.! i) accDisVars
+                accDRSs = [ drs | (Segment drs) <- accDUs]
 
 ---------------------------------------------------------------------------
 -- | Checks if the 'SDRS' @s@ is /pure/, where:
@@ -101,8 +65,8 @@ sdrsPureDRSs s = pure' $ segments s
 --  * no embedded 'DRS' declares 'DRSRef's that are declared in any other
 -- embedded 'DRS' of @s@. 
 ---------------------------------------------------------------------------
-isPureSDRS :: SDRS -> Bool
-isPureSDRS s = universes == nub universes
+sdrsAllDRSRefUnique :: SDRS -> Bool
+sdrsAllDRSRefUnique s = universes == nub universes
   where universes = concat $ map drsUniverse (drss s)
 
 ---------------------------------------------------------------------------
