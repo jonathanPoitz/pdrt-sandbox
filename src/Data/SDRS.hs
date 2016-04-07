@@ -16,6 +16,7 @@ module Data.SDRS
 ) where
 
 import Data.SDRS.Binding as SDRS
+import Data.SDRS.Composition as SDRS
 import Data.SDRS.DataType as SDRS
 import Data.SDRS.DiscourseGraph as SDRS
 import Data.SDRS.Properties as SDRS
