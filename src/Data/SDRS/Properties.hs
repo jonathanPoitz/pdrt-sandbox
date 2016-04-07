@@ -16,6 +16,7 @@ module Data.SDRS.Properties
 , sdrsPureDRSs
 , sdrsAllDRSRefUnique
 , allRelationsValid
+, validLast
 ) where
 
 import Data.SDRS.DataType
@@ -24,7 +25,7 @@ import Data.DRS.Merge
 import Data.DRS.Structure
 import qualified Data.Map as M
 import Data.List (nub)
-import Data.SDRS.Structure (segments, drss)
+import Data.SDRS.Structure
 import Data.SDRS.DiscourseGraph
 
 ---------------------------------------------------------------------------
@@ -76,5 +77,21 @@ allRelationsValid :: SDRS -> Bool
 allRelationsValid (SDRS m _) = all isRelation allRelationLabels
   where allSDRSFormulae = map snd $ M.assocs m
         allRelationLabels = [ l | Relation l _ _ <- allSDRSFormulae]
+
+---------------------------------------------------------------------------
+-- | checks whether the discourse unit pointed to by LAST is meaningful, i.e.
+--  * that it is an EDU, i.e. a Segment denoting a DRS, and
+--  * that it is part of a relation, in which it is not the left argument
+---------------------------------------------------------------------------
+validLast :: SDRS -> Bool
+validLast s@(SDRS m l) = isSegment (m M.! l) &&
+                         any (\(Relation _ dv dv') -> dv /= l && dv' == l) (map snd $ relations s)
+  where isSegment :: SDRSFormula -> Bool
+        isSegment (Segment _) = True
+        isSegment _           = False -- isn't there an easier way? but idk how to pattern match on Segment when not in a function. note, this also ignores the possibility that the last node is introduced in a rec. SDRSFormula
+
+
+
+
 
 
