@@ -67,6 +67,11 @@ _al07_5 = DRS [DRSRef "x4", DRSRef "t"]
                 ,Rel (DRSRel "dancing_competition") [DRSRef "t"]
                 ,Rel (DRSRel "win") [DRSRef "x4", DRSRef "t"]]
 
+_al07_6 = DRS [DRSRef "x5"]
+                [Rel (DRSRel "=") [DRSRef "x5", DRSRef "x"]
+                ,Rel (DRSRel "happy") [DRSRef "x5"]]
+
+
 ------
 
 _neg_1 = DRS [DRSRef "x"]
@@ -209,6 +214,10 @@ sdrsfullal07 = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
                                 (5, Segment _al07_5),
                                 (6, And (Relation "Elaboration" 2 7) (Relation "Narration" 2 5)),
                                 (7, Relation "Narration" 3 4)]) 5
+
+sdrsfullal07_2 = addDRS sdrsfullal07 _al07_6 [(5, "Narration")]
+
+sdrsfullal07_3 = addDRS sdrsfullal07 _al07_6 [(4, "Narration")]
 
 sdrsneg1 = SDRS (Map.fromList [(0, Not (Relation "Explanation" 1 2)),
                                 (1, Segment _neg_1),
