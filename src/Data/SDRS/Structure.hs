@@ -18,6 +18,7 @@ module Data.SDRS.Structure
 , segments
 , relLabels
 , drss
+, lookupKey
 ) where
 
 import Data.SDRS.DataType
@@ -38,6 +39,19 @@ listDUs (SDRS m _)     = M.keys m
 ---------------------------------------------------------------------------
 lookupDU :: SDRS -> DisVar -> Maybe SDRSFormula
 lookupDU (SDRS m _) i     = M.lookup i m
+
+---------------------------------------------------------------------------
+-- | Lookup the DisVar that labels the relation where the given DisVar is 
+-- an argument of
+---------------------------------------------------------------------------
+lookupKey :: SDRS -> DisVar -> DisVar
+lookupKey s dv = findKey $ relations s
+  where findKey :: [(DisVar, SDRSFormula)] -> DisVar
+        findKey []                 = error $ "Discourse variable " ++ show dv ++ " was not found."
+        findKey ((dv0, Relation _ dv1 dv2):rest)
+          | dv == dv1 || dv == dv2 = dv0
+          | otherwise              = findKey rest
+        findKey ((_,_):rest)       = findKey rest -- should not happen b/c of "relations s" call
 
 ---------------------------------------------------------------------------
 -- | Returns all labels that are Arguments of Relations
