@@ -67,6 +67,21 @@ _al07_5 = DRS [DRSRef "x4", DRSRef "t"]
                 ,Rel (DRSRel "dancing_competition") [DRSRef "t"]
                 ,Rel (DRSRel "win") [DRSRef "x4", DRSRef "t"]]
 
+------
+
+_neg_1 = DRS [DRSRef "x"]
+                [Rel (DRSRel "Mary") [DRSRef "x"]
+                ,Rel (DRSRel "quit") [DRSRef "x"]]
+
+_neg_2 = DRS [DRSRef "y"]
+                [Rel (DRSRel "=") [DRSRef "y", DRSRef "x"]
+                ,Neg(DRS [] [Rel (DRSRel "like_it") [DRSRef "y"]])]
+
+_neg_3 = DRS [DRSRef "z"]
+                [Rel (DRSRel "=") [DRSRef "z", DRSRef "x"]
+                ,Rel (DRSRel "pregnant") [DRSRef "z"]]
+
+
 ---------------------------------------------------------------------------
 -- | malformed DRSs
 ---------------------------------------------------------------------------
@@ -194,6 +209,13 @@ sdrsfullal07 = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
                                 (5, Segment _al07_5),
                                 (6, And (Relation "Elaboration" 2 7) (Relation "Narration" 2 5)),
                                 (7, Relation "Narration" 3 4)]) 5
+
+sdrsneg1 = SDRS (Map.fromList [(0, Not (Relation "Explanation" 1 2)),
+                                (1, Segment _neg_1),
+                                (2, Segment _neg_2),
+                                (3, Segment _neg_3),
+                                (4, Relation "Explanation" 1 3),
+                                (5, Relation "Contrast" 2 3)]) 3
 
 -- for recursion testing only, not felicitous
 sdrsrec1 = SDRS (Map.fromList [(0, recsf1),
