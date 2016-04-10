@@ -54,7 +54,7 @@ lookupKey s dv = findKey $ relations s
         findKey ((_,_):rest)       = findKey rest -- should not happen b/c of "relations s" call
 
 ---------------------------------------------------------------------------
--- | Returns all labels that are Arguments of Relations
+-- | Returns all labels that are arguments of relations
 ---------------------------------------------------------------------------
 relLabels :: [SDRSFormula] -> [DisVar]
 relLabels []                          = []
@@ -62,6 +62,19 @@ relLabels ((Relation _ dv1 dv2):rest) = dv1:dv2:relLabels rest
 relLabels ((And sf1 sf2):rest)        = relLabels [sf1] ++ relLabels [sf2] ++ relLabels rest
 relLabels ((Not sf1):rest)            = relLabels [sf1] ++ relLabels rest
 relLabels ((Segment _):rest)          = relLabels rest
+
+---------------------------------------------------------------------------
+-- | alternative version using an SDRS as input. Imo nicer like that, just
+-- some conflicts with other functions that are using it. TODO
+---------------------------------------------------------------------------
+--relLabels :: SDRS -> [DisVar]
+--relLabels (SDRS m _) = relLabels' $ M.elems m
+--  where relLabels' :: [SDRSFormula] -> [DisVar]
+--        relLabels' []                          = []
+--        relLabels' ((Relation _ dv1 dv2):rest) = dv1:dv2:relLabels' rest 
+--        relLabels' ((And sf1 sf2):rest)        = relLabels' [sf1] ++ relLabels' [sf2] ++ relLabels' rest
+--        relLabels' ((Not sf1):rest)            = relLabels' [sf1] ++ relLabels' rest
+--        relLabels' ((Segment _):rest)          = relLabels' rest
 
 ---------------------------------------------------------------------------
 -- | Lists, given an SDRS, its relations along with each respective label

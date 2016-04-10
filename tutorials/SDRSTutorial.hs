@@ -69,7 +69,7 @@ _al07_5 = DRS [DRSRef "x4", DRSRef "t"]
 
 _al07_6 = DRS [DRSRef "x5"]
                 [Rel (DRSRel "=") [DRSRef "x5", DRSRef "x"]
-                ,Rel (DRSRel "happy") [DRSRef "x5"]]
+                ,Rel (DRSRel "dance_well") [DRSRef "x5"]]
 
 
 ------
@@ -158,7 +158,7 @@ testSDRSs = [("sdrsrec1", sdrsrec1),
              ("sdrs1", sdrs1),
              ("sdrs2", sdrs2)]
 
-discourseGraph = Map.fromList [(0,[(1,""),(6,"")]),
+discourseGraph1 = Map.fromList [(0,[(1,""),(6,"")]),
                            (1,[(6,"Elaboration")]),
                            (2,[(5,"Narration"),(7,"Elaboration")]),
                            (3,[(4,"Narration")]),
@@ -206,6 +206,20 @@ sdrsal07 = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
                                 (6, And (Relation "Elaboration" 2 7) (Relation "Narration" 2 5)),
                                 (7, Relation "Narration" 3 4)]) 5
 
+sdrsfullal07_to3 = SDRS (Map.fromList [(0, And (Relation "Elaboration" 1 2) (Relation "Elaboration" 2 3)),
+                                (1, Segment _al07_1),
+                                (2, Segment _al07_2),
+                                (3, Segment _al07_3)]) 3
+
+sdrsfullal07_to4_comp = addDRS sdrsfullal07_to3 _al07_4 [(3, "Narration")]
+
+sdrsfullal07_to4 = SDRS (Map.fromList [(0, And (Relation "Elaboration" 1 2) (Relation "Elaboration" 2 7)),
+                                       (1, Segment _al07_1),
+                                       (2, Segment _al07_2),
+                                       (3, Segment _al07_3),
+                                       (4, Segment _al07_4),
+                                       (7, Relation "Narration" 3 4)]) 4
+
 sdrsfullal07 = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
                                 (1, Segment _al07_1),
                                 (2, Segment _al07_2),
@@ -215,9 +229,21 @@ sdrsfullal07 = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
                                 (6, And (Relation "Elaboration" 2 7) (Relation "Narration" 2 5)),
                                 (7, Relation "Narration" 3 4)]) 5
 
-sdrsfullal07_2 = addDRS sdrsfullal07 _al07_6 [(5, "Narration")]
+-- the order of declaration is different (does it affect the map of is it implicitly ordered?)
+-- the labels are different and have holes
+-- the sfs in the And are switched
+sdrsfullal07_iso = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
+                                (20, Segment _al07_2),
+                                (1, Segment _al07_1),
+                                (6, And (Relation "Narration" 20 5) (Relation "Elaboration" 20 8)),
+                                (3, Segment _al07_3),
+                                (4, Segment _al07_4),
+                                (5, Segment _al07_5),
+                                (8, Relation "Narration" 3 4)]) 5
 
-sdrsfullal07_3 = addDRS sdrsfullal07 _al07_6 [(4, "Narration")]
+sdrsfullal07_to6_comp = addDRS sdrsfullal07 _al07_6 [(5, "Elaboration")]
+
+sdrsfullal07_to6_comp_2 = addDRS sdrsfullal07 _al07_6 [(4, "Narration")]
 
 sdrsneg1 = SDRS (Map.fromList [(0, Not (Relation "Explanation" 1 2)),
                                 (1, Segment _neg_1),
