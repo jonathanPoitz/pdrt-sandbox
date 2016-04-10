@@ -22,6 +22,7 @@ module Data.SDRS.DataType
 , isRelation
 , isTopicRelation
 , isStrucRelation
+, labelEq
 , DGraph
 , Label
 , module Data.DRS.DataType
@@ -189,3 +190,13 @@ isTopicRelation :: String -> Bool
 isTopicRelation label = (filter (/=' ') (map toLower label)) `elem` relations
   where relations = ["narration",
                      "continuation"]
+
+---------------------------------------------------------------------------
+-- | a convenience method for equality of labels, including preprocessing
+-- (trimming and lowercasing)
+---------------------------------------------------------------------------
+labelEq :: String -> String -> Bool
+labelEq label1 label2 = (filter (/=' ') (map toLower label1)) == (filter (/=' ') (map toLower label2))
+
+
+
