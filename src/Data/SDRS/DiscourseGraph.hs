@@ -17,11 +17,13 @@ module Data.SDRS.DiscourseGraph
 , rf
 , Label
 , DGraph
+, root
 ) where
 
 import Data.SDRS.DataType
 import qualified Data.Map as M
-import Data.List (union, nub)
+import Data.List (union, nub, sort, (\\))
+import Data.SDRS.Structure (relLabels)
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -87,3 +89,17 @@ rf s@(SDRS _ l) = walkEdges [l]
         isOnRF dv key ((dv',label):rest)
           | dv' == dv && not (isCrdRelation label) = True
           | otherwise = isOnRF dv key rest
+
+---------------------------------------------------------------------------
+-- | Return the root node of the discourse graph. If the graph doesn't have
+-- a single node that dominates all subelements. The return type is list
+-- to account for the (infelicitous) case where there is more than one root
+-- node or nodes in the graph that are unconnected (thus root nodes of a separate
+-- graph).
+---------------------------------------------------------------------------
+root :: SDRS -> [DisVar]
+root (SDRS m _) = (sort $ nub (M.keys m)) \\ (sort $ nub (relLabels $ M.elems m))
+
+
+
+
