@@ -47,7 +47,7 @@ import Data.SDRS.Structure (relLabels)
 discourseGraph :: SDRS -> DGraph
 discourseGraph (SDRS m _) = M.foldlWithKey build M.empty m
   where build :: (M.Map DisVar [(DisVar, Label)]) -> DisVar -> SDRSFormula -> M.Map DisVar [(DisVar, Label)]
-        build acc dv0 (Relation label dv1 dv2) = M.insertWith (union) dv1 [(dv2,label)] (M.insertWith (union) dv0 [(dv1,""),(dv2,"")] acc)
+        build acc dv0 (Relation label dv1 dv2) = M.insertWith (++) dv1 [(dv2,label)] (M.insertWith (++) dv0 [(dv1,""),(dv2,"")] acc)
         build acc dv0 (And sf1 sf2)        = build (build acc dv0 sf1) dv0 sf2
         build acc dv0 (Not sf1)            = build acc dv0 sf1
         build acc _ _                      = acc
