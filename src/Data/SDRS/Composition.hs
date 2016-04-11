@@ -34,21 +34,23 @@ buildFromDRSs d1 label d2 = SDRS (M.fromList [(0, Relation label 1 2),
 -- of the SDRS, conjunct the newly created relation to the relations at this level.
 ---------------------------------------------------------------------------
 addDRS :: SDRS -> DRS -> [(DisVar, Label)] -> SDRS
-addDRS s@(SDRS m _) d edges = SDRS (updatedMap) updatedLast
+addDRS s@(SDRS m _) d edges = SDRS updatedMap updatedLast
   where updatedLast = (fst $ M.findMax m) + 1
         updatedMap = M.insert updatedLast (Segment d) (updateRelations edges m updatedLast)
-        conjunctRel :: SDRSFormula -> SDRSFormula -> SDRSFormula
-        conjunctRel newSF oldSF = And oldSF newSF
-        -- I don't think I have to distinguish between what is already there
-        -- no matter what, I take the old SF and put an And around it and the new one
-        --conjunctRel newSF oldSF@(Relation {}) = And oldSF newSF
-        --conjunctRel newSF oldSF@(And {}) = And oldSF newSF
         updateRelations :: [(DisVar, Label)] -> M.Map DisVar SDRSFormula -> DisVar -> M.Map DisVar SDRSFormula
         updateRelations [] m' _                      = m'
         updateRelations ((dv, label):rest) m' maxKey 
-          | dv `elem` relLabels (M.elems m') = M.adjust (conjunctRel (Relation label dv updatedLast)) (lookupKey s dv) m'
-          | otherwise = M.insert (maxKey + 1)
+          | dv `elem` relLabels (M.elems m') && (not $ isTopicRelation label) = M.adjust (And (Relation label dv updatedLast)) (lookupKey s dv) m'
+          | isCrdRelation label = M.map replaceByComplexNode mapWithNewNode -- iterate through map and find all relations where dv is second argument. replace this with M.findMax. todo: recurse somewhere
+          | otherwise = M.insert (maxKey + 1) -- only do that if not crd! in what cases will case here happen even?
                                  (Relation label dv updatedLast)
                                  (updateRelations rest m' (maxKey + 1))
+          where mapWithNewNode = M.insert (maxKey + 1) (Relation label dv updatedLast) m'
+                replaceByComplexNode :: SDRSFormula -> SDRSFormula
+                replaceByComplexNode r@(Relation l dv' dv'')
+                  | dv'' == dv = Relation l dv' (maxKey + 1)
+                  | otherwise = r
+                replaceByComplexNode sf = sf
+
 
 
