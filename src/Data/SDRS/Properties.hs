@@ -162,3 +162,11 @@ isomorph s1@(SDRS m1 _) s2@(SDRS m2 _) = isomorph' (root s1) (root s2)
           sf1 `isomorphSF` sf2
         isomorphSF _ _ = False
 
+--normalize :: SDRS -> SDRS
+--normalize s@(SDRS m l) = buildNormMap (root s) M.empty
+--  where buildNormMap :: [DisVar] -> M.Map DisVar DisVar -> M.Map DisVar DisVar
+--        buildNormMap (cur:rest) normMap = normMap `M.insert` ((fst findMax normMap) + 1) 
+--        g = discourseGraph s
+
+
+
