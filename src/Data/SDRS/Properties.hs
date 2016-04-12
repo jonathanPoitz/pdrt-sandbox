@@ -18,6 +18,8 @@ module Data.SDRS.Properties
 , allRelationsValid
 , validLast
 , isomorph
+, normalize
+, build' --debugging
 ) where
 
 import Data.SDRS.DataType
@@ -25,7 +27,7 @@ import Data.DRS.Properties
 import Data.DRS.Merge
 import Data.DRS.Structure
 import qualified Data.Map as M
-import Data.List (nub)
+import Data.List (nub, union)
 import Data.SDRS.Structure
 import Data.SDRS.DiscourseGraph
 
@@ -162,11 +164,58 @@ isomorph s1@(SDRS m1 _) s2@(SDRS m2 _) = isomorph' (root s1) (root s2)
           sf1 `isomorphSF` sf2
         isomorphSF _ _ = False
 
---normalize :: SDRS -> SDRS
---normalize s@(SDRS m l) = buildNormMap (root s) M.empty
---  where buildNormMap :: [DisVar] -> M.Map DisVar DisVar -> M.Map DisVar DisVar
---        buildNormMap (cur:rest) normMap = normMap `M.insert` ((fst findMax normMap) + 1) 
---        g = discourseGraph s
+---------------------------------------------------------------------------
+-- | normalizes the nodes in an SDRS.
+-- TODO normalize last label
+-- messes up some things, needs to be debugged
+-- probably b/c of overwriting. one run of map changes values to other values that
+-- conincidentally are then changed again. decouple that from each other. 
+---------------------------------------------------------------------------
+normalize :: SDRS -> SDRS
+normalize s@(SDRS m l) = SDRS (M.fromList (normalize' (M.assocs normMap) (M.assocs m))) l -- last needs to be updated too
+  where build :: [DisVar] -> DisVar -> M.Map DisVar DisVar -> M.Map DisVar DisVar
+        build [] _ nm = nm
+        build (cur:rest) index nm 
+          | ((M.lookup cur g) == Nothing) = M.insert cur index (build rest (index + 1) nm)
+          | otherwise                     = M.insert cur index (build (rest `union` (map fst $ g M.! cur)) (index + 1) nm)
+        normMap = build (root s) 0 M.empty
+        normalize' :: [(DisVar,DisVar)] -> [(DisVar, SDRSFormula)] -> [(DisVar, SDRSFormula)]
+        normalize' [] m'           = m'
+        normalize' ((f,t):rest) m' = map (normalizeTuple (f,t)) (normalize' rest m')
+        normalizeTuple :: (DisVar, DisVar) -> (DisVar, SDRSFormula) -> (DisVar, SDRSFormula)
+        normalizeTuple (f,t) (dv, sf) = (dv', normalizeSF (f,t) sf)
+          where dv'  = if dv == f then t else dv
+        normalizeSF :: (DisVar, DisVar) -> SDRSFormula -> SDRSFormula
+        normalizeSF _ d@(Segment _)            = d
+        normalizeSF (f,t) (Relation label dv1 dv2) = Relation label dv1' dv2'
+          where dv1' = if dv1 == f then t else dv1
+                dv2' = if dv2 == f then t else dv2
+        normalizeSF (f,t) (And sf1 sf2)        = And (normalizeSF (f,t) sf1) (normalizeSF (f,t) sf2)
+        normalizeSF (f,t) (Not sf1)            = Not (normalizeSF (f,t) sf1)
+        g = discourseGraph s
 
+---------------------------------------------------------------------------
+-- | for debugging
+---------------------------------------------------------------------------
+build' :: DGraph -> [DisVar] -> DisVar -> M.Map DisVar DisVar -> M.Map DisVar DisVar
+build' _ [] _ nm = nm
+build' g (cur:rest) index nm 
+  | ((M.lookup cur g) == Nothing) = M.insert cur index (build' g rest (index + 1) nm)
+  | otherwise                     = M.insert cur index (build' g (rest `union` (map fst $ g M.! cur)) (index + 1) nm)
 
+---------------------------------------------------------------------------
+-- | Checks whether all Segments are attached to a node that's on the RF of
+-- the graph before adding this Segment. It'll be difficult to check that
+-- directly (to go to each node and to check whether the node that it was
+-- added to on the RF of the graph before having added that node). Maybe
+-- the problem is translatable in some way?
+-- this could be something like:
+--  * not two crd relations with differing end nodes can be attached to the same
+--    begin nodes
+--  * nothing prior to the node that's on the right side of a crd relation
+--    can be attached to nodes being dominated by the node on the left side
+--    of the crd rel
+---------------------------------------------------------------------------
+--allNodesOnRF :: SDRS -> Bool
+--allNodesOnRF :: 
 
