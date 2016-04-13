@@ -129,11 +129,11 @@ opNot = "\x0021"
 ---------------------------------------------------------------------------
 
 showSDRSBox :: SDRS -> String
-showSDRSBox (SDRS f _) = showHorizontalLine l boxTopLeft boxTopRight
+showSDRSBox (SDRS f ll) = showHorizontalLine l boxTopLeft boxTopRight
   ++ showContent l vl ++ showHorizontalLine l boxMiddleLeft boxMiddleRight
   ++ showContent l fl ++ showHorizontalLine l boxBottomLeft boxBottomRight
   where vl
-          | not(null dvs) = showDisVars dvs "  "
+          | not(null dvs) = (showDisVars dvs "  ") ++ "   last:" ++ show ll
           | otherwise     = " "
           where dvs = Map.keys f
         fl = showFunction (Map.toList f)
