@@ -226,7 +226,8 @@ sdrsfullal07 = SDRS (Map.fromList [(0, Relation "Elaboration" 1 6),
                                 (3, Segment _al07_3),
                                 (4, Segment _al07_4),
                                 (5, Segment _al07_5),
-                                (6, And (Relation "Elaboration" 2 7) (Relation "Narration" 2 5)),
+                                (6, And (Relation "Elaboration" 2 7)
+                                        (Relation "Narration" 2 5)),
                                 (7, Relation "Narration" 3 4)]) 5
 
 -- the order of declaration is different (does it affect the map of is it implicitly ordered?)

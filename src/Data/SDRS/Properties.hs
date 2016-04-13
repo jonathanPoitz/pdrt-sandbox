@@ -172,26 +172,23 @@ isomorph s1@(SDRS m1 _) s2@(SDRS m2 _) = isomorph' (root s1) (root s2)
 -- conincidentally are then changed again. decouple that from each other. 
 ---------------------------------------------------------------------------
 normalize :: SDRS -> SDRS
-normalize s@(SDRS m l) = SDRS (M.fromList (normalize' (M.assocs normMap) (M.assocs m))) l -- last needs to be updated too
+normalize s@(SDRS m l) = SDRS (M.fromList (normalize' (M.assocs m) normMap)) (normMap M.! l) -- last needs to be updated too
   where build :: [DisVar] -> DisVar -> M.Map DisVar DisVar -> M.Map DisVar DisVar
         build [] _ nm = nm
         build (cur:rest) index nm 
           | ((M.lookup cur g) == Nothing) = M.insert cur index (build rest (index + 1) nm)
           | otherwise                     = M.insert cur index (build (rest `union` (map fst $ g M.! cur)) (index + 1) nm)
         normMap = build (root s) 0 M.empty
-        normalize' :: [(DisVar,DisVar)] -> [(DisVar, SDRSFormula)] -> [(DisVar, SDRSFormula)]
-        normalize' [] m'           = m'
-        normalize' ((f,t):rest) m' = map (normalizeTuple (f,t)) (normalize' rest m')
-        normalizeTuple :: (DisVar, DisVar) -> (DisVar, SDRSFormula) -> (DisVar, SDRSFormula)
-        normalizeTuple (f,t) (dv, sf) = (dv', normalizeSF (f,t) sf)
-          where dv'  = if dv == f then t else dv
-        normalizeSF :: (DisVar, DisVar) -> SDRSFormula -> SDRSFormula
-        normalizeSF _ d@(Segment _)            = d
-        normalizeSF (f,t) (Relation label dv1 dv2) = Relation label dv1' dv2'
-          where dv1' = if dv1 == f then t else dv1
-                dv2' = if dv2 == f then t else dv2
-        normalizeSF (f,t) (And sf1 sf2)        = And (normalizeSF (f,t) sf1) (normalizeSF (f,t) sf2)
-        normalizeSF (f,t) (Not sf1)            = Not (normalizeSF (f,t) sf1)
+        normalize' :: [(DisVar, SDRSFormula)] -> M.Map DisVar DisVar -> [(DisVar, SDRSFormula)]
+        normalize' [] _           = []
+        normalize' (t:rest) nm = (normalizeTuple t nm) : (normalize' rest nm)
+        normalizeTuple :: (DisVar, SDRSFormula) -> M.Map DisVar DisVar -> (DisVar, SDRSFormula)
+        normalizeTuple (dv, sf) nm = (nm M.! dv, normalizeSF sf nm)
+        normalizeSF :: SDRSFormula -> M.Map DisVar DisVar -> SDRSFormula
+        normalizeSF d@(Segment _) _            = d
+        normalizeSF (Relation label dv1 dv2) nm = Relation label (nm M.! dv1) (nm M.! dv2)
+        normalizeSF (And sf1 sf2) nm            = And (normalizeSF sf1 nm) (normalizeSF sf2 nm)
+        normalizeSF (Not sf1) nm                = Not (normalizeSF sf1 nm)
         g = discourseGraph s
 
 ---------------------------------------------------------------------------
