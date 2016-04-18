@@ -170,8 +170,19 @@ discourseGraph1 = Map.fromList [(0,[(1,""),(6,"")]),
 ---------------------------------------------------------------------------
 
 sdrs1 = SDRS (Map.fromList [(0, Relation "Result" 1 2),
-                                    (1, Segment $ drs3),
-                                    (2, Segment $ drs4)]) 0
+                                    (1, Segment drs3),
+                                    (2, Segment drs4)]) 2
+
+-- drs3 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "man") [(DRSRef "x")],
+--                                      Rel (DRSRel "glass") [(DRSRef "y")],
+--                                      Rel (DRSRel "drop") [(DRSRef "x"), (DRSRef "y")]]
+
+-- drs4 = DRS [DRSRef "z"] [Rel (DRSRel "=") [(DRSRef "z"), (DRSRef "y")], 
+--                          Rel (DRSRel "break") [(DRSRef "z")]]
+
+-- exampleDRS6 = stringToDRS "<{x },  {man(x), happy(x), not <{},{sad(x)}> }>"
+
+sdrs1_string = stringToSDRS "<{0:(Result,1,2); 1: <{x,y},{man(x), glass(y), drop(x,y)}>; 2: <{z},{=(z,y), break(z)}>}, 2>"
 
 sdrs2 = SDRS (Map.fromList [(0, Segment $ DRS [] [])]) 0
 

@@ -29,6 +29,7 @@ module Data.DRS.Input.String
 , dropUpToMatchingBracket
 , replaceArrows
 , splitOn
+, parseDRS
 ) where
 
 import Data.Char (isSpace, toLower)

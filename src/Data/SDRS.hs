@@ -21,4 +21,5 @@ import Data.SDRS.DataType as SDRS
 import Data.SDRS.DiscourseGraph as SDRS
 import Data.SDRS.Properties as SDRS
 import Data.SDRS.Show as SDRS 
+import Data.SDRS.Input.String as SDRS
 import Data.SDRS.Structure as SDRS
