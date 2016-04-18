@@ -174,18 +174,18 @@ isomorph s1@(SDRS m1 _) s2@(SDRS m2 _) = isomorph' (root s1) (root s2)
 normalize :: SDRS -> SDRS
 normalize s@(SDRS m l) = SDRS (M.fromList (normalize' (M.assocs m) normMap)) (normMap M.! l) -- last needs to be updated too
   where build :: [DisVar] -> DisVar -> M.Map DisVar DisVar -> M.Map DisVar DisVar
-        build [] _ nm = nm
+        build [] _ nm                     = nm
         build (cur:rest) index nm 
           | ((M.lookup cur g) == Nothing) = M.insert cur index (build rest (index + 1) nm)
           | otherwise                     = M.insert cur index (build (rest `union` (map fst $ g M.! cur)) (index + 1) nm)
         normMap = build (root s) 0 M.empty
         normalize' :: [(DisVar, SDRSFormula)] -> M.Map DisVar DisVar -> [(DisVar, SDRSFormula)]
         normalize' [] _           = []
-        normalize' (t:rest) nm = (normalizeTuple t nm) : (normalize' rest nm)
+        normalize' (t:rest) nm    = (normalizeTuple t nm) : (normalize' rest nm)
         normalizeTuple :: (DisVar, SDRSFormula) -> M.Map DisVar DisVar -> (DisVar, SDRSFormula)
         normalizeTuple (dv, sf) nm = (nm M.! dv, normalizeSF sf nm)
         normalizeSF :: SDRSFormula -> M.Map DisVar DisVar -> SDRSFormula
-        normalizeSF d@(Segment _) _            = d
+        normalizeSF d@(Segment _) _             = d
         normalizeSF (Relation label dv1 dv2) nm = Relation label (nm M.! dv1) (nm M.! dv2)
         normalizeSF (And sf1 sf2) nm            = And (normalizeSF sf1 nm) (normalizeSF sf2 nm)
         normalizeSF (Not sf1) nm                = Not (normalizeSF sf1 nm)

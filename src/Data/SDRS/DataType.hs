@@ -87,7 +87,7 @@ data SDRSFormula =
 
 data SDRS =
   SDRS (M.Map DisVar SDRSFormula) DisVar
-  -- ^ A SDRS (a set of speech act discourse referents, a map assigning
+  -- ^ An SDRS (a set of speech act discourse referents, a map assigning
   -- SDRS formulas to referents and the referent last added to the discourse)
   deriving (Read, Eq)
 
