@@ -56,7 +56,7 @@ parseMap s@(b:_)
           where parseRelation :: String -> SDRSFormula
                 parseRelation [] = error "parseRelation: empty input string" -- what do here?
                 parseRelation s''@(b'':_)
-                  | isAlpha b''  = Relation (splitRel !! 0) (read $ splitRel !! 1) (read $ splitRel !! 2) -- FIX number errors not handled?
+                  | isAlpha b''  = Relation (relationFromLabel (splitRel !! 0)) (read $ splitRel !! 1) (read $ splitRel !! 2) -- FIX number errors not handled?
                   | otherwise    = error ("parseRelation: infelicitous input string " ++ show b'')
                   where splitRel = splitOn ',' s''
 

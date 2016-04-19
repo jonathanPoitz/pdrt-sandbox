@@ -15,7 +15,6 @@ module Data.SDRS.Properties
   sdrsProperDRSs
 , sdrsPureDRSs
 , sdrsAllDRSRefUnique
-, allRelationsValid
 , validLast
 , isomorph
 , normalize
@@ -75,11 +74,12 @@ sdrsAllDRSRefUnique s = universes == nub universes
 
 ---------------------------------------------------------------------------
 -- | Checks, given an 'SDRS', whether all embedded relations are valid in SDRT
+-- CHECK: method redundant now?
 ---------------------------------------------------------------------------
-allRelationsValid :: SDRS -> Bool
-allRelationsValid (SDRS m _) = all isRelation allRelationLabels
-  where allSDRSFormulae = map snd $ M.assocs m
-        allRelationLabels = [ l | Relation l _ _ <- allSDRSFormulae]
+--allRelationsValid :: SDRS -> Bool
+--allRelationsValid (SDRS m _) = all isRelation allRelationLabels
+--  where allSDRSFormulae = map snd $ M.assocs m
+--        allRelationLabels = [ l | Relation l _ _ <- allSDRSFormulae]
 
 ---------------------------------------------------------------------------
 -- | checks whether the discourse unit pointed to by LAST is meaningful, i.e.
@@ -153,8 +153,8 @@ isomorph s1@(SDRS m1 _) s2@(SDRS m2 _) = isomorph' (root s1) (root s2)
         isomorphSF :: SDRSFormula -> SDRSFormula -> Bool
         isomorphSF (Segment d1) (Segment d2) = 
           d1 == d2 -- extend to account for different DisRefs in DRSs
-        isomorphSF (Relation l1 dv1 dv2) (Relation l2 dv3 dv4) = 
-          (labelEq l1 l2) &&
+        isomorphSF (Relation rel1 dv1 dv2) (Relation rel2 dv3 dv4) = 
+          rel1 == rel2 &&
           (m1 M.! dv1) `isomorphSF` (m2 M.! dv3) &&
           (m1 M.! dv2) `isomorphSF` (m2 M.! dv4)
         isomorphSF (And sf1 sf2) (And sf3 sf4) = 
@@ -166,13 +166,12 @@ isomorph s1@(SDRS m1 _) s2@(SDRS m2 _) = isomorph' (root s1) (root s2)
 
 ---------------------------------------------------------------------------
 -- | normalizes the nodes in an SDRS.
--- TODO normalize last label
 -- messes up some things, needs to be debugged
 -- probably b/c of overwriting. one run of map changes values to other values that
 -- conincidentally are then changed again. decouple that from each other. 
 ---------------------------------------------------------------------------
 normalize :: SDRS -> SDRS
-normalize s@(SDRS m l) = SDRS (M.fromList (normalize' (M.assocs m) normMap)) (normMap M.! l) -- last needs to be updated too
+normalize s@(SDRS m l) = SDRS (M.fromList (normalize' (M.assocs m) normMap)) (normMap M.! l)
   where build :: [DisVar] -> DisVar -> M.Map DisVar DisVar -> M.Map DisVar DisVar
         build [] _ nm                     = nm
         build (cur:rest) index nm 
@@ -186,7 +185,7 @@ normalize s@(SDRS m l) = SDRS (M.fromList (normalize' (M.assocs m) normMap)) (no
         normalizeTuple (dv, sf) nm = (nm M.! dv, normalizeSF sf nm)
         normalizeSF :: SDRSFormula -> M.Map DisVar DisVar -> SDRSFormula
         normalizeSF d@(Segment _) _             = d
-        normalizeSF (Relation label dv1 dv2) nm = Relation label (nm M.! dv1) (nm M.! dv2)
+        normalizeSF (Relation rel dv1 dv2) nm = Relation rel (nm M.! dv1) (nm M.! dv2)
         normalizeSF (And sf1 sf2) nm            = And (normalizeSF sf1 nm) (normalizeSF sf2 nm)
         normalizeSF (Not sf1) nm                = Not (normalizeSF sf1 nm)
         g = discourseGraph s

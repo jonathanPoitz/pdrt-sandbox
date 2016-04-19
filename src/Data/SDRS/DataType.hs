@@ -15,16 +15,12 @@ module Data.SDRS.DataType
 (
   SDRS (..)
 , SDRSFormula (..)
+, SDRSRelation (..)
 , DisVar
-, RelName
-, isCrdRelation
-, isSubRelation
-, isRelation
-, isTopicRelation
-, isStrucRelation
-, labelEq
 , DGraph
 , Label
+, RelType (..)
+, relationFromLabel
 , module Data.DRS.DataType
 ) where
 
@@ -59,15 +55,44 @@ import qualified Data.Map as M
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
+-- | A relation in SDRS carries its name, the relation type (Coordinating
+-- vs. Subordinating), a boolean indicating whether it is a structured 
+-- relation, and a boolean indicating whether it imposes a topic constraint
+-- on the discourse
+---------------------------------------------------------------------------
+data SDRSRelation =
+  SDRSRelation { label :: Label
+               , relType :: RelType
+               , isStructured :: Bool
+               , isTopic :: Bool
+               }
+  | NoRelation { label :: Label
+               , relType :: RelType
+               } deriving (Eq, Read)
+
+instance Show SDRSRelation where
+  show r = label r
+
+---------------------------------------------------------------------------
+-- | The type of relation (Crd = Coordinating, Sub = Subordinating or None for outscoping relation)
+---------------------------------------------------------------------------
+data RelType = Crd | Sub | None
+  deriving (Eq, Read)
+
+---------------------------------------------------------------------------
+-- | given a relation name, returns the SDRSRelation with that name
+---------------------------------------------------------------------------
+relationFromLabel :: Label -> SDRSRelation
+relationFromLabel l = if (length outRel > 1) || (length outRel == 0)
+                      then error "Error finding relation"
+                      else outRel !! 0
+  where outRel = filter (\r -> label r == (filter (/=' ') (map toLower l))) relations
+
+---------------------------------------------------------------------------
 -- | Discourse variable denoting a simple or complex speech act discourse  
 -- referent (a label or pointer). 
 ---------------------------------------------------------------------------
 type DisVar = Int
-
----------------------------------------------------------------------------
--- | Name of a rhetorical relation 
----------------------------------------------------------------------------
-type RelName = String
 
 ---------------------------------------------------------------------------
 -- | An SDRS formula
@@ -75,7 +100,7 @@ type RelName = String
 data SDRSFormula =
   Segment DRS
 -- ^ A DRS
-  | Relation RelName DisVar DisVar
+  | Relation SDRSRelation DisVar DisVar
 -- ^ A rhetorical relation between two speech act discourse referents
   | And SDRSFormula SDRSFormula
   | Not SDRSFormula
@@ -84,119 +109,38 @@ data SDRSFormula =
 ---------------------------------------------------------------------------
 -- | Segmented Discourse Representation Structure.
 ---------------------------------------------------------------------------
-
 data SDRS =
   SDRS (M.Map DisVar SDRSFormula) DisVar
   -- ^ An SDRS (a set of speech act discourse referents, a map assigning
   -- SDRS formulas to referents and the referent last added to the discourse)
   deriving (Read, Eq)
 
-
 ---------------------------------------------------------------------------
 -- | DGraph
 ---------------------------------------------------------------------------
-
-type DGraph = M.Map DisVar [(DisVar, Label)]
+type DGraph = M.Map DisVar [(DisVar, SDRSRelation)]
 
 ---------------------------------------------------------------------------
 -- | relation label
 ---------------------------------------------------------------------------
-
 type Label = String
 
 ---------------------------------------------------------------------------
 -- | relation types
 ---------------------------------------------------------------------------
-
---relations :: [Label]
---relations = ["elaboration",
---             "entity_elaboration",
---             "comment",
---             "flashback",
---             "background",
---             "goal",
---             "explanation",
---             "attribution",
---             "narration",
---             "contrast",
---             "result",
---             "parallel",
---             "continuation",
---             "alternation",
---             "conditional"]
-
----------------------------------------------------------------------------
--- | checks if a relation label is a subordinating relation
----------------------------------------------------------------------------
-isSubRelation :: String -> Bool
-isSubRelation label = (filter (/=' ') (map toLower label)) `elem` relations
- where relations = ["elaboration",
-                   "entity_elaboration",
-                   "comment",
-                   "flashback",
-                   "background",
-                   "goal",
-                   "explanation",
-                   "attribution"]
-
----------------------------------------------------------------------------
--- | checks if a relation label is a subordinating relation
----------------------------------------------------------------------------
-isCrdRelation :: String -> Bool
-isCrdRelation label = (filter (/=' ') (map toLower label)) `elem` relations
-  where relations = ["narration",
-                     "contrast",
-                     "result",
-                     "parallel",
-                     "continuation",
-                     "alternation",
-                     "conditional"]
-
----------------------------------------------------------------------------
--- | checks if a relation label is a relation
----------------------------------------------------------------------------
-isRelation :: String -> Bool
-isRelation label = (filter (/=' ') (map toLower label)) `elem` relations
-  where relations = ["narration",
-                     "contrast",
-                     "result",
-                     "parallel",
-                     "continuation",
-                     "alternation",
-                     "conditional",
-                     "elaboration",
-                     "entity_elaboration",
-                     "comment",
-                     "flashback",
-                     "background",
-                     "goal",
-                     "explanation",
-                     "attribution"]
-
----------------------------------------------------------------------------
--- | checks if a relation label is a structural relation, otherwise it is
--- a non-structural relation
----------------------------------------------------------------------------
-isStrucRelation :: String -> Bool
-isStrucRelation label = (filter (/=' ') (map toLower label)) `elem` relations
-  where relations = ["contrast",
-                     "parallel"]
-
----------------------------------------------------------------------------
--- | checks if a relation label imposes a topic constraint, otherwise it does
--- not
----------------------------------------------------------------------------
-isTopicRelation :: String -> Bool
-isTopicRelation label = (filter (/=' ') (map toLower label)) `elem` relations
-  where relations = ["narration",
-                     "continuation"]
-
----------------------------------------------------------------------------
--- | a convenience method for equality of labels, including preprocessing
--- (trimming and lowercasing)
----------------------------------------------------------------------------
-labelEq :: String -> String -> Bool
-labelEq label1 label2 = (filter (/=' ') (map toLower label1)) == (filter (/=' ') (map toLower label2))
-
-
-
+relations :: [SDRSRelation]
+relations = [SDRSRelation "elaboration" Sub False False,
+             SDRSRelation "entity_elaboration" Sub False False,
+             SDRSRelation "comment" Sub False False,
+             SDRSRelation "flashback" Sub False False,
+             SDRSRelation "background" Sub False False,
+             SDRSRelation "goal" Sub False False,
+             SDRSRelation "explanation" Sub False False,
+             SDRSRelation "attribution" Sub False False,
+             SDRSRelation "narration" Crd False True,
+             SDRSRelation "contrast" Crd True False,
+             SDRSRelation "result" Crd False False,
+             SDRSRelation "parallel" Crd True False,
+             SDRSRelation "continuation" Crd False True,
+             SDRSRelation "alternation" Crd False False,
+             SDRSRelation "conditional" Crd False False]

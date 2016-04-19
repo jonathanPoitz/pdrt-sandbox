@@ -23,8 +23,8 @@ import Data.SDRS.Structure (relLabels, lookupKey)
 ---------------------------------------------------------------------------
 -- | Build new SDRS using two DRSs and their relation
 ---------------------------------------------------------------------------
-buildFromDRSs :: DRS -> Label -> DRS -> SDRS
-buildFromDRSs d1 label d2 = SDRS (M.fromList [(0, Relation label 1 2),
+buildFromDRSs :: SDRSRelation -> DRS -> DRS -> SDRS
+buildFromDRSs rel d1 d2 = SDRS (M.fromList [(0, Relation rel 1 2),
                                               (1, Segment d1),
                                               (2, Segment d2)]) 2
 
@@ -33,22 +33,22 @@ buildFromDRSs d1 label d2 = SDRS (M.fromList [(0, Relation label 1 2),
 -- If the argument that is to be attached to in the set of edges is already part
 -- of the SDRS, conjunct the newly created relation to the relations at this level.
 ---------------------------------------------------------------------------
-addDRS :: SDRS -> DRS -> [(DisVar, Label)] -> SDRS
+addDRS :: SDRS -> DRS -> [(DisVar, SDRSRelation)] -> SDRS
 addDRS s@(SDRS m _) d edges = SDRS updatedMap updatedLast
   where updatedLast = (fst $ M.findMax m) + 1
         updatedMap = M.insert updatedLast (Segment d) (updateRelations edges m updatedLast)
-        updateRelations :: [(DisVar, Label)] -> M.Map DisVar SDRSFormula -> DisVar -> M.Map DisVar SDRSFormula
+        updateRelations :: [(DisVar, SDRSRelation)] -> M.Map DisVar SDRSFormula -> DisVar -> M.Map DisVar SDRSFormula
         updateRelations [] m' _                      = m'
-        updateRelations ((dv, label):rest) m' maxKey 
-          | dv `elem` relLabels (M.elems m') && (not $ isTopicRelation label) = M.adjust (And (Relation label dv updatedLast)) (lookupKey s dv) m'
-          | isCrdRelation label = M.map replaceByComplexNode mapWithNewNode -- iterate through map and find all relations where dv is second argument. replace this with M.findMax. todo: recurse somewhere
+        updateRelations ((dv, rel):rest) m' maxKey 
+          | dv `elem` relLabels (M.elems m') && (not $ isTopic rel) = M.adjust (And (Relation rel dv updatedLast)) (lookupKey s dv) m'
+          | relType rel == Crd = M.map replaceByComplexNode mapWithNewNode -- iterate through map and find all relations where dv is second argument. replace this with M.findMax. todo: recurse somewhere
           | otherwise = M.insert (maxKey + 1) -- only do that if not crd! in what cases will case here happen even?
-                                 (Relation label dv updatedLast)
-                                 (updateRelations rest m' (maxKey + 1))
-          where mapWithNewNode = M.insert (maxKey + 1) (Relation label dv updatedLast) m'
+                                 (Relation rel dv updatedLast)
+                                 (updateRelations rest m' (maxKey + 1)) 
+          where mapWithNewNode = M.insert (maxKey + 1) (Relation rel dv updatedLast) m'
                 replaceByComplexNode :: SDRSFormula -> SDRSFormula
-                replaceByComplexNode r@(Relation l dv' dv'')
-                  | dv'' == dv = Relation l dv' (maxKey + 1)
+                replaceByComplexNode r@(Relation rel' dv' dv'')
+                  | dv'' == dv = Relation rel' dv' (maxKey + 1)
                   | otherwise = r
                 replaceByComplexNode sf = sf
 

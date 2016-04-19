@@ -46,8 +46,8 @@ import Data.SDRS.Structure (relLabels)
 ---------------------------------------------------------------------------
 discourseGraph :: SDRS -> DGraph
 discourseGraph (SDRS m _) = M.foldlWithKey build M.empty m
-  where build :: (M.Map DisVar [(DisVar, Label)]) -> DisVar -> SDRSFormula -> M.Map DisVar [(DisVar, Label)]
-        build acc dv0 (Relation label dv1 dv2) = M.insertWith (++) dv1 [(dv2,label)] (M.insertWith (++) dv0 [(dv1,""),(dv2,"")] acc)
+  where build :: (M.Map DisVar [(DisVar, SDRSRelation)]) -> DisVar -> SDRSFormula -> M.Map DisVar [(DisVar, SDRSRelation)]
+        build acc dv0 (Relation rel dv1 dv2) = M.insertWith (++) dv1 [(dv2,rel)] (M.insertWith (++) dv0 [(dv1,NoRelation [] None),(dv2,NoRelation [] None)] acc)
         build acc dv0 (And sf1 sf2)            = build (build acc dv0 sf1) dv0 sf2
         build acc dv0 (Not sf1)                = build acc dv0 sf1
         build acc _ _                          = acc
@@ -67,7 +67,7 @@ accessibleNodes s dv1 = walkEdges [dv1]
         walkEdges (k:rest) = (walkEdges rest) `union` walkEdges (keys k) `union` (keys k)
         keys :: DisVar -> [DisVar]
         keys dv2 = nub (M.keys (M.filter (findKey dv2) g))
-        findKey :: DisVar -> [(DisVar, Label)] -> Bool
+        findKey :: DisVar -> [(DisVar, SDRSRelation)] -> Bool
         findKey _ []  = False
         findKey dv ((dv',_):rest)
           | dv' == dv = True
@@ -86,12 +86,12 @@ rf s@(SDRS _ l) = walkEdges [l]
         walkEdges (v:rest) = (walkEdges rest) `union` walkEdges (keys v) `union` (keys v) `union` [v]
         keys :: DisVar -> [DisVar]
         keys dv = nub (M.keys (M.filterWithKey (isOnRF dv) g))
-        isOnRF :: DisVar -> DisVar -> [(DisVar, Label)] -> Bool
+        isOnRF :: DisVar -> DisVar -> [(DisVar, SDRSRelation)] -> Bool
         isOnRF _ _ []                                = False
-        isOnRF dv key ((dv',label):rest)
-          | dv' == dv && (isStrucRelation label ||
-                          not (isCrdRelation label)) = True
-          | otherwise                                = isOnRF dv key rest
+        isOnRF dv key ((dv',rel):rest)
+          | (dv' == dv && (isStructured rel)) ||                                 -- FIX, here we're only working with a label, how do we check the label's structuredness etc?
+                          (relType rel == Sub) = True
+          | otherwise                          = isOnRF dv key rest
 
 ---------------------------------------------------------------------------
 -- | Return the root node of the discourse graph. If the graph doesn't have

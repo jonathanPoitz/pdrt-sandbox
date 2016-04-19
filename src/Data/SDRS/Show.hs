@@ -58,14 +58,16 @@ instance {-# OVERLAPPING #-} Show [SDRSFormula] where
 -- DEBUG // DEBUG // DEBUG --
 --
 ---------------------------------------------------------------------------
--- | Typeclass for 'showablSDRS's, that are unresolved.
+-- | Typeclass for 'showableSDRS's, that are unresolved.
 ---------------------------------------------------------------------------
 class ShowableSDRS s where
   resolve :: s -> SDRS
 
 -- | Derive appropriate instances of 'ShowableSDRS'.
-instance ShowableSDRS SDRS where
-  resolve s = s
+-- instance ShowableSDRS SDRS where
+--   resolve s = s
+-- instance (ShowableSDRS s) => ShowableSDRS (DRS -> s) where
+--   resolve s
 
 -- | Derive appropriate instances of 'Show' for 'ShowableSDRS's.
 
@@ -125,7 +127,7 @@ opNot = "\x0021"
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
--- | Shows a 'SDRS' in 'Boxes' notation.
+-- | Shows an 'SDRS' in 'Boxes' notation.
 ---------------------------------------------------------------------------
 
 showSDRSBox :: SDRS -> String
@@ -140,7 +142,7 @@ showSDRSBox (SDRS f ll) = showHorizontalLine l boxTopLeft boxTopRight
         l = 4 + maximum (map length (lines vl) `union` map length (lines fl))
 
 ---------------------------------------------------------------------------
--- **  Showing the subparts of a SDRS
+-- **  Showing the subparts of an SDRS
 ---------------------------------------------------------------------------
 
 showFunction :: [(DisVar,SDRSFormula)] -> String
@@ -157,7 +159,7 @@ showFunction f = foldr ((++) . showFunc) "" f
 
 showFormula :: SDRSFormula -> String
 showFormula (Segment d)          = showDRS (DRS.Boxes d)
-showFormula (Relation r dv1 dv2) = r ++ "(" ++ show dv1 ++ "," ++ show dv2 ++")\n"
+showFormula (Relation r dv1 dv2) = label r ++ "(" ++ show dv1 ++ "," ++ show dv2 ++")\n"
 showFormula (And f1 f2)          = showConjunction f1 f2 
 showFormula (Not f1)             = showNegation f1
 
@@ -184,7 +186,7 @@ showNegation f
         mpos = modifierPos form
 
 ---------------------------------------------------------------------------
--- | Shows the discourse variables @dvs$ of a 'SDRS', using 'String' @d@ 
+-- | Shows the discourse variables @dvs$ of an 'SDRS', using 'String' @d@ 
 -- as a delimiter between referents.
 ---------------------------------------------------------------------------
 showDisVars :: [DisVar] -> String -> String
