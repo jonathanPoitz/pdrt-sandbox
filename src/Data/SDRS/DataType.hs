@@ -66,9 +66,7 @@ data SDRSRelation =
                , isStructured :: Bool
                , isTopic :: Bool
                }
-  | NoRelation { label :: Label
-               , relType :: RelType
-               } deriving (Eq, Read)
+  | Outscopes deriving (Eq, Read)
 
 instance Show SDRSRelation where
   show r = label r
@@ -76,7 +74,7 @@ instance Show SDRSRelation where
 ---------------------------------------------------------------------------
 -- | The type of relation (Crd = Coordinating, Sub = Subordinating or None for outscoping relation)
 ---------------------------------------------------------------------------
-data RelType = Crd | Sub | None
+data RelType = Crd | Sub
   deriving (Eq, Read)
 
 ---------------------------------------------------------------------------
