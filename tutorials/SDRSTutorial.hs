@@ -171,7 +171,7 @@ discourseGraph1 = Map.fromList [(0,[(1,""),(6,"")]),
 
 sdrs1 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Result") 1 2),
                                     (1, Segment drs3),
-                                    (2, Segment drs4)]) 2
+                                    (2, Segment drs4)]) 3
 
 -- drs3 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "man") [(DRSRef "x")],
 --                                      Rel (DRSRel "glass") [(DRSRef "y")],

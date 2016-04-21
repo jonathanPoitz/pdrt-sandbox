@@ -77,6 +77,8 @@ accessibleNodes s dv1 = walkEdges [dv1]
 -- | computes the right frontier of an 'SDRS', also in order
 -- TODO might be simplified. currently a lot of steps, maybe rec can be simplified.
 -- TODO debug structural checks -> does this work in every situation?
+-- If the last node is wrong or even an unvalid pointer, this function will
+-- return a wrong rf. FIX, walk from root instead to avoid that?
 ---------------------------------------------------------------------------
 rf :: SDRS -> [DisVar]
 rf s@(SDRS _ l) = walkEdges [l]

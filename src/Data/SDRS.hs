@@ -19,6 +19,7 @@ import Data.SDRS.Binding as SDRS
 import Data.SDRS.Composition as SDRS
 import Data.SDRS.DataType as SDRS
 import Data.SDRS.DiscourseGraph as SDRS
+import Data.SDRS.LambdaCalculus as SDRS
 import Data.SDRS.Properties as SDRS
 import Data.SDRS.Show as SDRS 
 import Data.SDRS.Input.String as SDRS

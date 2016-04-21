@@ -3,7 +3,7 @@ Module      :  Data.SDRS.Properties
 Copyright   :  (c) Jonathan Poitz, Harm Brouwer and Noortje Venhuizen
 License     :  Apache-2.0
 
-Maintainer  :  jonathanpoitz@gmail.com me@hbrouwer.eu, n.j.venhuizen@rug.nl
+Maintainer  :  jonathanpoitz@gmail.com, me@hbrouwer.eu, n.j.venhuizen@rug.nl
 Stability   :  provisional
 Portability :  portable
 
@@ -17,7 +17,6 @@ module Data.SDRS.Properties
 , sdrsAllDRSRefUnique
 , validLast
 , isomorph
-, normalize
 , build' --debugging
 ) where
 
@@ -163,32 +162,6 @@ isomorph s1@(SDRS m1 _) s2@(SDRS m2 _) = isomorph' (root s1) (root s2)
         isomorphSF (Not sf1) (Not sf2) =
           sf1 `isomorphSF` sf2
         isomorphSF _ _ = False
-
----------------------------------------------------------------------------
--- | normalizes the nodes in an SDRS.
--- messes up some things, needs to be debugged
--- probably b/c of overwriting. one run of map changes values to other values that
--- conincidentally are then changed again. decouple that from each other. 
----------------------------------------------------------------------------
-normalize :: SDRS -> SDRS
-normalize s@(SDRS m l) = SDRS (M.fromList (normalize' (M.assocs m) normMap)) (normMap M.! l)
-  where build :: [DisVar] -> DisVar -> M.Map DisVar DisVar -> M.Map DisVar DisVar
-        build [] _ nm                     = nm
-        build (cur:rest) index nm 
-          | ((M.lookup cur g) == Nothing) = M.insert cur index (build rest (index + 1) nm)
-          | otherwise                     = M.insert cur index (build (rest `union` (map fst $ g M.! cur)) (index + 1) nm)
-        normMap = build (root s) 0 M.empty
-        normalize' :: [(DisVar, SDRSFormula)] -> M.Map DisVar DisVar -> [(DisVar, SDRSFormula)]
-        normalize' [] _           = []
-        normalize' (t:rest) nm    = (normalizeTuple t nm) : (normalize' rest nm)
-        normalizeTuple :: (DisVar, SDRSFormula) -> M.Map DisVar DisVar -> (DisVar, SDRSFormula)
-        normalizeTuple (dv, sf) nm = (nm M.! dv, normalizeSF sf nm)
-        normalizeSF :: SDRSFormula -> M.Map DisVar DisVar -> SDRSFormula
-        normalizeSF d@(Segment _) _             = d
-        normalizeSF (Relation rel dv1 dv2) nm = Relation rel (nm M.! dv1) (nm M.! dv2)
-        normalizeSF (And sf1 sf2) nm            = And (normalizeSF sf1 nm) (normalizeSF sf2 nm)
-        normalizeSF (Not sf1) nm                = Not (normalizeSF sf1 nm)
-        g = discourseGraph s
 
 ---------------------------------------------------------------------------
 -- | for debugging
