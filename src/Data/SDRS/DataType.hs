@@ -17,7 +17,6 @@ module Data.SDRS.DataType
 , SDRSFormula (..)
 , SDRSRelation (..)
 , DisVar
-, DGraph
 , Label
 , RelType (..)
 , relationFromLabel
@@ -69,7 +68,8 @@ data SDRSRelation =
   | Outscopes deriving (Eq, Read)
 
 instance Show SDRSRelation where
-  show r = label r
+  show r@(SDRSRelation {}) = label r
+  show Outscopes = ""
 
 ---------------------------------------------------------------------------
 -- | The type of relation (Crd = Coordinating, Sub = Subordinating or None for outscoping relation)
@@ -81,10 +81,10 @@ data RelType = Crd | Sub
 -- | given a relation name, returns the SDRSRelation with that name
 ---------------------------------------------------------------------------
 relationFromLabel :: Label -> SDRSRelation
-relationFromLabel l = if (length outRel > 1) || (length outRel == 0)
+relationFromLabel l = if (length outRels > 1) || (length outRels == 0)
                       then error "Error finding relation"
-                      else outRel !! 0
-  where outRel = filter (\r -> label r == (filter (/=' ') (map toLower l))) relations
+                      else outRels !! 0
+  where outRels = filter (\r -> show r == (filter (/=' ') (map toLower l))) relations
 
 ---------------------------------------------------------------------------
 -- | Discourse variable denoting a simple or complex speech act discourse  
@@ -114,11 +114,6 @@ data SDRS =
   deriving (Read, Eq)
 
 ---------------------------------------------------------------------------
--- | DGraph
----------------------------------------------------------------------------
-type DGraph = M.Map DisVar [(DisVar, SDRSRelation)]
-
----------------------------------------------------------------------------
 -- | relation label
 ---------------------------------------------------------------------------
 type Label = String
@@ -141,4 +136,5 @@ relations = [SDRSRelation "elaboration" Sub False False,
              SDRSRelation "parallel" Crd True False,
              SDRSRelation "continuation" Crd False True,
              SDRSRelation "alternation" Crd False False,
-             SDRSRelation "conditional" Crd False False]
+             SDRSRelation "conditional" Crd False False,
+             Outscopes]

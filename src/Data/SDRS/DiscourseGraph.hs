@@ -41,6 +41,11 @@ import Data.SDRS.Structure (relLabels)
 
 
 ---------------------------------------------------------------------------
+-- | DGraph
+---------------------------------------------------------------------------
+type DGraph = M.Map DisVar [(DisVar, SDRSRelation)]
+
+---------------------------------------------------------------------------
 -- | Given an SDRS, build a labeled graph structure, consisting of a tuple
 -- of the graph itself and the last node
 ---------------------------------------------------------------------------

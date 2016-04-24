@@ -158,12 +158,12 @@ recsf4 = Not (Not (Not $ Relation (relationFromLabel "Explanation") 2 4))
 --             ("sdrs1", sdrs1),
 --             ("sdrs2", sdrs2)]
 
-discourseGraph1 = Map.fromList [(0,[(1,""),(6,"")]),
-                           (1,[(6,"Elaboration")]),
-                           (2,[(5,"Narration"),(7,"Elaboration")]),
-                           (3,[(4,"Narration")]),
-                           (6,[(2,""),(5,""),(7,"")]),
-                           (7,[(3,""),(4,"")])] :: Map.Map DisVar [(DisVar, Label)]
+discourseGraph1 = Map.fromList [(0,[(1,Outscopes),(6,Outscopes)]),
+                           (1,[(6,relationFromLabel "Elaboration")]),
+                           (2,[(5,relationFromLabel "Narration"),(7,relationFromLabel "Elaboration")]),
+                           (3,[(4,relationFromLabel "Narration")]),
+                           (6,[(2,Outscopes),(5,Outscopes),(7,Outscopes)]),
+                           (7,[(3,Outscopes),(4,Outscopes)])] :: Map.Map DisVar [(DisVar, SDRSRelation)]
 
 ---------------------------------------------------------------------------
 -- | SDRSs
@@ -237,8 +237,8 @@ sdrsfullal07 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration"
                                 (3, Segment _al07_3),
                                 (4, Segment _al07_4),
                                 (5, Segment _al07_5),
-                                (6, And (Relation (relationFromLabel "Elaboration") 2 7)
-                                        (Relation (relationFromLabel "Narration") 2 5)),
+                                (6, And (Relation (relationFromLabel "Narration") 2 5)
+                                        (Relation (relationFromLabel "Explanation") 2 7)),
                                 (7, Relation (relationFromLabel "Narration") 3 4)]) 5
 
 -- the order of declaration is different (does it affect the map of is it implicitly ordered?)
@@ -247,11 +247,12 @@ sdrsfullal07 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration"
 sdrsfullal07_iso = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
                                 (20, Segment _al07_2),
                                 (1, Segment _al07_1),
-                                (6, And (Relation (relationFromLabel "Narration") 20 5) (Relation (relationFromLabel "Explanation") 20 8)),
+                                (6, And (Relation (relationFromLabel "Narration") 20 49)
+                                        (Relation (relationFromLabel "Explanation") 20 8)),
                                 (3, Segment _al07_3),
                                 (4, Segment _al07_4),
-                                (5, Segment _al07_5),
-                                (8, Relation (relationFromLabel "Narration") 3 4)]) 5
+                                (49, Segment _al07_5),
+                                (8, Relation (relationFromLabel "Narration") 3 4)]) 49
 
 sdrsfullal07_to6_comp = addDRS sdrsfullal07 _al07_6 [(5, (relationFromLabel "Elaboration"))]
 
