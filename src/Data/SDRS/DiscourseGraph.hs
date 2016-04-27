@@ -15,6 +15,7 @@ module Data.SDRS.DiscourseGraph
   discourseGraph
 , accessibleNodes
 , rf
+, immediateOutscopes
 , Label
 , DGraph
 , root
@@ -53,6 +54,14 @@ discourseGraph :: SDRS -> DGraph
 discourseGraph (SDRS m _) = M.foldlWithKey build M.empty m
   where build :: (M.Map DisVar [(DisVar, SDRSRelation)]) -> DisVar -> SDRSFormula -> M.Map DisVar [(DisVar, SDRSRelation)]
         build acc dv0 (Relation rel dv1 dv2) = M.insertWith (++) dv1 [(dv2,rel)] (M.insertWith (union) dv0 [(dv1,Outscopes),(dv2,Outscopes)] acc)
+        build acc dv0 (And sf1 sf2)            = build (build acc dv0 sf1) dv0 sf2
+        build acc dv0 (Not sf1)                = build acc dv0 sf1
+        build acc _ _                          = acc
+
+immediateOutscopes :: SDRS -> M.Map DisVar [DisVar]
+immediateOutscopes (SDRS m _) = M.foldlWithKey build M.empty m
+  where build :: (M.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> M.Map DisVar [DisVar]
+        build acc dv0 (Relation _ dv1 dv2) = M.insertWith (union) dv0 [dv1,dv2] acc
         build acc dv0 (And sf1 sf2)            = build (build acc dv0 sf1) dv0 sf2
         build acc dv0 (Not sf1)                = build acc dv0 sf1
         build acc _ _                          = acc
@@ -102,7 +111,6 @@ rf s@(SDRS _ l) = walkEdges [l]
           | dv == dv' && ((isStructured rel) ||                                 -- FIX, here we're only working with a label, how do we check the label's structuredness etc?
                           (relType rel == Sub)) = True
           | otherwise                           = isOnRF dv key rest
-
 
 ---------------------------------------------------------------------------
 -- | Return the root node of the discourse graph. If the graph doesn't have
