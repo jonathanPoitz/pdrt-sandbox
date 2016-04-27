@@ -62,7 +62,7 @@ immediateOutscopes :: SDRS -> M.Map DisVar [DisVar]
 immediateOutscopes (SDRS m _) = M.foldlWithKey build M.empty m
   where build :: (M.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> M.Map DisVar [DisVar]
         build acc dv0 (Relation _ dv1 dv2) = M.insertWith (union) dv0 [dv1,dv2] acc
-        build acc dv0 (And sf1 sf2)            = build (build acc dv0 sf1) dv0 sf2
+        build acc dv0 (And sf1 sf2)            = build (build acc dv0 sf2) dv0 sf1
         build acc dv0 (Not sf1)                = build acc dv0 sf1
         build acc _ _                          = acc
 

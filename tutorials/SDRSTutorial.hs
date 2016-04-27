@@ -231,15 +231,27 @@ sdrsfullal07_to4 = SDRS (Map.fromList [(0, And (Relation (relationFromLabel "Ela
                                        (4, Segment _al07_4),
                                        (7, Relation (relationFromLabel "Narration") 3 4)]) 4
 
+sdrsfullal07_to8 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
+                                   (1, Segment _al07_1),
+                                   (2, Segment _al07_2),
+                                   (3, Segment _al07_3),
+                                   (4, Segment _al07_4),
+                                   (5, Segment _al07_5),
+                                   (8, Segment _al07_6),
+                                   (6, And (Relation (relationFromLabel "Narration") 2 5)
+                                       (And (Relation (relationFromLabel "Explanation") 2 7)
+                                       (Relation (relationFromLabel "Elaboration") 5 8))),
+                                   (7, Relation (relationFromLabel "Narration") 3 4)]) 8
+
 sdrsfullal07 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
-                                (1, Segment _al07_1),
-                                (2, Segment _al07_2),
-                                (3, Segment _al07_3),
-                                (4, Segment _al07_4),
-                                (5, Segment _al07_5),
-                                (6, And (Relation (relationFromLabel "Narration") 2 5)
-                                        (Relation (relationFromLabel "Explanation") 2 7)),
-                                (7, Relation (relationFromLabel "Narration") 3 4)]) 5
+                                   (1, Segment _al07_1),
+                                   (2, Segment _al07_2),
+                                   (3, Segment _al07_3),
+                                   (4, Segment _al07_4),
+                                   (5, Segment _al07_5),
+                                   (6, And (Relation (relationFromLabel "Narration") 2 5)
+                                           (Relation (relationFromLabel "Explanation") 2 7)),
+                                   (7, Relation (relationFromLabel "Narration") 3 4)]) 5
 
 -- the order of declaration is different (does it affect the map of is it implicitly ordered?)
 -- the labels are different and have holes
