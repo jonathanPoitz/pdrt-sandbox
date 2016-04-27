@@ -60,24 +60,3 @@ normalize s = sdrsAlphaConvert s normMap
         g = discourseGraph s
 
 
----------------------------------------------------------------------------
--- | Given two 'SDRS's, @s1@ and @s2@, builds up the alpha conversion map
--- from the 'DisVar's of @s1@ to its possible counterparts in @s2@.
----------------------------------------------------------------------------
---buildConversionMap :: SDRS -> SDRS -> M.Map DisVar DisVar
---buildConversionMap s1@(SDRS m1 l1) s2@(SDRS m2 l2) = convMap
---  where convMap = build g1 g2
---        g1 = discourseGraph s1
---        g2 = discourseGraph s2
---        build :: M.Map DisVarc
-
--- two SDRS are structurally struc_isomorph if
--- -- build up conversion map from sdrs1 to 2
--- -- 
-
--- 2 sdrss are not structurally isomorphic if:
--- maps have different number of entries
--- 
-
-
-

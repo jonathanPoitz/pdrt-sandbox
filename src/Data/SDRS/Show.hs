@@ -90,7 +90,7 @@ instance (ShowableSDRS s) => Show (SDRSNotation s) where
   show (Debug s)  = '\n' : showSDRS (Debug  (resolve s))
 
 ---------------------------------------------------------------------------
--- | Shows a 'SDRS'.
+-- | Shows an 'SDRS'.
 ---------------------------------------------------------------------------
 showSDRS :: SDRSNotation SDRS -> String
 showSDRS n = 
@@ -101,7 +101,7 @@ showSDRS n =
     (Debug s)  -> showSDRSBox s -- showSDRSDebug s ++ "\n"
 
 ---------------------------------------------------------------------------
--- | Prints a 'SDRS'.
+-- | Prints an 'SDRS'.
 ---------------------------------------------------------------------------
 printSDRS :: SDRS -> IO ()
 printSDRS s = putStrLn $ '\n' : showSDRS (Boxes s)

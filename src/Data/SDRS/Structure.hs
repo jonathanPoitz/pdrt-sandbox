@@ -19,6 +19,8 @@ module Data.SDRS.Structure
 , relLabels
 , drss
 , lookupKey
+, sdrsMap
+, sdrsLast
 ) where
 
 import Data.SDRS.DataType
@@ -27,6 +29,18 @@ import qualified Data.Map as M
 ---------------------------------------------------------------------------
 -- * Exported
 ---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+-- | Returns the map of the 'SDRS'.
+---------------------------------------------------------------------------
+sdrsMap :: SDRS -> M.Map DisVar SDRSFormula
+sdrsMap (SDRS m _) = m
+
+---------------------------------------------------------------------------
+-- | Returns the last pointer of the 'SDRS'.
+---------------------------------------------------------------------------
+sdrsLast :: SDRS -> DisVar
+sdrsLast (SDRS _ l) = l
 
 ---------------------------------------------------------------------------
 -- | Returns the set of discourse units

@@ -1,7 +1,5 @@
 -- This is a tutorial for creating and manipulating SDRSs with PDRT-SANDBOX.
 
---map (\(x,y) -> (x, hasOnlyFOLDRSs y)) testSDRSs
-
 import qualified Data.Map as Map
 import Data.SDRS
 
@@ -189,7 +187,7 @@ sdrs1 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Result") 1 2),
 
 -- exampleDRS6 = stringToDRS "<{x },  {man(x), happy(x), not <{},{sad(x)}> }>"
 
--- sdrs1_string = stringToSDRS "<{0:(Result,1,2); 1: <{x,y},{man(x), glass(y), drop(x,y)}>; 2: <{z},{=(z,y), break(z)}>}, 2>"
+sdrs1_string = stringToSDRS "<{0:(Result,1,2) & (Result,2,3); 1: <{x,y},{man(x), glass(y), drop(x,y)}>; 2: <{z},{=(z,y), break(z)}>, 3: <{x',z'},{=(x',x), =(z',z), remove(x',z')}>}, 3>"
 
 sdrs2 = SDRS (Map.fromList [(0, Segment $ DRS [] [])]) 0
 
@@ -229,7 +227,7 @@ sdrsfullal07_to3 = SDRS (Map.fromList [(0, And (Relation (relationFromLabel "Ela
                                 (2, Segment _al07_2),
                                 (3, Segment _al07_3)]) 3
 
-sdrsfullal07_to4_comp = addDRS sdrsfullal07_to3 _al07_4 [(3, (relationFromLabel "Narration"))]
+--sdrsfullal07_to4_comp = addDRS sdrsfullal07_to3 _al07_4 [(3, (relationFromLabel "Narration"))]
 
 sdrsfullal07_to4 = SDRS (Map.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 7)),
                                        (1, Segment _al07_1),
@@ -273,9 +271,9 @@ sdrsfullal07_iso = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaborat
                                 (49, Segment _al07_5),
                                 (8, Relation (relationFromLabel "Narration") 3 4)]) 49
 
-sdrsfullal07_to6_comp = addDRS sdrsfullal07 _al07_6 [(5, (relationFromLabel "Elaboration"))]
+--sdrsfullal07_to6_comp = addDRS sdrsfullal07 _al07_6 [(5, (relationFromLabel "Elaboration"))]
 
-sdrsfullal07_to6_comp_2 = addDRS sdrsfullal07 _al07_6 [(4, (relationFromLabel "Narration"))]
+--sdrsfullal07_to6_comp_2 = addDRS sdrsfullal07 _al07_6 [(4, (relationFromLabel "Narration"))]
 
 sdrsneg1 = SDRS (Map.fromList [(0, Not (Relation (relationFromLabel "Explanation") 1 2)),
                                 (1, Segment _neg_1),
@@ -344,3 +342,13 @@ problast2 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Commentary") 1 
                                             (2, Segment drs0),
                                             (3, Segment drs0),
                                             (4, Segment drs0)]) 1
+
+root_sdrsfullal07 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
+                                 (1, Segment _al07_1),
+                                 (2, Segment _al07_2),
+                                 (3, Segment _al07_3),
+                                 (4, Segment _al07_4),
+                                 (5, Segment _al07_5),
+                                 (6, Relation (relationFromLabel "Narration") 2 5),
+                                 (7, Relation (relationFromLabel "Narration") 3 4)]) 5
+

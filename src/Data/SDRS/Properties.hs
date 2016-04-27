@@ -16,7 +16,7 @@ module Data.SDRS.Properties
 , sdrsPureDRSs
 , sdrsAllDRSRefUnique
 , validLast
-, isomorph
+, struc_isomorph
 , struc_isomorph2
 , testBuild
 ) where
@@ -175,47 +175,6 @@ testBuild s1 s2 = build' (zip (root s1) (repeat Outscopes)) (zip (root s2) (repe
         build' _ _ cm = cm -- if one SDRS is finished, return the map?  
         g1 = discourseGraph s1
         g2 = discourseGraph s2
-
----------------------------------------------------------------------------
--- current problem is that the order of outscoped SDRSFormula (2 5 2 7 vs. 20 8 20 5) clashes.
----------------------------------------------------------------------------
-
---struc_isomorph :: SDRS -> SDRS -> [String]
---struc_isomorph s1@(SDRS m1 _) s2@(SDRS m2 _) = isomorph' (root s1) (root s2)
---  where g1 = discourseGraph s1
---        g2 = discourseGraph s2
---        isomorph' :: [DisVar] -> [DisVar] -> [String]
---        isomorph' (cur1:rest1) (cur2:rest2)
---          | ((M.lookup cur1 g1) == Nothing) || -- || or &&? 
---            ((M.lookup cur2 g2) == Nothing) = (show cur1 ++ show cur2 ++ show ((m1 M.! cur1) `isomorphSF` (m2 M.! cur2))) : (isomorph' rest1 rest2)
---          | otherwise = (show cur1 ++ show cur2 ++ show ((m1 M.! cur1) `isomorphSF` (m2 M.! cur2))) :
---                        (isomorph' (map fst $ g1 M.! cur1) (map fst $ g2 M.! cur2)) ++
---                        (isomorph' rest1 rest2)
---        isomorph' [] []                     = [show True]
---        isomorph' _ []                      = [show False]
---        isomorph' [] _                      = [show False]
---        isomorphSF :: SDRSFormula -> SDRSFormula -> Bool
---        isomorphSF (Segment d1) (Segment d2) = 
---          d1 == d2 -- extend to account for different DisRefs in DRSs
---        isomorphSF (Relation rel1 dv1 dv2) (Relation rel2 dv3 dv4) = 
---          rel1 == rel2 &&
---          (m1 M.! dv1) `isomorphSF` (m2 M.! dv3) &&
---          (m1 M.! dv2) `isomorphSF` (m2 M.! dv4)
---        isomorphSF (And sf1 sf2) (And sf3 sf4) = 
---          (sf1 `isomorphSF` sf3 && sf2 `isomorphSF` sf4) ||
---          (sf1 `isomorphSF` sf4 && sf2 `isomorphSF` sf3) -- TODO account for associativity (see function comment on top)
---        isomorphSF (Not sf1) (Not sf2) =
---          sf1 `isomorphSF` sf2
---        isomorphSF _ _ = False
-
----------------------------------------------------------------------------
--- | for debugging
----------------------------------------------------------------------------
--- build' :: DGraph -> [DisVar] -> DisVar -> M.Map DisVar DisVar -> M.Map DisVar DisVar
--- build' _ [] _ nm = nm
--- build' g (cur:rest) index nm 
---   | ((M.lookup cur g) == Nothing) = M.insert cur index (build' g rest (index + 1) nm)
---   | otherwise                     = M.insert cur index (build' g (rest `union` (map fst $ g M.! cur)) (index + 1) nm)
 
 ---------------------------------------------------------------------------
 -- | Checks whether all Segments are attached to a node that's on the RF of

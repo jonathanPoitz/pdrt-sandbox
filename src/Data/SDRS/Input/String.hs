@@ -42,7 +42,7 @@ parseMap s@(b:_)
         parseTuple t = (parseDV $ splitTuple !! 0, parseSDRSFormula $ splitTuple !! 1)
           where splitTuple = splitOn ':' t
         parseDV :: String -> DisVar
-        parseDV [] = -1 -- FIX what should I do here
+        parseDV [] = error "infelicitous input string"
         parseDV s' 
           | all isDigit s' = read s' -- FIX error handling if it's not a number?
           | otherwise      = error ("parseDV: infelicitous input string " ++ show s' ++ "at global string " ++ s)
