@@ -168,10 +168,17 @@ discourseGraph1 = Map.fromList [(0,[(1,Outscopes),(6,Outscopes)]),
 ---------------------------------------------------------------------------
 -- | SDRSs
 ---------------------------------------------------------------------------
+sdrsmerge1 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Result") 1 2),
+                                    (1, Segment drs3),
+                                    (2, Segment drs4)]) 2
+
+sdrsmerge2 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Result") 1 2),
+                                    (1, Segment drs3),
+                                    (2, Segment drs4)]) 2
 
 sdrs1 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Result") 1 2),
                                     (1, Segment drs3),
-                                    (2, Segment drs4)]) 3
+                                    (2, Segment drs4)]) 2
 
 -- drs3 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "man") [(DRSRef "x")],
 --                                      Rel (DRSRel "glass") [(DRSRef "y")],
