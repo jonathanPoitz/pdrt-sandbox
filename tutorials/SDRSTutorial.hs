@@ -1,6 +1,6 @@
 -- This is a tutorial for creating and manipulating SDRSs with PDRT-SANDBOX.
 
-import qualified Data.Map as Map
+import qualified Data.Map as M
 import Data.SDRS
 
 ---------------------------------------------------------------------------
@@ -108,22 +108,22 @@ _al07_2c = DRS [DRSRef "x1", DRSRef "z", DRSRef "y"]
 -- | misc structures
 ---------------------------------------------------------------------------
 
-map1 = Map.fromList [(1,"a"),(2,"b"),(3,"c"),(4,"d")]
+map1 = M.fromList [(1,"a"),(2,"b"),(3,"c"),(4,"d")]
 
-mapal07 = Map.fromList [(0, Relation (relationFromLabel "Explanation") 1 6),
+mapal07 = M.fromList [(0, Relation (relationFromLabel "Explanation") 1 6),
                          (1, Segment _al07_1),
                          (2, Segment _al07_2),
                          (3, Segment _al07_3),
                          (4, Segment _al07_4),
                          (5, Segment _al07_5),
                          (6, And (Relation (relationFromLabel "Elaboration") 2 7) (Relation (relationFromLabel "Narration") 2 5)),
-                         (7, Relation (relationFromLabel "Narration") 3 4)] :: Map.Map DisVar SDRSFormula
+                         (7, Relation (relationFromLabel "Narration") 3 4)] :: M.Map DisVar SDRSFormula
 
-outscopesmap = Map.fromList [(0,[1,6]),
+outscopesmap = M.fromList [(0,[1,6]),
                               (6,[2,7,5]),
                               (7,[3,4])]
 
---graphmap = Map.fromList [(0,[1,6]),
+--graphmap = M.fromList [(0,[1,6]),
 --                          (1,[]),
 --                          (6,[2,7,5]),
 --                          (2,[]),
@@ -156,25 +156,25 @@ recsf4 = Not (Not (Not $ Relation (relationFromLabel "Explanation") 2 4))
 --             ("sdrs1", sdrs1),
 --             ("sdrs2", sdrs2)]
 
-discourseGraph1 = Map.fromList [(0,[(1,Outscopes),(6,Outscopes)]),
+discourseGraph1 = M.fromList [(0,[(1,Outscopes),(6,Outscopes)]),
                            (1,[(6,relationFromLabel "Elaboration")]),
                            (2,[(5,relationFromLabel "Narration"),(7,relationFromLabel "Elaboration")]),
                            (3,[(4,relationFromLabel "Narration")]),
                            (6,[(2,Outscopes),(5,Outscopes),(7,Outscopes)]),
-                           (7,[(3,Outscopes),(4,Outscopes)])] :: Map.Map DisVar [(DisVar, SDRSRelation)]
+                           (7,[(3,Outscopes),(4,Outscopes)])] :: M.Map DisVar [(DisVar, SDRSRelation)]
 
 ---------------------------------------------------------------------------
 -- | SDRSs
 ---------------------------------------------------------------------------
-sdrsmerge1 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Result") 1 2),
+sdrsmerge1 = SDRS (M.fromList [(0, Relation (relationFromLabel "Result") 1 2),
                                     (1, Segment drs3),
                                     (2, Segment drs4)]) 2
 
-sdrsmerge2 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Result") 1 2),
+sdrsmerge2 = SDRS (M.fromList [(0, Relation (relationFromLabel "Result") 1 2),
                                     (1, Segment drs3),
                                     (2, Segment drs4)]) 2
 
-sdrs1 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Result") 1 2),
+sdrs1 = SDRS (M.fromList [(0, Relation (relationFromLabel "Result") 1 2),
                                     (1, Segment drs3),
                                     (2, Segment drs4)]) 2
 
@@ -189,31 +189,41 @@ sdrs1 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Result") 1 2),
 
 sdrs1_string = stringToSDRS "<{0:(Result,1,2) & (Result,2,3); 1: <{x,y},{man(x), glass(y), drop(x,y)}>; 2: <{z},{=(z,y), break(z)}>, 3: <{x',z'},{=(x',x), =(z',z), remove(x',z')}>}, 3>"
 
-sdrs2 = SDRS (Map.fromList [(0, Segment $ DRS [] [])]) 0
+sdrs2 = SDRS (M.fromList [(0, Segment $ DRS [] [])]) 0
 
-sdrsdanlos1 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Explanation") 1 2),
+sdrs_updateRefCase2_to2 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 2),
+                                          (1, Segment drs0),
+                                          (2, Segment drs0)]) 2
+
+sdrs_updateRefCase2_to3 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Narration") 1 3)),
+                                          (1, Segment drs0),
+                                          (2, Segment drs0),
+                                          (3, Segment drs0)]) 3
+
+
+sdrsdanlos1 = SDRS (M.fromList [(0, Relation (relationFromLabel "Explanation") 1 2),
                                             (1, Segment drs0),
                                             (2, Relation (relationFromLabel "Continuation") 3 4),
                                             (3, Segment drs0),
                                             (4, Segment drs0)]) 4
 
-sdrsdanlos2 = SDRS (Map.fromList [(0, And (Relation (relationFromLabel "Explanation") 1 2) (Relation (relationFromLabel "Explanation") 2 3)),
+sdrsdanlos2 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Explanation") 1 2) (Relation (relationFromLabel "Explanation") 2 3)),
                                             (1, Segment drs0),
                                             (2, Segment drs0),
                                             (3, Segment drs0)]) 3
 
-sdrsdanlos3 = SDRS (Map.fromList [(0, And (Relation (relationFromLabel "Explanation") 1 2) (Relation (relationFromLabel "Narration") 1 3)),
+sdrsdanlos3 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Explanation") 1 2) (Relation (relationFromLabel "Narration") 1 3)),
                                             (1, Segment drs0),
                                             (2, Segment drs0),
                                             (3, Segment drs0)]) 3
 
-sdrsdanlos4 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Commentary") 1 2),
+sdrsdanlos4 = SDRS (M.fromList [(0, Relation (relationFromLabel "Commentary") 1 2),
                                             (1, Relation (relationFromLabel "Explanation") 3 4),
                                             (2, Segment drs0),
                                             (3, Segment drs0),
                                             (4, Segment drs0)]) 4
 
-sdrsal07 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
+sdrsal07 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
                                 (1, Segment drs0),
                                 (2, Segment drs0),
                                 (3, Segment drs0),
@@ -222,21 +232,31 @@ sdrsal07 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration") 1 
                                 (6, And (Relation (relationFromLabel "Elaboration") 2 7) (Relation (relationFromLabel "Narration") 2 5)),
                                 (7, Relation (relationFromLabel "Narration") 3 4)]) 5
 
-sdrsfullal07_to3 = SDRS (Map.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 3)),
+sdrsfullal07_to3 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 3)),
                                 (1, Segment _al07_1),
                                 (2, Segment _al07_2),
                                 (3, Segment _al07_3)]) 3
 
 --sdrsfullal07_to4_comp = addDRS sdrsfullal07_to3 _al07_4 [(3, (relationFromLabel "Narration"))]
 
-sdrsfullal07_to4 = SDRS (Map.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 7)),
+sdrsfullal07_to4 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 7)),
                                        (1, Segment _al07_1),
                                        (2, Segment _al07_2),
                                        (3, Segment _al07_3),
                                        (4, Segment _al07_4),
                                        (7, Relation (relationFromLabel "Narration") 3 4)]) 4
 
-sdrsfullal07_to8 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
+sdrsfullal07 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
+                                   (1, Segment _al07_1),
+                                   (2, Segment _al07_2),
+                                   (3, Segment _al07_3),
+                                   (4, Segment _al07_4),
+                                   (5, Segment _al07_5),
+                                   (6, And (Relation (relationFromLabel "Narration") 2 5)
+                                           (Relation (relationFromLabel "Explanation") 2 7)),
+                                   (7, Relation (relationFromLabel "Narration") 3 4)]) 5
+
+sdrsfullal07_to8 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
                                    (1, Segment _al07_1),
                                    (2, Segment _al07_2),
                                    (3, Segment _al07_3),
@@ -248,20 +268,10 @@ sdrsfullal07_to8 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaborat
                                        (Relation (relationFromLabel "Elaboration") 5 8))),
                                    (7, Relation (relationFromLabel "Narration") 3 4)]) 8
 
-sdrsfullal07 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
-                                   (1, Segment _al07_1),
-                                   (2, Segment _al07_2),
-                                   (3, Segment _al07_3),
-                                   (4, Segment _al07_4),
-                                   (5, Segment _al07_5),
-                                   (6, And (Relation (relationFromLabel "Narration") 2 5)
-                                           (Relation (relationFromLabel "Explanation") 2 7)),
-                                   (7, Relation (relationFromLabel "Narration") 3 4)]) 5
-
 -- the order of declaration is different (does it affect the map of is it implicitly ordered?)
 -- the labels are different and have holes
 -- the sfs in the And are switched
-sdrsfullal07_iso = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
+sdrsfullal07_iso = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
                                 (20, Segment _al07_2),
                                 (1, Segment _al07_1),
                                 (6, And (Relation (relationFromLabel "Narration") 20 49)
@@ -275,7 +285,7 @@ sdrsfullal07_iso = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaborat
 
 --sdrsfullal07_to6_comp_2 = addDRS sdrsfullal07 _al07_6 [(4, (relationFromLabel "Narration"))]
 
-sdrsneg1 = SDRS (Map.fromList [(0, Not (Relation (relationFromLabel "Explanation") 1 2)),
+sdrsneg1 = SDRS (M.fromList [(0, Not (Relation (relationFromLabel "Explanation") 1 2)),
                                 (1, Segment _neg_1),
                                 (2, Segment _neg_2),
                                 (3, Segment _neg_3),
@@ -283,7 +293,7 @@ sdrsneg1 = SDRS (Map.fromList [(0, Not (Relation (relationFromLabel "Explanation
                                 (5, Relation (relationFromLabel "Contrast") 2 3)]) 3
 
 -- for recursion testing only, not felicitous
---sdrsrec1 = SDRS (Map.fromList [(0, recsf1),
+--sdrsrec1 = SDRS (M.fromList [(0, recsf1),
 --                                 (1, recsf2),
 --                                 (2, recsf3),
 --                                 (3, recsf4)]) 0
@@ -296,31 +306,31 @@ sdrs_because d1 d2 = buildFromDRSs (relationFromLabel "Explanation") d1 d2
 ---------------------------------------------------------------------------
 
 -- has self referencing relation
-probselfref1 = SDRS (Map.fromList [(0, And (Relation (relationFromLabel "Explanation") 1 1) (Relation (relationFromLabel "Explanation") 2 3)),
+probselfref1 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Explanation") 1 1) (Relation (relationFromLabel "Explanation") 2 3)),
                                             (1, Segment drs0),
                                             (2, Segment drs0),
                                             (3, Segment drs0)]) 3
 
 -- has self referencing relation
-probselfref2 = SDRS (Map.fromList [(0, And (Relation (relationFromLabel "Explanation") 0 1) (Relation (relationFromLabel "Explanation") 2 3)),
+probselfref2 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Explanation") 0 1) (Relation (relationFromLabel "Explanation") 2 3)),
                                             (1, Segment drs0),
                                             (2, Segment drs0),
                                             (3, Segment drs0)]) 3
 
 -- has self referencing relation
-probselfref3 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Explanation") 1 1),
+probselfref3 = SDRS (M.fromList [(0, Relation (relationFromLabel "Explanation") 1 1),
                                             (1, Segment drs0),
                                             (2, Segment drs0),
                                             (3, Segment drs0)]) 3
 
 -- This entry is problematic since it is deemed felicitous (although it isn't, since not all entries are in relations with eachother)
-probnotenoughrels = SDRS (Map.fromList [(0, Relation (relationFromLabel "Explanation") 1 2),
+probnotenoughrels = SDRS (M.fromList [(0, Relation (relationFromLabel "Explanation") 1 2),
                                             (1, Segment drs0),
                                             (2, Segment drs0),
                                             (3, Segment drs0)]) 3
 
 -- the discourse graph is not well formed. TODO find out what rules exactly are broken here
-probgraphnotwellformed = SDRS (Map.fromList [(0, Relation (relationFromLabel "Explanation") 1 5),
+probgraphnotwellformed = SDRS (M.fromList [(0, Relation (relationFromLabel "Explanation") 1 5),
                                                 (1, Segment drs0),
                                                 (2, Segment drs0),
                                                 (3, Segment drs0),
@@ -330,20 +340,20 @@ probgraphnotwellformed = SDRS (Map.fromList [(0, Relation (relationFromLabel "Ex
                                                 (7, Relation (relationFromLabel "Narration") 4 7)]) 5
 
 -- last is not a valid discourse variable
-problast1 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Commentary") 1 2),
+problast1 = SDRS (M.fromList [(0, Relation (relationFromLabel "Commentary") 1 2),
                                             (1, Relation (relationFromLabel "Explanation") 3 4),
                                             (2, Segment drs0),
                                             (3, Segment drs0),
                                             (4, Segment drs0)]) 7
 
 -- last is not a segment
-problast2 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Commentary") 1 2),
+problast2 = SDRS (M.fromList [(0, Relation (relationFromLabel "Commentary") 1 2),
                                             (1, Relation (relationFromLabel "Explanation") 3 4),
                                             (2, Segment drs0),
                                             (3, Segment drs0),
                                             (4, Segment drs0)]) 1
 
-root_sdrsfullal07 = SDRS (Map.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
+root_sdrsfullal07 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
                                  (1, Segment _al07_1),
                                  (2, Segment _al07_2),
                                  (3, Segment _al07_3),

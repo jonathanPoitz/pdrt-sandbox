@@ -19,7 +19,8 @@ module Data.SDRS.Composition
 import Data.SDRS.DataType
 import qualified Data.Map as M
 import Data.SDRS.DiscourseGraph
-import Data.SDRS.Structure (relLabels, lookupKey)
+import Data.SDRS.Structure (lookupKey)
+-- import Debug.Trace
 
 ---------------------------------------------------------------------------
 -- | Build new SDRS using two DRSs and their relation
@@ -77,7 +78,7 @@ buildFromDRSs rel d1 d2 = SDRS (M.fromList [(0, Relation rel 1 2),
 ---------------------------------------------------------------------------
 -- | adds a 'DRS' to an 'SDRS' given a number of edges, represented by
 -- tuples consisting of the target node and the relation to that node.
--- TODO, needs to be debugged, e.g. addDRS sdrsfullal07_to3 _al07_4 [(3,relationFromLabel "Narration")] yields wrong result.
+-- TODO, needs to be debugged, e.g. addDRS sdrsfullal07_to4 _al07_5 [(2,relationFromLabel "Narration")] yields wrong result. (can't handle removal of relations from an and)
 -- TODO disgustingly complicated, simplify!
 ---------------------------------------------------------------------------
 addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
@@ -87,44 +88,38 @@ addDRS s@(SDRS m _) d edges = SDRS updatedMap updatedLast
         updateRelations :: [(DisVar, SDRSRelation)] -> M.Map DisVar SDRSFormula -> DisVar -> M.Map DisVar SDRSFormula
         updateRelations [] m' _                      = m'
         updateRelations ((dv, rel):rest) m' maxKey
-          | isOnRF dv && isRoot dv = updateRelations rest (mapWithNewRel) (maxKey + 1) -- add it to the root node, put this relation under new outscoping label
+          | isOnRF dv && isRoot dv = updateRelations rest (addNewRel m') (maxKey + 1) -- add it to the root node, put this relation under new outscoping label
           | isOnRF dv && isCrd rel &&
-            isTopic rel && entailsTopic rel = updateRelations rest (updateRefs dv (maxKey + 1) mapWithNewRel) (maxKey + 1) -- TODO what if it is already under outscoping label and just needs to be added? refs to be done then? put new rel under new outscope and update old references to left arg with new outscoping label
-          | isOnRF dv && isCrd rel && isTopic rel && (not $ entailsTopic rel) = updateRelations rest (updateRefs dv (maxKey + 1) mapWithNewRel) (maxKey + 1) -- not sure, we might have to make an explicit \Downarrow relation
+            isTopic rel && entailsTopic rel = updateRelations rest (addNewRel updatedRefs) (maxKey + 1) -- TODO what if it is already under outscoping label and just needs to be added? refs to be done then? put new rel under new outscope and update old references to left arg with new outscoping label
+          | isOnRF dv && isCrd rel && isTopic rel && (not $ entailsTopic rel) = updateRelations rest (addNewRel updatedRefs) (maxKey + 1) -- not sure, we might have to make an explicit \Downarrow relation
           | isOnRF dv && isCrd rel = updateRelations rest mapWithNewConj (maxKey + 1)
           | isOnRF dv = updateRelations rest mapWithNewConj (maxKey + 1)
           | otherwise = updateRelations rest m' maxKey -- skipping relation b/c target node is not on RF of SDRS
           where isOnRF :: DisVar -> Bool
                 isOnRF dv' = dv' `elem` rf s
                 isRoot :: DisVar -> Bool
-                isRoot dv' = dv' `elem` relLabels s
+                isRoot dv' = dv' == root s !! 0
                 isCrd :: SDRSRelation -> Bool
                 isCrd rel' = relType rel' == Crd
                 entailsTopic :: SDRSRelation -> Bool
                 entailsTopic _ = True -- TODO which subRels entail \Downarrow?
-                mapWithNewRel = M.insert (maxKey + 1) (Relation rel dv updatedLast) m'
+                updatedRefs = updateRefs dv (maxKey + 1) m'
+                addNewRel :: M.Map DisVar SDRSFormula -> M.Map DisVar SDRSFormula
+                addNewRel m'' = M.insert (maxKey + 1) (Relation rel dv updatedLast) m''
                 mapWithNewConj = M.adjust (And (Relation rel dv updatedLast)) (lookupKey s dv) m'
                 updateRefs :: DisVar -> DisVar -> M.Map DisVar SDRSFormula -> M.Map DisVar SDRSFormula
-                updateRefs old new m'' = M.fromList $ map updateRef (M.assocs m'')
-                  where updateRef :: (DisVar,SDRSFormula) -> (DisVar,SDRSFormula)
-                        updateRef (dv',sf)
-                          | dv' == old = (new,updateSF sf)
-                          | otherwise = (dv',updateSF sf) -- simplify?????
-                          where updateSF :: SDRSFormula -> SDRSFormula
-                                updateSF seg@(Segment {})      = seg
-                                updateSF r@(Relation rel' dv1 dv2)
-                                  | dv1 == old && dv2 == old = Relation rel' new new -- shouldn't happen
-                                  | dv1 == old               = Relation rel' new dv2
-                                  | dv2 == old               = Relation rel' dv1 new
-                                  | otherwise                = r
-                                updateSF (And sf1 sf2)         = And (updateSF sf1) (updateSF sf2)
-                                updateSF (Not sf1)             = Not (updateSF sf1)
+                updateRefs old new m'' = M.map updateRef m''
+                  where updateRef :: SDRSFormula -> SDRSFormula
+                        updateRef seg@(Segment {})      = seg
+                        updateRef r@(Relation rel' dv1 dv2)
+                          | dv1 == old && dv2 == old    = Relation rel' new new -- shouldn't happen
+                          | dv1 == old                  = Relation rel' new dv2
+                          | dv2 == old                  = Relation rel' dv1 new -- this should then be replaced by the new outscoping label and put underneath that. how the hell will i do that?
+                          | otherwise                   = r
+                        updateRef (And sf1 sf2)         = And (updateRef sf1) (updateRef sf2)
+                        updateRef (Not sf1)             = Not (updateRef sf1)
 
-
-
-
-
-
+                      
 
 
 
