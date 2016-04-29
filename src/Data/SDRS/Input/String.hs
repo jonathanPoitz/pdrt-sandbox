@@ -32,7 +32,9 @@ parseSDRS s@(b:_)
   | otherwise = error ("parseSDRS: infelicitous input string " ++ show b)
   where s' = dropOuterBrackets s
 
-
+---------------------------------------------------------------------------
+-- | parses map of an 'SDRS'.
+---------------------------------------------------------------------------
 parseMap :: String -> M.Map DisVar SDRSFormula
 parseMap [] = M.empty
 parseMap s@(b:_)
@@ -60,6 +62,9 @@ parseMap s@(b:_)
                   | otherwise    = error ("parseRelation: infelicitous input string " ++ show b'')
                   where splitRel = splitOn ',' s''
 
+---------------------------------------------------------------------------
+-- | parses last node of an 'SDRS'.
+---------------------------------------------------------------------------
 parseLast :: String -> DisVar
 parseLast [] = -1 -- FIX
 parseLast s

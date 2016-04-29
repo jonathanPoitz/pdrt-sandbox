@@ -63,8 +63,7 @@ sdrsPureDRSs s@(SDRS m _) = pure' $ segments s
                 accDRSs = [ drs | (Segment drs) <- accDUs]
 
 ---------------------------------------------------------------------------
--- | Checks if the 'SDRS' @s@ is /pure/, where:
--- ['SDRS' @s@ is pure /iff/]
+-- | Checks if the 'SDRS' @s@ only has unique DRSRefs where, i.e.:
 --
 --  * no embedded 'DRS' declares 'DRSRef's that are declared in any other
 -- embedded 'DRS' of @s@. 

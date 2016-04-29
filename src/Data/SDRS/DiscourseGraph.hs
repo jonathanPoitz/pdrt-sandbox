@@ -24,7 +24,7 @@ module Data.SDRS.DiscourseGraph
 import Data.SDRS.DataType
 import qualified Data.Map as M
 import Data.List (union, nub, sort, (\\))
-import Data.SDRS.Structure (relLabels)
+import Data.SDRS.Structure (relLabels, dus)
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -58,6 +58,9 @@ discourseGraph (SDRS m _) = M.foldlWithKey build M.empty m
         build acc dv0 (Not sf1)                = build acc dv0 sf1
         build acc _ _                          = acc
 
+---------------------------------------------------------------------------
+-- | Given an 'SDRS', returns a map from 'DisVar's to 'DisVar's that it outscopes
+---------------------------------------------------------------------------
 immediateOutscopes :: SDRS -> M.Map DisVar [DisVar]
 immediateOutscopes (SDRS m _) = M.foldlWithKey build M.empty m
   where build :: (M.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> M.Map DisVar [DisVar]
@@ -88,7 +91,7 @@ accessibleNodes s dv1 = walkEdges [dv1]
           | otherwise = findKey dv rest
 
 ---------------------------------------------------------------------------
--- | computes the right frontier of an 'SDRS', also in order
+-- | computes the right frontier of an 'SDRS', in order of locality
 -- TODO might be simplified. currently a lot of steps, maybe rec can be simplified.
 -- TODO debug structural checks -> does this work in every situation?
 -- If the last node is wrong or even an unvalid pointer, this function will
@@ -120,7 +123,7 @@ rf s@(SDRS _ l) = walkEdges [l]
 -- graph).
 ---------------------------------------------------------------------------
 root :: SDRS -> [DisVar]
-root (SDRS m _) = (sort $ nub (M.keys m)) \\ (sort $ nub (relLabels $ M.elems m))
+root s = (sort $ nub (dus s)) \\ (sort $ nub (relLabels s))
 
 
 

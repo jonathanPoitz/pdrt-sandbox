@@ -28,10 +28,10 @@ import Data.SDRS.Structure (relLabels)
 -- well
 ---------------------------------------------------------------------------
 noUndeclaredVars :: SDRS -> Bool
-noUndeclaredVars (SDRS m l) = 
+noUndeclaredVars s@(SDRS m l) = 
   (l `member` disVars) && -- LAST is in the list of discourse variables
   relVars `isProperSubsetOf` disVars -- the discourse variables used as arguments in relations are declared labels
-    where relVars = fromList $ relLabels (M.elems m)
+    where relVars = fromList $ relLabels s
           disVars = fromList $ M.keys m
 
 ---------------------------------------------------------------------------
@@ -52,9 +52,9 @@ noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
 -- within recursive SDRSFormulae
 ---------------------------------------------------------------------------
 allSegmentsBound :: SDRS -> Bool
-allSegmentsBound (SDRS m _) = allSegmentLabels `isSubsetOf` relArgs
+allSegmentsBound s@(SDRS m _) = allSegmentLabels `isSubsetOf` relArgs
   where allSegmentLabels = segmentLabels (M.assocs m)
-        relArgs = fromList $ relLabels (M.elems m)
+        relArgs = fromList $ relLabels s
         segmentLabels :: [(DisVar, SDRSFormula)] -> Set DisVar
         segmentLabels []                       = empty
         segmentLabels ((dv, Segment _):rest)   = insert dv $ segmentLabels rest

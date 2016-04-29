@@ -12,7 +12,7 @@ Structural operations on SDRSs
 
 module Data.SDRS.Structure
 (
-  listDUs
+  dus
 , lookupDU
 , relations
 , segments
@@ -45,8 +45,8 @@ sdrsLast (SDRS _ l) = l
 ---------------------------------------------------------------------------
 -- | Returns the set of discourse units
 ---------------------------------------------------------------------------
-listDUs :: SDRS -> [DisVar]
-listDUs (SDRS m _)     = M.keys m
+dus :: SDRS -> [DisVar]
+dus (SDRS m _)     = M.keys m
 
 ---------------------------------------------------------------------------
 -- | Returns a certain discourse unit if present
@@ -70,25 +70,25 @@ lookupKey s dv = findKey $ relations s
 ---------------------------------------------------------------------------
 -- | Returns all labels that are arguments of relations
 ---------------------------------------------------------------------------
-relLabels :: [SDRSFormula] -> [DisVar]
-relLabels []                          = []
-relLabels ((Relation _ dv1 dv2):rest) = dv1:dv2:relLabels rest 
-relLabels ((And sf1 sf2):rest)        = relLabels [sf1] ++ relLabels [sf2] ++ relLabels rest
-relLabels ((Not sf1):rest)            = relLabels [sf1] ++ relLabels rest
-relLabels ((Segment _):rest)          = relLabels rest
+--relLabels :: [SDRSFormula] -> [DisVar]
+--relLabels []                          = []
+--relLabels ((Relation _ dv1 dv2):rest) = dv1:dv2:relLabels rest 
+--relLabels ((And sf1 sf2):rest)        = relLabels [sf1] ++ relLabels [sf2] ++ relLabels rest
+--relLabels ((Not sf1):rest)            = relLabels [sf1] ++ relLabels rest
+--relLabels ((Segment _):rest)          = relLabels rest
 
 ---------------------------------------------------------------------------
 -- | alternative version using an SDRS as input. Imo nicer like that, just
 -- some conflicts with other functions that are using it. TODO
 ---------------------------------------------------------------------------
---relLabels :: SDRS -> [DisVar]
---relLabels (SDRS m _) = relLabels' $ M.elems m
---  where relLabels' :: [SDRSFormula] -> [DisVar]
---        relLabels' []                          = []
---        relLabels' ((Relation _ dv1 dv2):rest) = dv1:dv2:relLabels' rest 
---        relLabels' ((And sf1 sf2):rest)        = relLabels' [sf1] ++ relLabels' [sf2] ++ relLabels' rest
---        relLabels' ((Not sf1):rest)            = relLabels' [sf1] ++ relLabels' rest
---        relLabels' ((Segment _):rest)          = relLabels' rest
+relLabels :: SDRS -> [DisVar]
+relLabels (SDRS m _) = relLabels' $ M.elems m
+  where relLabels' :: [SDRSFormula] -> [DisVar]
+        relLabels' []                          = []
+        relLabels' ((Relation _ dv1 dv2):rest) = dv1:dv2:relLabels' rest 
+        relLabels' ((And sf1 sf2):rest)        = relLabels' [sf1] ++ relLabels' [sf2] ++ relLabels' rest
+        relLabels' ((Not sf1):rest)            = relLabels' [sf1] ++ relLabels' rest
+        relLabels' ((Segment _):rest)          = relLabels' rest
 
 ---------------------------------------------------------------------------
 -- | Lists, given an SDRS, its relations along with each respective label
