@@ -83,18 +83,19 @@ buildFromDRSs rel d1 d2 = SDRS (M.fromList [(0, Relation rel 1 2),
 ---------------------------------------------------------------------------
 addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
 addDRS s@(SDRS m _) d edges = SDRS updatedMap updatedLast
-  where updatedLast = (fst $ M.findMax m) + 1
-        updatedMap = M.insert updatedLast (Segment d) (updateRelations edges m updatedLast)
+  where updatedLast = (fst $ M.findMax m) + 1 -- new reference to last 
+        updatedMap = M.insert updatedLast (Segment d) (updateRelations edges m updatedLast) -- the new map with the added segment and the updated relations
         updateRelations :: [(DisVar, SDRSRelation)] -> M.Map DisVar SDRSFormula -> DisVar -> M.Map DisVar SDRSFormula
-        updateRelations [] m' _                      = m'
+        updateRelations [] m' _                     = m'
         updateRelations ((dv, rel):rest) m' maxKey
-          | isOnRF dv && isRoot dv = updateRelations rest (addNewRel m') (maxKey + 1) -- add it to the root node, put this relation under new outscoping label
+          | isOnRF dv && isRoot dv                  = updateRelations rest (addNewRel m') (maxKey + 1) -- add it to the root node, put this relation under new outscoping label
           | isOnRF dv && isCrd rel &&
-            isTopic rel && entailsTopic rel = updateRelations rest (addNewRel updatedRefs) (maxKey + 1) -- TODO what if it is already under outscoping label and just needs to be added? refs to be done then? put new rel under new outscope and update old references to left arg with new outscoping label
-          | isOnRF dv && isCrd rel && isTopic rel && (not $ entailsTopic rel) = updateRelations rest (addNewRel updatedRefs) (maxKey + 1) -- not sure, we might have to make an explicit \Downarrow relation
-          | isOnRF dv && isCrd rel = updateRelations rest mapWithNewConj (maxKey + 1)
-          | isOnRF dv = updateRelations rest mapWithNewConj (maxKey + 1)
-          | otherwise = updateRelations rest m' maxKey -- skipping relation b/c target node is not on RF of SDRS
+            isTopic rel && entailsTopic rel         = updateRelations rest (addNewRel updatedRefs) (maxKey + 1) -- put new rel under new outscope and update old references to left arg with new outscoping label
+          | isOnRF dv && isCrd rel && 
+            isTopic rel && (not $ entailsTopic rel) = updateRelations rest (addNewRel updatedRefs) (maxKey + 1) -- not sure, we might have to make an explicit \Downarrow relation
+          | isOnRF dv && isCrd rel                  = updateRelations rest mapWithNewConj (maxKey + 1)
+          | isOnRF dv                               = updateRelations rest mapWithNewConj (maxKey + 1)
+          | otherwise                               = updateRelations rest m' maxKey -- skipping relation b/c target node is not on RF of SDRS
           where isOnRF :: DisVar -> Bool
                 isOnRF dv' = dv' `elem` rf s
                 isRoot :: DisVar -> Bool
@@ -102,11 +103,11 @@ addDRS s@(SDRS m _) d edges = SDRS updatedMap updatedLast
                 isCrd :: SDRSRelation -> Bool
                 isCrd rel' = relType rel' == Crd
                 entailsTopic :: SDRSRelation -> Bool
-                entailsTopic _ = True -- TODO which subRels entail \Downarrow?
+                entailsTopic _ = True -- TODO implement, which subRels entail \Downarrow?
                 updatedRefs = updateRefs dv (maxKey + 1) m'
                 addNewRel :: M.Map DisVar SDRSFormula -> M.Map DisVar SDRSFormula
                 addNewRel m'' = M.insert (maxKey + 1) (Relation rel dv updatedLast) m''
-                mapWithNewConj = M.adjust (And (Relation rel dv updatedLast)) (lookupKey s dv) m'
+                mapWithNewConj = M.adjust (And (Relation rel dv updatedLast)) (lookupKey s dv) m' -- add existing SDRSFormula with And to the new one. TODO, order? The old thing should be the first arg of And, right?
                 updateRefs :: DisVar -> DisVar -> M.Map DisVar SDRSFormula -> M.Map DisVar SDRSFormula
                 updateRefs old new m'' = M.map updateRef m''
                   where updateRef :: SDRSFormula -> SDRSFormula
