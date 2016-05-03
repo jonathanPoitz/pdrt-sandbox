@@ -53,10 +53,15 @@ instance {-# OVERLAPPING #-} (Show a) => Show [(a,SDRSFormula)] where
     | otherwise = '\n' : showConcat (showModifier ("( " ++ show l ++ " ,") mpos form) (DRS.showPadding ")\n") ++ show ts
     where form = showFormula f
           mpos = modifierPos form
+
 instance {-# OVERLAPPING #-} Show [SDRSFormula] where
   show fs = '\n' : unlines (map showFormula fs)
+
+instance {-# OVERLAPPING #-} Show SDRSFormula where
+  show sf = showFormula sf
 -- DEBUG // DEBUG // DEBUG --
---
+
+
 ---------------------------------------------------------------------------
 -- | Typeclass for 'showableSDRS's, that are unresolved.
 ---------------------------------------------------------------------------
