@@ -48,15 +48,15 @@ sdrsfullal07_to4_2 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Ela
 
 -- should yield:
 
-sdrsfullal07 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 7),
-                                   (1, Segment drs0),
-                                   (2, Segment drs0),
-                                   (3, Segment drs0),
-                                   (4, Segment drs0),
-                                   (5, Relation (relationFromLabel "Narration") 3 4),
-                                   (6, Segment drs0),
-                                   (7, And (Relation (relationFromLabel "Narration") 2 6)
-                                           (Relation (relationFromLabel "Explanation") 2 5))]) 6
+sdrsfullal07 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 7) (Relation (relationFromLabel "Elaboration") 2 5)),
+                                 (1, Segment drs0),
+                                 (2, Segment drs0),
+                                 (3, Segment drs0),
+                                 (4, Segment drs0),
+                                 (5, Relation (relationFromLabel "Narration") 3 4),
+                                 (6, Segment drs0),
+                                 (7, And (Relation (relationFromLabel "Narration") 2 6)
+                                         (Relation (relationFromLabel "Explanation") 2 5))]) 6
 
 -- thus, as one can see, this update involves the removal of the relation Elab(2,5) from 0 and its addition to 7.
 -- I don't know yet how to do that programmatically. Because currently, I iterate over the map and for each relation

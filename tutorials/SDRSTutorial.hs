@@ -239,12 +239,13 @@ sdrsfullal07_to3 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elabo
 
 --sdrsfullal07_to4_comp = addDRS sdrsfullal07_to3 _al07_4 [(3, (relationFromLabel "Narration"))]
 
-sdrsfullal07_to4 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 7)),
-                                       (1, Segment _al07_1),
-                                       (2, Segment _al07_2),
-                                       (3, Segment _al07_3),
-                                       (4, Segment _al07_4),
-                                       (7, Relation (relationFromLabel "Narration") 3 4)]) 4
+sdrsfullal07_to4 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2)
+                                             (Relation (relationFromLabel "Elaboration") 2 5)),
+                                     (1, Segment _al07_1),
+                                     (2, Segment _al07_2),
+                                     (3, Segment _al07_3),
+                                     (4, Segment _al07_4),
+                                     (5, Relation (relationFromLabel "Narration") 3 4)]) 4
 
 sdrsfullal07 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
                                  (1, Segment _al07_1),
