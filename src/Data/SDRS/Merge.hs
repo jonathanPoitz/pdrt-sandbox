@@ -23,14 +23,18 @@ import Data.List (insert)
 import Data.SDRS.Structure
 import Data.SDRS.DiscourseGraph
 import Data.SDRS.LambdaCalculus
+import Data.SDRS.Composition (updateRelations)
+--import Debug.Trace
+--import Data.SDRS.Show()
 
 ---------------------------------------------------------------------------
 -- | Applies merge to 'SDRS' @s1@ and 'SDRS' @s2@. The latter is attached
--- with node @dv2@ to @dv1@ of @s1@, using relation @r@.  
+-- with its root node to a node @dv1@ that must be on the RF of @s1@, using relation @r@.  
 -- TODO do wellformedness checks before merge?
+-- TODO extend to also take multiple relations for merge?
 ---------------------------------------------------------------------------
-sdrsMerge :: SDRS -> SDRS -> SDRSRelation -> SDRS
-sdrsMerge s1@(SDRS m1 _) s2@(SDRS m2 _) rel = SDRS mergedWithNewRelation (sdrsLast s2_conv) 
+sdrsMerge :: SDRS -> SDRS -> (DisVar,SDRSRelation) -> SDRS
+sdrsMerge s1@(SDRS m1 _) s2@(SDRS m2 _) (dv1,rel) = SDRS mMergedWithNewRelation (sdrsLast s2_conv) 
   where buildConvMap :: M.Map DisVar DisVar -> [DisVar] -> [DisVar] -> M.Map DisVar DisVar
         buildConvMap cm _ [] = cm
         buildConvMap cm acc (dv:rest)
@@ -39,6 +43,6 @@ sdrsMerge s1@(SDRS m1 _) s2@(SDRS m2 _) rel = SDRS mergedWithNewRelation (sdrsLa
           where newMax = maximum acc + 1
         convMap = buildConvMap M.empty (M.keys m1) (M.keys m2)
         s2_conv = sdrsAlphaConvert s2 convMap
-        merged = m1 `M.union` (sdrsMap s2_conv)
-        mergedWithNewRelation = M.insert ((fst $ M.findMax merged) + 1) (Relation rel (root s1 !! 0) (root s2_conv !! 0)) merged
-
+        mMerged = m1 `M.union` (sdrsMap s2_conv)
+        attachingNode = root s2_conv !! 0
+        mMergedWithNewRelation = updateRelations s1 [(dv1,rel)] mMerged attachingNode --M.insert ((fst $ M.findMax mMerged) + 1) (Relation rel (root s1 !! 0) (root s2_conv !! 0)) mMerged
