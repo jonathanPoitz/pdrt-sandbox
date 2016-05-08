@@ -302,6 +302,22 @@ sdrsneg1 = SDRS (M.fromList [(0, Not (Relation (relationFromLabel "Explanation")
 -- "because"
 sdrs_because d1 d2 = buildFromDRSs (relationFromLabel "Explanation") d1 d2
 
+-- One plaintiff was passed over for promotion three times.
+-- Another didn't get a raise for five years.
+-- A third plaintiff was given a lower wage compared to others.
+-- These people were badly treated.
+-- But the jury didn't believe this.
+sdrs_plaintiff = SDRS (M.fromList [(0, Not (Relation (relationFromLabel "Explanation") 1 2)),
+                                (1, Segment drs0), -- one plaintiff
+                                (2, Segment drs0), -- another didn't
+                                (3, Segment drs0), -- a third
+                                (4, Segment drs0), -- these people
+                                (6, Segment drs0), -- but the jury
+                                (0, And (Relation (relationFromLabel "Continuation") 1 2)
+                                        (Relation (relationFromLabel "Continuation") 2 3)),
+                                (5, Relation (relationFromLabel "Topic") 0 4),
+                                (7, Relation (relationFromLabel "Contrast") 4 6)]) 3
+
 ---------------------------------------------------------------------------
 -- | malformed SDRSs
 ---------------------------------------------------------------------------
@@ -362,4 +378,23 @@ root_sdrsfullal07 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaborati
                                  (5, Segment _al07_5),
                                  (6, Relation (relationFromLabel "Narration") 2 5),
                                  (7, Relation (relationFromLabel "Narration") 3 4)]) 5
+
+---------------------------------------------------------------------------
+-- | Example sentences
+---------------------------------------------------------------------------
+
+-- If Mary sees a cat, she pets it. But if Peter sees it, he takes it home. 
+-- It started raining. After he finished his shower, Peter noticed.
+-- 
+
+---------------------------------------------------------------------------
+-- | Merges
+---------------------------------------------------------------------------
+
+mergeRes = sdrsMerge sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Result")]
+merge2NarElab = sdrsMerge sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Narration"),(2, relationFromLabel "Elaboration")]
+
+
+
+
 
