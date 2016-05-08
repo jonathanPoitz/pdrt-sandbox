@@ -30,7 +30,6 @@ import Data.SDRS.Composition (updateRelations)
 ---------------------------------------------------------------------------
 -- | Applies merge to 'SDRS' @s1@ and 'SDRS' @s2@. The latter is attached
 -- with its root node to a node @dv1@ that must be on the RF of @s1@, using relation @r@.  
--- TODO do wellformedness checks before merge?
 ---------------------------------------------------------------------------
 sdrsMerge :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
 sdrsMerge s1@(SDRS m1 _) s2@(SDRS m2 _) edges = SDRS mMergedWithNewRelation (sdrsLast s2_conv) 
@@ -47,7 +46,14 @@ sdrsMerge s1@(SDRS m1 _) s2@(SDRS m2 _) edges = SDRS mMergedWithNewRelation (sdr
         updatedOutscope = (fst $ M.findMax mMerged) + 1
         mMergedWithNewRelation = updateRelations s1 edges mMerged attachingNode updatedOutscope
 
-
-
+---------------------------------------------------------------------------
+-- | Strict merge. Preliminary version, depends on implementation of
+-- isWellformedSDRS
+---------------------------------------------------------------------------
+--sdrsMergeStrict :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
+--sdrsMergeStrict s1 s2 edges
+--  | isWellformedSDRS s1 &&
+--    isWellformedSDRS s2 = sdrsMerge s1 s2 edges
+--  | otherwise           = error "The merge SDRSs are not wellformed."
 
 
