@@ -31,10 +31,9 @@ import Data.SDRS.Composition (updateRelations)
 -- | Applies merge to 'SDRS' @s1@ and 'SDRS' @s2@. The latter is attached
 -- with its root node to a node @dv1@ that must be on the RF of @s1@, using relation @r@.  
 -- TODO do wellformedness checks before merge?
--- TODO extend to also take multiple relations for merge?
 ---------------------------------------------------------------------------
-sdrsMerge :: SDRS -> SDRS -> (DisVar,SDRSRelation) -> SDRS
-sdrsMerge s1@(SDRS m1 _) s2@(SDRS m2 _) (dv1,rel) = SDRS mMergedWithNewRelation (sdrsLast s2_conv) 
+sdrsMerge :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
+sdrsMerge s1@(SDRS m1 _) s2@(SDRS m2 _) edges = SDRS mMergedWithNewRelation (sdrsLast s2_conv) 
   where buildConvMap :: M.Map DisVar DisVar -> [DisVar] -> [DisVar] -> M.Map DisVar DisVar
         buildConvMap cm _ [] = cm
         buildConvMap cm acc (dv:rest)
@@ -45,4 +44,10 @@ sdrsMerge s1@(SDRS m1 _) s2@(SDRS m2 _) (dv1,rel) = SDRS mMergedWithNewRelation 
         s2_conv = sdrsAlphaConvert s2 convMap
         mMerged = m1 `M.union` (sdrsMap s2_conv)
         attachingNode = root s2_conv !! 0
-        mMergedWithNewRelation = updateRelations s1 [(dv1,rel)] mMerged attachingNode --M.insert ((fst $ M.findMax mMerged) + 1) (Relation rel (root s1 !! 0) (root s2_conv !! 0)) mMerged
+        updatedOutscope = (fst $ M.findMax mMerged) + 1
+        mMergedWithNewRelation = updateRelations s1 edges mMerged attachingNode updatedOutscope
+
+
+
+
+

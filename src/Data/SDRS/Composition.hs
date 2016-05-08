@@ -40,24 +40,26 @@ buildFromDRSs rel d1 d2 = SDRS (M.fromList [(0, Relation rel 1 2),
 addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
 addDRS s@(SDRS m _) d edges = SDRS updatedMap updatedLast
   where updatedLast = (fst $ M.findMax m) + 1 -- new reference to last 
-        updatedMap = updateRelations s edges mWithSegment updatedLast -- the new map with the added segment and the updated relations
+        updatedMap = updateRelations s edges mWithSegment updatedLast updatedOutscope -- the new map with the added segment and the updated relations
         mWithSegment = M.insert updatedLast (Segment d) m -- 1. step - new segment
+        updatedOutscope = (fst $ M.findMax mWithSegment) + 1
         
 ---------------------------------------------------------------------------
 -- | does the necessary adjustments to an 'SDRS' when a new 'DRS' or 'SDRS'
--- has been added to it.
+-- has been added to it. This function is exported b/c it's used by merge
+-- but it shouldn't be called by the user. 
 ---------------------------------------------------------------------------
-updateRelations :: SDRS -> [(DisVar, SDRSRelation)] -> M.Map DisVar SDRSFormula -> DisVar -> M.Map DisVar SDRSFormula
-updateRelations _ [] mArg _                     = mArg
-updateRelations s ((dv, rel):rest) mArg attachingNode
-  | isOnRF dv && isRoot dv                  = updateRelations s rest mWithSwapRels updatedOutscope
+updateRelations :: SDRS -> [(DisVar, SDRSRelation)] -> M.Map DisVar SDRSFormula -> DisVar -> DisVar -> M.Map DisVar SDRSFormula
+updateRelations _ [] mArg _ _               = mArg
+updateRelations s ((dv, rel):rest) mArg attachingNode updatedOutscope
+  | isOnRF dv && isRoot dv                  = updateRelations s rest mWithSwapRels attachingNode updatedOutscope
   | isOnRF dv && isCrd rel &&
-    isTopic rel && entailsTopic rel         = updateRelations s rest mWithSwapRels updatedOutscope
+    isTopic rel && entailsTopic rel         = updateRelations s rest mWithSwapRels attachingNode updatedOutscope
   | isOnRF dv && isCrd rel && 
-    isTopic rel && (not $ entailsTopic rel) = updateRelations s rest mWithSwapRels updatedOutscope -- not sure, we might have to make an explicit \Downarrow relation
-  | isOnRF dv && isCrd rel                  = updateRelations s rest mapWithNewConj updatedOutscope
-  | isOnRF dv                               = updateRelations s rest mapWithNewConj updatedOutscope
-  | otherwise                               = updateRelations s rest mArg attachingNode -- skipping relation b/c target node is not on RF of SDRS
+    isTopic rel && (not $ entailsTopic rel) = updateRelations s rest mWithSwapRels attachingNode updatedOutscope-- not sure, we might have to make an explicit \Downarrow relation
+  | isOnRF dv && isCrd rel                  = updateRelations s rest mapWithNewConj attachingNode updatedOutscope
+  | isOnRF dv                               = updateRelations s rest mapWithNewConj attachingNode updatedOutscope
+  | otherwise                               = updateRelations s rest mArg attachingNode updatedOutscope-- skipping relation b/c target node is not on RF of SDRS
   where isOnRF :: DisVar -> Bool
         isOnRF dv' = dv' `elem` rf s
         isRoot :: DisVar -> Bool
@@ -67,7 +69,6 @@ updateRelations s ((dv, rel):rest) mArg attachingNode
         entailsTopic :: SDRSRelation -> Bool
         entailsTopic _ = True -- TODO implement, which subRels entail \Downarrow?
         -----------
-        updatedOutscope = (fst $ M.findMax mArg) + 1
         mWithRel = M.insert updatedOutscope (Relation rel dv attachingNode) mArg -- 2. step - new relation
         mWithRightArgUpdate = updateRightArgs mWithRel dv updatedOutscope -- 3. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
         swapRels = calcSwapRels mArg dv
