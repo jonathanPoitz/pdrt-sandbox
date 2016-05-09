@@ -102,18 +102,19 @@ rf s@(SDRS _ l) = walkEdges [l]
   where g = discourseGraph s
         walkEdges :: [DisVar] -> [DisVar]
         walkEdges []       = []
-        walkEdges (v:rest) = (walkEdges rest) `union` walkEdges (keys v) `union` (keys v) `union` [v]
-        keys :: DisVar -> [DisVar]
-        keys dv = nub (M.keys (M.filterWithKey (isOnRF dv) g))
-        isOnRF :: DisVar -> DisVar -> [(DisVar, SDRSRelation)] -> Bool
-        isOnRF _ _ []                                = False
-        isOnRF dv key ((dv',Outscopes):rest)
+        walkEdges (v:rest) = (walkEdges rest) `union` walkEdges (parents v) `union` (parents v) `union` [v]
+        parents :: DisVar -> [DisVar]
+        parents dv = nub (M.keys (M.filter (isOnRF dv) g))
+        isOnRF :: DisVar -> [(DisVar, SDRSRelation)] -> Bool
+        isOnRF _ []                                = False
+        isOnRF dv ((dv',Outscopes):rest)
           | dv == dv' = True
-          | otherwise = isOnRF dv key rest
-        isOnRF dv key ((dv',rel@(SDRSRelation {})):rest)
+          | otherwise = isOnRF dv rest
+        isOnRF dv ((dv',rel@(SDRSRelation {})):rest)
           | dv == dv' && ((isStructured rel) ||                                 -- FIX, here we're only working with a label, how do we check the label's structuredness etc?
                           (relType rel == Sub)) = True
-          | otherwise                           = isOnRF dv key rest
+          | otherwise                           = isOnRF dv rest
+
 
 ---------------------------------------------------------------------------
 -- | Return the root node of the discourse graph. If the graph doesn't have
