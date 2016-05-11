@@ -48,6 +48,7 @@ addDRS s@(SDRS m _) d edges = SDRS updatedMap updatedLast
 -- | does the necessary adjustments to an 'SDRS' when a new 'DRS' or 'SDRS'
 -- has been added to it. This function is exported b/c it's used by merge
 -- but it shouldn't be called by the user. 
+-- TODO put inline comments
 ---------------------------------------------------------------------------
 updateRelations :: SDRS -> [(DisVar, SDRSRelation)] -> M.Map DisVar SDRSFormula -> DisVar -> DisVar -> M.Map DisVar SDRSFormula
 updateRelations _ [] mArg _ _               = mArg
@@ -63,7 +64,7 @@ updateRelations s ((dv, rel):rest) mArg attachingNode updatedOutscope
   where isOnRF :: DisVar -> Bool
         isOnRF dv' = dv' `elem` rf s
         isRoot :: DisVar -> Bool
-        isRoot dv' = dv' == root s !! 0
+        isRoot dv' = dv' == root s
         isCrd :: SDRSRelation -> Bool
         isCrd rel' = relType rel' == Crd
         entailsTopic :: SDRSRelation -> Bool

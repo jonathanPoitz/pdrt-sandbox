@@ -56,7 +56,7 @@ normalize s = sdrsAlphaConvert s normMap
         build (cur:rest) index nm 
           | ((M.lookup cur g) == Nothing) = M.insert cur index (build rest (index + 1) nm)
           | otherwise                     = M.insert cur index (build (rest `union` (map fst $ g M.! cur)) (index + 1) nm)
-        normMap = build (root s) 0 M.empty
+        normMap = build [root s] 0 M.empty
         g = discourseGraph s
 
 

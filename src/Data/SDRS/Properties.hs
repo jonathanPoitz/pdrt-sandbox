@@ -18,7 +18,6 @@ module Data.SDRS.Properties
 , validLast
 , struc_isomorph
 , struc_isomorph2
-, testBuild
 ) where
 
 import Data.SDRS.DataType
@@ -100,7 +99,7 @@ validLast s@(SDRS m l) = isSegment (m M.! l) &&
 -- graph structure does not differ except for different labeling of DUs
 ---------------------------------------------------------------------------
 struc_isomorph :: SDRS -> SDRS -> Bool
-struc_isomorph s1@(SDRS m1 _) s2@(SDRS m2 _) = isomorph' (root s1) (root s2)
+struc_isomorph s1@(SDRS m1 _) s2@(SDRS m2 _) = isomorph' [root s1] [root s2]
   where g1 = discourseGraph s1
         g2 = discourseGraph s2
         isomorph' :: [DisVar] -> [DisVar] -> Bool
@@ -136,7 +135,7 @@ struc_isomorph2 s1@(SDRS m1 _) s2@(SDRS m2 _) = length m1 == length m2 && -- als
   where g1 = discourseGraph s1
         g2 = discourseGraph s2
         g2_conv = discourseGraph $ sdrsAlphaConvert s2 convMap
-        convMap = build (zip (root s1) (repeat Outscopes)) (zip (root s2) (repeat Outscopes)) M.empty -- Outscopes is just dummy here
+        convMap = build (zip [root s1] (repeat Outscopes)) (zip [root s2] (repeat Outscopes)) M.empty -- Outscopes is just dummy here
           where build :: [(DisVar,SDRSRelation)] -> [(DisVar,SDRSRelation)] -> M.Map DisVar DisVar -> M.Map DisVar DisVar
                 build ((dv1,rel1):rest1) ((dv2,rel2):rest2) cm
                   | ((M.lookup dv1 g1) == Nothing) &&
@@ -151,29 +150,6 @@ struc_isomorph2 s1@(SDRS m1 _) s2@(SDRS m2 _) = length m1 == length m2 && -- als
                                                            (rest2 `union` (g2 M.! dv2))
                                                            cm)
                 build _ _ cm = cm -- if one SDRS is finished, return the map? 
-
-
----------------------------------------------------------------------------
--- | debugging of struc_isomorph2
----------------------------------------------------------------------------
-testBuild :: SDRS -> SDRS -> M.Map DisVar DisVar
-testBuild s1 s2 = build' (zip (root s1) (repeat Outscopes)) (zip (root s2) (repeat Outscopes)) M.empty 
-  where build' :: [(DisVar,SDRSRelation)] -> [(DisVar,SDRSRelation)] -> M.Map DisVar DisVar -> M.Map DisVar DisVar
-        build' ((dv1,rel1):rest1) ((dv2,rel2):rest2) cm
-          | ((M.lookup dv1 g1) == Nothing) &&
-            ((M.lookup dv2 g2) == Nothing) &&
-            rel1 == rel2 = M.insert dv2 dv1 (build' rest1 rest2 cm)
-          | ((M.lookup dv1 g1) == Nothing) &&
-            ((M.lookup dv2 g2) == Nothing) &&
-            rel1 /= rel2 = cm -- if both are leaves, but their relation is different, abort this branch of recursion
-          | ((M.lookup dv1 g1) == Nothing) ||
-            ((M.lookup dv2 g2) == Nothing) = cm -- if only one of both nodes is a leaf, abort this branch of the recursion
-          | rel1 == rel2 = M.insert dv2 dv1 (build' (rest1 `union` (g1 M.! dv1))
-                                                   (rest2 `union` (g2 M.! dv2))
-                                                   cm)
-        build' _ _ cm = cm -- if one SDRS is finished, return the map?  
-        g1 = discourseGraph s1
-        g2 = discourseGraph s2
 
 ---------------------------------------------------------------------------
 -- | Checks whether all Segments are attached to a node that's on the RF of

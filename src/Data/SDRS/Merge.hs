@@ -42,7 +42,7 @@ sdrsMerge s1@(SDRS m1 _) s2@(SDRS m2 _) edges = SDRS mMergedWithNewRelation (sdr
         convMap = buildConvMap M.empty (M.keys m1) (M.keys m2)
         s2_conv = sdrsAlphaConvert s2 convMap
         mMerged = m1 `M.union` (sdrsMap s2_conv)
-        attachingNode = root s2_conv !! 0
+        attachingNode = root s2_conv
         updatedOutscope = (fst $ M.findMax mMerged) + 1
         mMergedWithNewRelation = updateRelations s1 edges mMerged attachingNode updatedOutscope
 

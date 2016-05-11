@@ -106,10 +106,10 @@ rf s@(SDRS _ l) = walkEdges [l]
         parents :: DisVar -> [DisVar]
         parents dv = nub (M.keys (M.filter (isOnRF dv) g))
         isOnRF :: DisVar -> [(DisVar, SDRSRelation)] -> Bool
-        isOnRF _ []                                = False
+        isOnRF _ []                             = False
         isOnRF dv ((dv',Outscopes):rest)
-          | dv == dv' = True
-          | otherwise = isOnRF dv rest
+          | dv == dv'                           = True
+          | otherwise                           = isOnRF dv rest
         isOnRF dv ((dv',rel@(SDRSRelation {})):rest)
           | dv == dv' && ((isStructured rel) ||                                 -- FIX, here we're only working with a label, how do we check the label's structuredness etc?
                           (relType rel == Sub)) = True
@@ -117,15 +117,8 @@ rf s@(SDRS _ l) = walkEdges [l]
 
 
 ---------------------------------------------------------------------------
--- | Return the root node of the discourse graph. If the graph doesn't have
--- a single node that dominates all subelements. The return type is list
--- to account for the (infelicitous) case where there is more than one root
--- node or nodes in the graph that are unconnected (thus root nodes of a separate
--- graph).
+-- | Return the root node of the discourse graph. If the graph has more than
+-- one root node, only the first one in the list will be returned. 
 ---------------------------------------------------------------------------
-root :: SDRS -> [DisVar]
-root s = (sort $ nub (dus s)) \\ (sort $ nub (relLabels s))
-
-
-
-
+root :: SDRS -> DisVar
+root s = ((sort $ nub (dus s)) \\ (sort $ nub (relLabels s))) !! 0
