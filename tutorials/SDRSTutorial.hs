@@ -163,6 +163,11 @@ discourseGraph1 = M.fromList [(0,[(1,Outscopes),(6,Outscopes)]),
                            (6,[(2,Outscopes),(5,Outscopes),(7,Outscopes)]),
                            (7,[(3,Outscopes),(4,Outscopes)])] :: M.Map DisVar [(DisVar, SDRSRelation)]
 
+discourseGraphRFExt = M.fromList [(0,[(1,Outscopes),(2,Outscopes),(3,relationFromLabel "Explanation")]),
+                                  (1,[(2,relationFromLabel "Parallel")]),
+                                  --(2,[(4,relationFromLabel "Entity_Elaboration")]),
+                                  (5,[(0,Outscopes)])] :: M.Map DisVar [(DisVar, SDRSRelation)]
+
 ---------------------------------------------------------------------------
 -- | SDRSs
 ---------------------------------------------------------------------------
@@ -300,7 +305,7 @@ sdrsneg1 = SDRS (M.fromList [(0, Not (Relation (relationFromLabel "Explanation")
 --                                 (3, recsf4)]) 0
 
 -- "because"
-sdrs_because d1 d2 = buildFromDRSs (relationFromLabel "Explanation") d1 d2
+sdrs_because d1 d2 = buildFromDRSs [relationFromLabel "Explanation"] d1 d2
 
 -- One plaintiff was passed over for promotion three times.
 -- Another didn't get a raise for five years.
@@ -317,6 +322,11 @@ sdrs_plaintiff = SDRS (M.fromList [(0, Not (Relation (relationFromLabel "Explana
                                         (Relation (relationFromLabel "Continuation") 2 3)),
                                 (5, Relation (relationFromLabel "Topic") 0 4),
                                 (7, Relation (relationFromLabel "Contrast") 4 6)]) 3
+
+sdrsRFExt = SDRS (M.fromList [(5, Relation (relationFromLabel "Explanation") 0 3),
+                              (0, And (Relation (relationFromLabel "Parallel") 1 2)
+                                      (Relation (relationFromLabel "Entity_Elaboration") 2 4))]) 3
+
 
 ---------------------------------------------------------------------------
 -- | malformed SDRSs

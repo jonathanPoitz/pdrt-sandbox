@@ -13,6 +13,7 @@ SDRS composition
 module Data.SDRS.Composition
 (
   buildFromDRSs
+, drsToSDRS 
 , addDRS
 , removeRel
 , updateRelations
@@ -26,12 +27,19 @@ import Data.SDRS.Structure (lookupKey)
 --import Data.SDRS.Show()
 
 ---------------------------------------------------------------------------
--- | Build new SDRS using two DRSs and their relation
+-- | Builds a new 'SDRS' from a single 'DRS'.
 ---------------------------------------------------------------------------
-buildFromDRSs :: SDRSRelation -> DRS -> DRS -> SDRS
-buildFromDRSs rel d1 d2 = SDRS (M.fromList [(0, Relation rel 1 2),
-                                              (1, Segment d1),
-                                              (2, Segment d2)]) 2
+drsToSDRS :: DRS -> SDRS
+drsToSDRS d = SDRS (M.fromList [(0, Segment d)]) 0
+
+---------------------------------------------------------------------------
+-- | Builds a new 'SDRS' using two 'DRS's and their relations
+-- TODO clumsy and redundant, remove?
+---------------------------------------------------------------------------
+buildFromDRSs :: [SDRSRelation] -> DRS -> DRS -> SDRS
+buildFromDRSs rels d1 d2 = addDRS sdrs1 d2 edges
+  where sdrs1 = drsToSDRS d1
+        edges = zip (repeat $ root sdrs1) rels
 
 ---------------------------------------------------------------------------
 -- | adds a 'DRS' to an 'SDRS' given a number of edges, represented by
