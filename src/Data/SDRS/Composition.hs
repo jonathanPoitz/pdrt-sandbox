@@ -20,11 +20,18 @@ module Data.SDRS.Composition
 ) where
 
 import Data.SDRS.DataType
-import qualified Data.Map as M
 import Data.SDRS.DiscourseGraph
-import Data.SDRS.Structure (lookupKey)
+import Data.SDRS.Structure (lookupKey, drss)
+--import Data.SDRS.LambdaCalculus (sdrsDRSRefsAlphaConvert)
+
+import qualified Data.Map as M
+import Data.List (intersect)
 --import Debug.Trace
 --import Data.SDRS.Show()
+
+import Data.DRS.Structure (drsUniverse)
+import Data.DRS.LambdaCalculus (drsAlphaConvert)
+
 
 ---------------------------------------------------------------------------
 -- | Builds a new 'SDRS' from a single 'DRS'.
@@ -49,9 +56,29 @@ addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
 addDRS s@(SDRS m _) d edges = SDRS updatedMap updatedLast
   where updatedLast = (fst $ M.findMax m) + 1 -- new reference to last 
         updatedMap = updateRelations s edges mWithSegment updatedLast updatedOutscope -- the new map with the added segment and the updated relations
-        mWithSegment = M.insert updatedLast (Segment d) m -- 1. step - new segment
+        mWithSegment = M.insert updatedLast (Segment alphaConvD) m -- 1. step - new segment
+        alphaConvD = drsAlphaConvert d drsRefConvMap
         updatedOutscope = (fst $ M.findMax mWithSegment) + 1
-        
+        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap
+        drsRefs1 = concat $ map drsUniverse $ drss s
+        drsRefOverlap = drsRefs1 `intersect` (drsUniverse d)
+
+---------------------------------------------------------------------------
+-- | Given a list of all present 'DRSRef's @rs@ and a list of overlapping
+-- 'DRSRef's, builds a conversion list.
+---------------------------------------------------------------------------
+buildDRSRefConvMap :: [DRSRef] -> [DRSRef] -> [(DRSRef,DRSRef)]
+buildDRSRefConvMap _ [] = []
+buildDRSRefConvMap rs (ref:rest) = (ref,newRef) : buildDRSRefConvMap (newRef:rs) rest
+  where newRef = checkRef $ incrRef ref
+        incrRef :: DRSRef -> DRSRef
+        incrRef (DRSRef r) = DRSRef (r ++ "\'") -- lousy, how to do it better?
+        incrRef ldr = ldr
+        checkRef :: DRSRef -> DRSRef
+        checkRef dr
+          | dr `elem` rs = checkRef $ incrRef dr
+          | otherwise    = dr
+
 ---------------------------------------------------------------------------
 -- | adds one or more relations to the 'SDRS' @s@ between the newly added 'DisVar'
 -- @attachingNode@ and one or several target nodes on the right frontier of @s@.
