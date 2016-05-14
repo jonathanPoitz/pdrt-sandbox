@@ -32,19 +32,32 @@ import Data.SDRS.Composition (updateRelations)
 -- with its root node to a node @dv1@ that must be on the RF of @s1@, using relation @r@.  
 ---------------------------------------------------------------------------
 sdrsMerge :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
-sdrsMerge s1@(SDRS m1 _) s2@(SDRS m2 _) edges = SDRS mMergedWithNewRelation (sdrsLast s2_conv) 
-  where buildConvMap :: M.Map DisVar DisVar -> [DisVar] -> [DisVar] -> M.Map DisVar DisVar
-        buildConvMap cm _ [] = cm
-        buildConvMap cm acc (dv:rest)
-          | dv `elem` acc = buildConvMap (M.insert dv newMax cm) (insert newMax acc) rest
-          | otherwise     = buildConvMap cm acc rest
-          where newMax = maximum acc + 1
-        convMap = buildConvMap M.empty (M.keys m1) (M.keys m2)
+sdrsMerge s1@(SDRS m1 _) s2 edges = SDRS mMergedWithNewRelation (sdrsLast s2_conv) 
+  where convMap = buildConvMap s1 s2
         s2_conv = sdrsAlphaConvert s2 convMap
         mMerged = m1 `M.union` (sdrsMap s2_conv)
         attachingNode = root s2_conv
         updatedOutscope = (fst $ M.findMax mMerged) + 1
         mMergedWithNewRelation = updateRelations s1 edges mMerged attachingNode updatedOutscope
+
+---------------------------------------------------------------------------
+-- | Private
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+-- | Builds a conversion map for all overlapping 'DisVar' from 
+---------------------------------------------------------------------------
+buildConvMap :: SDRS -> SDRS -> M.Map DisVar DisVar
+buildConvMap (SDRS m1 _) (SDRS m2 _) = build M.empty s1Keys s2Keys
+  where build :: M.Map DisVar DisVar -> [DisVar] -> [DisVar] -> M.Map DisVar DisVar
+        build cm _ []       = cm
+        build cm keys1 (dv:rest)
+          | dv `elem` keys1 = build (M.insert dv newMax cm) (insert newMax keys1) rest
+          | otherwise       = build cm keys1 rest
+          where newMax = maximum keys1 + 1
+        s1Keys = M.keys m1
+        s2Keys = M.keys m2
+
 
 ---------------------------------------------------------------------------
 -- | Strict merge. Preliminary version, depends on implementation of
