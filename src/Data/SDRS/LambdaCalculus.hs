@@ -15,16 +15,16 @@ module Data.SDRS.LambdaCalculus
   sdrsAlphaConvert
 , sdrsDRSRefsAlphaConvert
 , normalize
+, buildDRSRefConvMap
+, buildConvMap
 ) where
 
-import Data.List (union)
+import Data.List (union, insert)
 import qualified Data.Map as M
 
 import Data.SDRS.DataType
 import Data.SDRS.DiscourseGraph
---import Data.SDRS.Structure (drss)
 
---import Data.DRS.Structure (drsUniverse)
 import Data.DRS.LambdaCalculus (drsAlphaConvert)
 
 ---------------------------------------------------------------------------
@@ -34,8 +34,6 @@ import Data.DRS.LambdaCalculus (drsAlphaConvert)
 ---------------------------------------------------------------------------
 -- ** Alpha Conversion
 ---------------------------------------------------------------------------
-
-
 
 ---------------------------------------------------------------------------
 -- | Applies alpha conversion to an 'SDRS' on the basis of a conversion list
@@ -66,6 +64,36 @@ sdrsDRSRefsAlphaConvert (SDRS m l) rs = SDRS mConv l
         convert r@(Relation {}) = r
         convert (And sf1 sf2) = And (convert sf1) (convert sf2)
         convert (Not sf1) = Not (convert sf1)
+
+---------------------------------------------------------------------------
+-- | Given a list of all present 'DRSRef's @rs@ and a list of overlapping
+-- 'DRSRef's, builds a conversion list.
+---------------------------------------------------------------------------
+buildDRSRefConvMap :: [DRSRef] -> [DRSRef] -> [(DRSRef,DRSRef)]
+buildDRSRefConvMap _ [] = []
+buildDRSRefConvMap rs (ref:rest) = (ref,newRef) : buildDRSRefConvMap (newRef:rs) rest
+  where newRef = checkRef $ incrRef ref
+        incrRef :: DRSRef -> DRSRef
+        incrRef (DRSRef r) = DRSRef (r ++ "\'") -- lousy, how to do it better?
+        incrRef ldr = ldr
+        checkRef :: DRSRef -> DRSRef
+        checkRef dr
+          | dr `elem` rs = checkRef $ incrRef dr
+          | otherwise    = dr
+
+---------------------------------------------------------------------------
+-- | Builds a conversion map for all overlapping 'DisVar' from 
+---------------------------------------------------------------------------
+buildConvMap :: SDRS -> SDRS -> M.Map DisVar DisVar
+buildConvMap (SDRS m1 _) (SDRS m2 _) = build M.empty s1Keys s2Keys
+  where build :: M.Map DisVar DisVar -> [DisVar] -> [DisVar] -> M.Map DisVar DisVar
+        build cm _ []       = cm
+        build cm keys1 (dv:rest)
+          | dv `elem` keys1 = build (M.insert dv newMax cm) (insert newMax keys1) rest
+          | otherwise       = build cm keys1 rest
+          where newMax = maximum keys1 + 1
+        s1Keys = M.keys m1
+        s2Keys = M.keys m2
 
 ---------------------------------------------------------------------------
 -- | normalizes the nodes in an SDRS.

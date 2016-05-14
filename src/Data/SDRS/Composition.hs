@@ -22,7 +22,7 @@ module Data.SDRS.Composition
 import Data.SDRS.DataType
 import Data.SDRS.DiscourseGraph
 import Data.SDRS.Structure (lookupKey, drss)
---import Data.SDRS.LambdaCalculus (sdrsDRSRefsAlphaConvert)
+import Data.SDRS.LambdaCalculus (buildDRSRefConvMap)
 
 import qualified Data.Map as M
 import Data.List (intersect)
@@ -62,22 +62,6 @@ addDRS s@(SDRS m _) d edges = SDRS updatedMap updatedLast
         drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap
         drsRefs1 = concat $ map drsUniverse $ drss s
         drsRefOverlap = drsRefs1 `intersect` (drsUniverse d)
-
----------------------------------------------------------------------------
--- | Given a list of all present 'DRSRef's @rs@ and a list of overlapping
--- 'DRSRef's, builds a conversion list.
----------------------------------------------------------------------------
-buildDRSRefConvMap :: [DRSRef] -> [DRSRef] -> [(DRSRef,DRSRef)]
-buildDRSRefConvMap _ [] = []
-buildDRSRefConvMap rs (ref:rest) = (ref,newRef) : buildDRSRefConvMap (newRef:rs) rest
-  where newRef = checkRef $ incrRef ref
-        incrRef :: DRSRef -> DRSRef
-        incrRef (DRSRef r) = DRSRef (r ++ "\'") -- lousy, how to do it better?
-        incrRef ldr = ldr
-        checkRef :: DRSRef -> DRSRef
-        checkRef dr
-          | dr `elem` rs = checkRef $ incrRef dr
-          | otherwise    = dr
 
 ---------------------------------------------------------------------------
 -- | adds one or more relations to the 'SDRS' @s@ between the newly added 'DisVar'
