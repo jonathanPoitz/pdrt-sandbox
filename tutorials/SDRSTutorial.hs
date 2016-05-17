@@ -401,8 +401,8 @@ root_sdrsfullal07 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaborati
 -- | Merges
 ---------------------------------------------------------------------------
 
-mergeRes = sdrsMerge sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Result")]
-merge2NarElab = sdrsMerge sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Narration"),(2, relationFromLabel "Elaboration")]
+--mergeRes = sdrsMerge sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Result")]
+--merge2NarElab = sdrsMerge sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Narration"),(2, relationFromLabel "Elaboration")]
 
 
 
