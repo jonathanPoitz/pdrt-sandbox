@@ -26,6 +26,7 @@ import Data.SDRS.DataType
 import Data.SDRS.DiscourseGraph
 
 import Data.DRS.LambdaCalculus (drsAlphaConvert)
+import Data.DRS.Variables (increase)
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -74,7 +75,7 @@ buildDRSRefConvMap _ [] = []
 buildDRSRefConvMap rs (ref:rest) = (ref,newRef) : buildDRSRefConvMap (newRef:rs) rest
   where newRef = checkRef $ incrRef ref
         incrRef :: DRSRef -> DRSRef
-        incrRef (DRSRef r) = DRSRef (r ++ "\'") -- lousy, how to do it better?
+        incrRef (DRSRef r) = DRSRef $ increase r
         incrRef ldr = ldr
         checkRef :: DRSRef -> DRSRef
         checkRef dr
