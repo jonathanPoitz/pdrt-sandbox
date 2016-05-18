@@ -237,6 +237,8 @@ sdrsal07 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6)
                                 (6, And (Relation (relationFromLabel "Elaboration") 2 7) (Relation (relationFromLabel "Narration") 2 5)),
                                 (7, Relation (relationFromLabel "Narration") 3 4)]) 5
 
+
+
 sdrsfullal07_to2 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 2),
                                 (1, Segment _al07_1),
                                 (2, Segment _al07_2)]) 2
@@ -393,6 +395,17 @@ root_sdrsfullal07 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaborati
                                  (5, Segment _al07_5),
                                  (6, Relation (relationFromLabel "Narration") 2 5),
                                  (7, Relation (relationFromLabel "Narration") 3 4)]) 5
+
+-- sdrs without added new segment (5)
+sdrsfullal07_wo5 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6),
+                                 (1, Segment _al07_1),
+                                 (2, Segment _al07_2),
+                                 (3, Segment _al07_3),
+                                 (4, Segment _al07_4),
+                                 (6, And (Relation (relationFromLabel "Narration") 2 5)
+                                         (Relation (relationFromLabel "Explanation") 2 7)),
+                                 (7, Relation (relationFromLabel "Narration") 3 4)]) 5
+
 
 ---------------------------------------------------------------------------
 -- | Example sentences
