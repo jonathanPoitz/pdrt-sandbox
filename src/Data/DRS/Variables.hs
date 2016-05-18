@@ -21,6 +21,7 @@ module Data.DRS.Variables
 , drsUniverses
 , drsVariables
 , drsLambdas
+, increase
 ) where
 
 import Data.Char (isDigit)
