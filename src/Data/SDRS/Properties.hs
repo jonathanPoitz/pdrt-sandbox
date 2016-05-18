@@ -20,46 +20,43 @@ module Data.SDRS.Properties
 , struc_isomorph2
 ) where
 
-import Data.SDRS.DataType
-import Data.DRS.Properties
-import Data.DRS.Merge
-import Data.DRS.Structure
 import qualified Data.Map as M
 import Data.List (nub, union)
+
+import Data.SDRS.DataType
 import Data.SDRS.Structure
 import Data.SDRS.DiscourseGraph
 import Data.SDRS.LambdaCalculus
+
+import Data.DRS.Properties
+import Data.DRS.Merge
+import Data.DRS.Structure
 
 ---------------------------------------------------------------------------
 -- | Checks, given an 'SDRS', whether all embedded DRSs are proper
 ---------------------------------------------------------------------------
 sdrsProperDRSs :: SDRS -> Bool
-sdrsProperDRSs s@(SDRS m _) = proper $ segments s
+sdrsProperDRSs s = proper $ segments s
  where proper :: [(DisVar, SDRSFormula)] -> Bool
        proper []                    = True
        proper ((dv,Segment d):rest) = (properDRS dv d) && proper rest
        proper ((_,_):rest)          = proper rest
        properDRS :: DisVar -> DRS -> Bool
        properDRS dv d = isProperDRS ((foldl (<<+>>) (DRS [] []) accDRSs) <<+>> d) -- is merging with empty DRS the only way for this?
-         where accDisVars = accessibleNodes s dv
-               accDUs = map (\i -> m M.! i) accDisVars
-               accDRSs = [ drs | (Segment drs) <- accDUs]
+         where accDRSs = accessibleDRSs s dv
        
-
 ---------------------------------------------------------------------------
 -- | Checks, given an 'SDRS', whether all embedded 'DRS's are pure
 ---------------------------------------------------------------------------
 sdrsPureDRSs :: SDRS -> Bool
-sdrsPureDRSs s@(SDRS m _) = pure' $ segments s
+sdrsPureDRSs s = pure' $ segments s
   where pure' :: [(DisVar, SDRSFormula)] -> Bool
         pure' []                    = True
         pure' ((dv,Segment d):rest) = (pureDRS dv d) && pure' rest
         pure' ((_,_):rest)          = pure' rest
         pureDRS :: DisVar -> DRS -> Bool
         pureDRS dv d = isPureDRS ((foldl (<<+>>) (DRS [] []) accDRSs) <<+>> d) -- is merging with empty DRS the only way for this?
-          where accDisVars = accessibleNodes s dv
-                accDUs = map (\i -> m M.! i) accDisVars
-                accDRSs = [ drs | (Segment drs) <- accDUs]
+          where accDRSs = accessibleDRSs s dv
 
 ---------------------------------------------------------------------------
 -- | Checks if the 'SDRS' @s@ only has unique DRSRefs where, i.e.:
