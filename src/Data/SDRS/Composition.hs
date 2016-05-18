@@ -21,13 +21,13 @@ module Data.SDRS.Composition
 
 import Data.SDRS.DataType
 import Data.SDRS.DiscourseGraph
-import Data.SDRS.Structure (lookupKey, drss, sdrsMap)
+import Data.SDRS.Structure (lookupKey, drss)
 import Data.SDRS.LambdaCalculus (buildDRSRefConvMap)
 
 import qualified Data.Map as M
 import Data.List (intersect)
---import Debug.Trace
---import Data.SDRS.Show()
+import Debug.Trace
+import Data.SDRS.Show()
 
 import Data.DRS.Structure (drsUniverse)
 import Data.DRS.LambdaCalculus (drsAlphaConvert)
@@ -51,14 +51,16 @@ buildFromDRSs rels d1 d2 = addDRS sdrs1 d2 edges
 ---------------------------------------------------------------------------
 -- | adds a 'DRS' to an 'SDRS' given a number of edges, represented by
 -- tuples consisting of the target node and the relation to that node.
+-- TODO is it possible that more than one new outscope will be created?
 ---------------------------------------------------------------------------
 addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
-addDRS s@(SDRS m _) d edges = sdrsWithRelations
+addDRS s@(SDRS m _) d edges = sdrsWithNewLast
   where updatedLast = (fst $ M.findMax m) + 1 -- new reference to last 
-        sdrsWithRelations = updateRelations sdrsWithSegment edges updatedLast updatedOutscope -- the new map with the added segment and the updated relations
-        sdrsWithSegment = SDRS (M.insert updatedLast (Segment alphaConvD) m) updatedLast -- 1. step - new segment + new last
+        sdrsWithRelations = updateRelations s edges updatedLast updatedOutscope -- 1. step update relations (this must be before new segment to ensure right calculation of RF)
+        sdrsWithSegment = addRel sdrsWithRelations updatedLast (Segment alphaConvD) -- 2. step - new segment
+        sdrsWithNewLast = updateLast sdrsWithSegment updatedLast
         alphaConvD = drsAlphaConvert d drsRefConvMap
-        updatedOutscope = (fst $ M.findMax (sdrsMap sdrsWithSegment)) + 1
+        updatedOutscope = (fst $ M.findMax m) + 2 -- FIX this is very hacky
         drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap
         drsRefs1 = concat $ map drsUniverse $ drss s
         drsRefOverlap = drsRefs1 `intersect` (drsUniverse d)
@@ -73,36 +75,41 @@ addDRS s@(SDRS m _) d edges = sdrsWithRelations
 ---------------------------------------------------------------------------
 updateRelations :: SDRS -> [(DisVar, SDRSRelation)] -> DisVar -> DisVar -> SDRS
 updateRelations s [] _ _               = s
-updateRelations s@(SDRS m l) ((dv, rel):rest) attachingNode updatedOutscope
-  | isOnRF s dv && isRoot s dv              = updateRelations sdrsWithSwapRels rest attachingNode updatedOutscope
+updateRelations s ((dv, rel):rest) attachingNode updatedOutscope
+  | isOnRF s dv && isRoot s dv              = trace (show "1") updateRelations sdrsWithRel rest attachingNode updatedOutscope
   -- ^ the target node is the root node of the SDRS
   | isOnRF s dv && isCrd rel &&
-    isTopic rel && entailsTopic rel         = updateRelations sdrsWithSwapRels rest attachingNode updatedOutscope
+    isTopic rel && entailsTopic rel         = trace (show "2") updateRelations sdrsWithRel rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint
   | isOnRF s dv && isCrd rel && 
-    isTopic rel && (not $ entailsTopic rel) = updateRelations sdrsWithSwapRels rest attachingNode updatedOutscope
+    isTopic rel && (not $ entailsTopic rel) = trace (show "3") updateRelations sdrsWithRel rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint,
   -- not sure if something changes here, we might have to make an explicit \Downarrow relation
-  | isOnRF s dv && isCrd rel                = updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
+  | isOnRF s dv && isCrd rel                = trace (show "4") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is coordinating, but doesn't impose a topic constraint
-  | isOnRF s dv                             = updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
+  | isOnRF s dv                             = trace (show "5") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is subordinating
-  | otherwise                               = updateRelations s rest attachingNode updatedOutscope
+  | otherwise                               = trace (show "6") updateRelations s rest attachingNode updatedOutscope
   -- ^ skipping this relation because the target node is not on the RF of the SDRS
   where entailsTopic :: SDRSRelation -> Bool
         entailsTopic _ = True -- TODO implement, which subRels entail \Downarrow?
         -----------
-        sdrsWithRel = SDRS (M.insert updatedOutscope (Relation rel dv attachingNode) m) l -- 2. step - new relation, FIX get rid of m here?
-        sdrsWithRightArgUpdate = updateRightArgs sdrsWithRel dv updatedOutscope -- 3. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
+        sdrsWithRightArgUpdate = updateRightArgs s dv updatedOutscope -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
         swapRels = calcLeftArgRels s dv
-        sdrsWithRemovedSwapRels = removeRels sdrsWithRightArgUpdate swapRels
-        sdrsWithSwapRels = addRels sdrsWithRemovedSwapRels updatedOutscope swapRels
+        sdrsWithRemovedSwapRels = removeRels sdrsWithRightArgUpdate swapRels -- 3. 
+        sdrsWithSwapRels = addRels sdrsWithRemovedSwapRels updatedOutscope swapRels -- 4. 
+        sdrsWithRel = addRel sdrsWithSwapRels updatedOutscope (Relation rel dv attachingNode) -- 5. step - new relation
         sdrsWithNewConj = addRel s (lookupKey s dv) (Relation rel dv attachingNode) -- FIX order?
-        --M.adjust (flip And (Relation rel dv attachingNode)) (lookupKey s dv) mArg
 
 ---------------------------------------------------------------------------
 -- | Private
 ---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+-- | updates the last pointer of an 'SDRS' @s@ to the new 'DisVar' @l@.
+---------------------------------------------------------------------------
+updateLast :: SDRS -> DisVar -> SDRS
+updateLast (SDRS m _) l' = SDRS m l'
 
 ---------------------------------------------------------------------------
 -- | Adds a given list of 'SDRSFormula'e as new conjuncts to an existing
@@ -113,20 +120,21 @@ addRels s _ []           = s
 addRels s new (sf:rest) = addRels (addRel s new sf) new rest
 
 ---------------------------------------------------------------------------
--- | Given an 'SDRS' @s@, adds an SDRSFormula @r@ as a new conjunct to an
--- existing 'SDRSFormula' that is labeled by the 'DisVar' @new@ iff @r@ is
--- a Relation.
+-- | Given an 'SDRS' @s@, adds an SDRSFormula @sf@ as a new conjunct to an
+-- existing 'SDRSFormula' that is labeled by the 'DisVar' @new@. If @new@
+-- is not yet part of the 'SDRS', create it and have it label @sf@.
 ---------------------------------------------------------------------------
 addRel :: SDRS -> DisVar -> SDRSFormula -> SDRS
-addRel (SDRS m l) new r@(Relation {}) = SDRS (M.adjust (And r) new m) l -- TODO switch args around?
-addRel s _ _                            = s
+addRel (SDRS m l) new sf 
+  | M.member new m = SDRS (M.adjust (flip And sf) new m) l -- TODO switch args around?
+  | otherwise      = SDRS (M.insert new sf m) l
 
 ---------------------------------------------------------------------------
 -- | Calculates all relations within an 'SDRS' @s@ that have the 'DisVar' @old@
 -- as their left argument.
 ---------------------------------------------------------------------------
 calcLeftArgRels :: SDRS -> DisVar -> [SDRSFormula]
-calcLeftArgRels (SDRS m _) old = M.foldl putSwapRel [] m
+calcLeftArgRels (SDRS m _) old = reverse $ M.foldr putSwapRel [] m -- needs to be reversed in order to get right ordering in conjunction later
   where putSwapRel :: [SDRSFormula] -> SDRSFormula -> [SDRSFormula]
         putSwapRel acc (Segment {})  = acc
         putSwapRel acc r@(Relation _ dv1 _)

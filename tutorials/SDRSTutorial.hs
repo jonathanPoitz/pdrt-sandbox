@@ -237,6 +237,11 @@ sdrsal07 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 6)
                                 (6, And (Relation (relationFromLabel "Elaboration") 2 7) (Relation (relationFromLabel "Narration") 2 5)),
                                 (7, Relation (relationFromLabel "Narration") 3 4)]) 5
 
+sdrsfullal07_to2 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 2),
+                                (1, Segment _al07_1),
+                                (2, Segment _al07_2)]) 2
+
+
 sdrsfullal07_to3 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 3)),
                                 (1, Segment _al07_1),
                                 (2, Segment _al07_2),
