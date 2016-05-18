@@ -14,6 +14,7 @@ module Data.SDRS.DiscourseGraph
 ( 
   discourseGraph
 , accessibleNodes
+, accessibleDRSs
 , rf
 , immediateOutscopes
 , Label
@@ -89,6 +90,15 @@ accessibleNodes s dv1 = walkEdges [dv1]
         findKey dv ((dv',_):rest)
           | dv' == dv = True
           | otherwise = findKey dv rest
+
+---------------------------------------------------------------------------
+-- | returns all accessible 'DRS's from a given 'DisVar' @dv@ in the 'SDRS' @s@. 
+---------------------------------------------------------------------------
+accessibleDRSs :: SDRS -> DisVar -> [DRS]
+accessibleDRSs s@(SDRS m _) dv = accDRSs
+  where accDisVars = accessibleNodes s dv
+        accDUs = map (\i -> m M.! i) accDisVars
+        accDRSs = [ drs | (Segment drs) <- accDUs]
 
 ---------------------------------------------------------------------------
 -- | computes the right frontier of an 'SDRS', in order of locality
