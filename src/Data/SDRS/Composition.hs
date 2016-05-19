@@ -21,8 +21,8 @@ module Data.SDRS.Composition
 
 import qualified Data.Map as M
 import Data.List (intersect)
---import Debug.Trace
---import Data.SDRS.Show()
+import Debug.Trace
+import Data.SDRS.Show()
 
 import Data.SDRS.DataType
 import Data.SDRS.DiscourseGraph
@@ -31,7 +31,7 @@ import Data.SDRS.LambdaCalculus (buildDRSRefConvMap)
 
 import Data.DRS.Variables (drsVariables)
 import Data.DRS.LambdaCalculus (renameSubDRS)
-import Data.DRS.Merge
+import Data.DRS.Merge ((<<+>>))
 
 ---------------------------------------------------------------------------
 -- | Builds a new 'SDRS' from a single 'DRS'.
@@ -78,20 +78,20 @@ addDRS s@(SDRS m _) d edges = sdrsWithNewLast
 updateRelations :: SDRS -> [(DisVar, SDRSRelation)] -> DisVar -> DisVar -> SDRS
 updateRelations s [] _ _               = s
 updateRelations s ((dv, rel):rest) attachingNode updatedOutscope
-  | isOnRF s dv && isRoot s dv              = updateRelations sdrsWithRel rest attachingNode updatedOutscope
+  | isOnRF s dv && isRoot s dv              = trace (show "1") updateRelations sdrsWithRel rest attachingNode updatedOutscope
   -- ^ the target node is the root node of the SDRS
   | isOnRF s dv && isCrd rel &&
-    isTopic rel && entailsTopic rel         = updateRelations sdrsWithRel rest attachingNode updatedOutscope
+    isTopic rel && entailsTopic rel         = trace (show "2") updateRelations sdrsWithRel rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint
   | isOnRF s dv && isCrd rel && 
-    isTopic rel && (not $ entailsTopic rel) = updateRelations sdrsWithRel rest attachingNode updatedOutscope
+    isTopic rel && (not $ entailsTopic rel) = trace (show "3") updateRelations sdrsWithRel rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint,
   -- not sure if something changes here, we might have to make an explicit \Downarrow relation
-  | isOnRF s dv && isCrd rel                = updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
+  | isOnRF s dv && isCrd rel                = trace (show "4") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is coordinating, but doesn't impose a topic constraint
-  | isOnRF s dv                             = updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
+  | isOnRF s dv                             = trace (show "5") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is subordinating
-  | otherwise                               = updateRelations s rest attachingNode updatedOutscope
+  | otherwise                               = trace (show "6") updateRelations s rest attachingNode updatedOutscope
   -- ^ skipping this relation because the target node is not on the RF of the SDRS
   where entailsTopic :: SDRSRelation -> Bool
         entailsTopic _ = True -- TODO implement, which subRels entail \Downarrow?

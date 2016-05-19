@@ -12,21 +12,23 @@ SDRS merge
 
 module Data.SDRS.Merge
 (
-  --sdrsMerge
+  sdrsMerge
 ) where
 
---import qualified Data.Map as M
---import Data.List (intersect)
-----import Debug.Trace
-----import Data.SDRS.Show()
+import qualified Data.Map as M
+import Data.List (intersect)
+import Debug.Trace
+import Data.SDRS.Show()
 
---import Data.SDRS.DataType
---import Data.SDRS.Structure
---import Data.SDRS.DiscourseGraph
---import Data.SDRS.LambdaCalculus
---import Data.SDRS.Composition (updateRelations)
+import Data.SDRS.DataType
+import Data.SDRS.Structure
+import Data.SDRS.DiscourseGraph
+import Data.SDRS.LambdaCalculus
+import Data.SDRS.Composition (updateRelations)
 
---import Data.DRS.Structure (drsUniverse)
+import Data.DRS.Structure (drsUniverse)
+import Data.DRS.LambdaCalculus (renameSubDRS)
+import Data.DRS.Merge ((<<+>>))
 
 -------------------------------------------------------------------------
 -- | Applies merge to 'SDRS' @s1@ and 'SDRS' @s2@. The latter is attached
@@ -38,30 +40,41 @@ module Data.SDRS.Merge
 -- and finally added the new drs. because it's already an sdrs
 -- we could, after having added the sdrs, get the node labels and drsrefalphaconv each
 -- new drs. this might be a good option also for addDRS, making it a general
--- solution for both scenarios.
+-- solution for both scenarios. -> sort of solved
+-- next problem: in order to add the new relation, one needs a wellformed SDRS
+-- thus, add the relation already on s1 just with the new outscopes label.
+-- however, in order to get the new outscopes label
 -------------------------------------------------------------------------
---sdrsMerge :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
---sdrsMerge s1@(SDRS m1 _) s2 edges = SDRS mMergedWithNewRelation (sdrsLast s2DRConv) 
---  where 
---        convMap = buildConvMap s1 s2 -- 1.
---        s2DVConv = sdrsAlphaConvert s2 convMap -- 2.
---        drsRefs1 = concat $ map drsUniverse $ drss s1 -- 3a.
---        drsRefs2 = concat $ map drsUniverse $ drss s2DVConv -- 3b.
---        drsRefOverlap = drsRefs1 `intersect` drsRefs2 -- order? 3c.
---        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap -- 3d.
---        s2DRConv = sdrsDRSRefsAlphaConvert s2DVConv drsRefConvMap
---        updatedLast = sdrsLast s2DRConv
---        sdrsMerged = SDRS (m1 `M.union` (sdrsMap s2DRConv)) (sdrsLast s2DRConv)
---        attachingNode = root s2DVConv
---        updatedOutscope = (fst $ M.findMax mMerged) + 1
---        sdrsMergedWithNewRelation = updateRelations sdrsMerged edges attachingNode updatedOutscope
+sdrsMerge :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
+sdrsMerge s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
+  where convMap = buildConvMap s1 s2 -- 1.
+        drsRefs1 = concat $ map drsUniverse $ drss s1 -- 3a.
+        drsRefs2 = concat $ map drsUniverse $ drss s2DVConv -- 3b.
+        drsRefOverlap = drsRefs1 `intersect` drsRefs2 -- order? 3c.
+        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap -- 3d.
+        updatedLast = sdrsLast s2DVConv
+        attachingNode = root s2DVConv
+        updatedOutscope = max (fst $ M.findMax m1) (fst $ M.findMax (sdrsMap s2DVConv)) + 1
+        -----
+        s2DVConv = sdrsAlphaConvert s2 convMap -- 2.
+        s1WithNewRelation = trace (show attachingNode ++ " " ++ show updatedOutscope) updateRelations s1 edges attachingNode updatedOutscope
+        sdrsMerged = SDRS ((sdrsMap s1WithNewRelation) `M.union` (sdrsMap s2DVConv)) updatedLast -- merged maps and updated last
+        newDRSKeys = map fst $ segments s2DVConv -- 2a. the labels of the drss that are to be added. these later need to be drsRefAlphaConv'ed
+        sdrsDRSRefAlphaConved = alphaConvDRSs sdrsMerged newDRSKeys
+        alphaConvDRSs :: SDRS -> [DisVar] -> SDRS
+        alphaConvDRSs s []                 = s
+        alphaConvDRSs (SDRS m l) (dv:rest) = alphaConvDRSs (SDRS m' l) rest
+          where m' = M.adjust alphaConvDRS dv m
+        alphaConvDRS :: SDRSFormula -> SDRSFormula
+        alphaConvDRS (Segment d) = Segment $ renameSubDRS d gd drsRefConvMap
+          where gd = foldl (<<+>>) (DRS [] []) accDRSs
+                accDRSs = accessibleDRSs sdrsMerged updatedLast
+        alphaConvDRS sf          = sf -- other cases don't matter currently
+        
 
 ---------------------------------------------------------------------------
 -- | Private
 ---------------------------------------------------------------------------
-
-
-
 
 ---------------------------------------------------------------------------
 -- | Strict merge. Preliminary version, depends on implementation of
