@@ -28,27 +28,40 @@ module Data.SDRS.Merge
 
 --import Data.DRS.Structure (drsUniverse)
 
----------------------------------------------------------------------------
+-------------------------------------------------------------------------
 -- | Applies merge to 'SDRS' @s1@ and 'SDRS' @s2@. The latter is attached
 -- with its root node to a node @dv1@ that must be on the RF of @s1@, using relation @r@.  
----------------------------------------------------------------------------
+-- TODO the issue here is that in order to DRSRef alpha conv the refs from s2
+-- one needs to attach s2 to s1 first (in order to calculate each new drs's accessible drs)
+-- so we can't do the trick that we did in addDRS where we first added the relation,
+-- calculated the accDRSs using the new relation, drsalphaconv the new drs
+-- and finally added the new drs. because it's already an sdrs
+-- we could, after having added the sdrs, get the node labels and drsrefalphaconv each
+-- new drs. this might be a good option also for addDRS, making it a general
+-- solution for both scenarios.
+-------------------------------------------------------------------------
 --sdrsMerge :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
 --sdrsMerge s1@(SDRS m1 _) s2 edges = SDRS mMergedWithNewRelation (sdrsLast s2DRConv) 
---  where convMap = buildConvMap s1 s2
---        s2DVConv = sdrsAlphaConvert s2 convMap
+--  where 
+--        convMap = buildConvMap s1 s2 -- 1.
+--        s2DVConv = sdrsAlphaConvert s2 convMap -- 2.
+--        drsRefs1 = concat $ map drsUniverse $ drss s1 -- 3a.
+--        drsRefs2 = concat $ map drsUniverse $ drss s2DVConv -- 3b.
+--        drsRefOverlap = drsRefs1 `intersect` drsRefs2 -- order? 3c.
+--        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap -- 3d.
 --        s2DRConv = sdrsDRSRefsAlphaConvert s2DVConv drsRefConvMap
---        mMerged = m1 `M.union` (sdrsMap s2DRConv)
+--        updatedLast = sdrsLast s2DRConv
+--        sdrsMerged = SDRS (m1 `M.union` (sdrsMap s2DRConv)) (sdrsLast s2DRConv)
 --        attachingNode = root s2DVConv
 --        updatedOutscope = (fst $ M.findMax mMerged) + 1
---        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap
---        drsRefs1 = concat $ map drsUniverse $ drss s1
---        drsRefs2 = concat $ map drsUniverse $ drss s2
---        drsRefOverlap = drsRefs1 `intersect` drsRefs2 -- order?
---        mMergedWithNewRelation = updateRelations s1 edges mMerged attachingNode updatedOutscope
+--        sdrsMergedWithNewRelation = updateRelations sdrsMerged edges attachingNode updatedOutscope
 
 ---------------------------------------------------------------------------
 -- | Private
 ---------------------------------------------------------------------------
+
+
+
 
 ---------------------------------------------------------------------------
 -- | Strict merge. Preliminary version, depends on implementation of

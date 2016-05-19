@@ -25,8 +25,9 @@ import qualified Data.Map as M
 import Data.SDRS.DataType
 import Data.SDRS.DiscourseGraph
 
-import Data.DRS.LambdaCalculus (drsAlphaConvert)
+import Data.DRS.LambdaCalculus (renameSubDRS)
 import Data.DRS.Variables (increase)
+import Data.DRS.Merge ((<<+>>))
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -58,13 +59,15 @@ sdrsAlphaConvert (SDRS m l) convMap = SDRS (M.fromList (convert' (M.assocs m) co
 -- on the basis of a conversion list for 'DRSRef's @rs@.
 ---------------------------------------------------------------------------
 sdrsDRSRefsAlphaConvert :: SDRS -> [(DRSRef,DRSRef)] -> SDRS
-sdrsDRSRefsAlphaConvert (SDRS m l) rs = SDRS mConv l
-  where mConv = M.map convert m
-        convert :: SDRSFormula -> SDRSFormula
-        convert (Segment d) = Segment $ drsAlphaConvert d rs
-        convert r@(Relation {}) = r
-        convert (And sf1 sf2) = And (convert sf1) (convert sf2)
-        convert (Not sf1) = Not (convert sf1)
+sdrsDRSRefsAlphaConvert s@(SDRS m l) rs = SDRS mConv l
+  where mConv = M.mapWithKey convert m
+        convert :: DisVar -> SDRSFormula -> SDRSFormula
+        convert dv (Segment d) = Segment $ renameSubDRS d gd rs
+          where gd = foldl (<<+>>) (DRS [] []) accDRSs
+                accDRSs = accessibleDRSs s dv
+        convert _ r@(Relation {}) = r
+        convert dv (And sf1 sf2) = And (convert dv sf1) (convert dv sf2)
+        convert dv (Not sf1) = Not (convert dv sf1)
 
 ---------------------------------------------------------------------------
 -- | Given a list of all present 'DRSRef's @rs@ and a list of overlapping
