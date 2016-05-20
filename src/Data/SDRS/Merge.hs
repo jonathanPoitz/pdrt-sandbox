@@ -17,8 +17,8 @@ module Data.SDRS.Merge
 
 import qualified Data.Map as M
 import Data.List (intersect)
-import Debug.Trace
-import Data.SDRS.Show()
+-- import Debug.Trace
+-- import Data.SDRS.Show()
 
 import Data.SDRS.DataType
 import Data.SDRS.Structure
@@ -55,10 +55,10 @@ sdrsMerge s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
         accDRSs = accessibleDRSs sdrsMerged attachingNode
         updatedLast = sdrsLast s2DVConv
         attachingNode = root s2DVConv
-        updatedOutscope = max (fst $ M.findMax m1) (fst $ M.findMax (sdrsMap s2DVConv)) + 1
+        updatedOutscope = (max (fst $ M.findMax m1) (fst $ M.findMax (sdrsMap s2DVConv))) + 1
         -----
         s2DVConv = sdrsAlphaConvert s2 convMap -- 2.
-        s1WithNewRelation = trace (show attachingNode ++ " " ++ show updatedOutscope) updateRelations s1 edges attachingNode updatedOutscope
+        s1WithNewRelation = updateRelations s1 edges attachingNode updatedOutscope
         sdrsMerged = SDRS ((sdrsMap s1WithNewRelation) `M.union` (sdrsMap s2DVConv)) updatedLast -- merged maps and updated last
         newDRSKeys = map fst $ segments s2DVConv -- 2a. the labels of the drss that are to be added. these later need to be drsRefAlphaConv'ed
         sdrsDRSRefAlphaConved = alphaConvDRSs sdrsMerged newDRSKeys

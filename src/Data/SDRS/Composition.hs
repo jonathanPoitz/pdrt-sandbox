@@ -77,18 +77,20 @@ addDRS s@(SDRS m _) d edges = sdrsWithNewLast
 -- by the user. 
 ---------------------------------------------------------------------------
 updateRelations :: SDRS -> [(DisVar, SDRSRelation)] -> DisVar -> DisVar -> SDRS
-updateRelations s [] _ _               = s
+updateRelations s [] _ _                   = s
 updateRelations s ((dv, rel):rest) attachingNode updatedOutscope
-  | isOnRF s dv && isRoot s dv              = trace (show "1") updateRelations sdrsWithRel rest attachingNode updatedOutscope
+  | isOnRF s dv && isRoot s dv             = trace (show "root") updateRelations sdrsWithRel rest attachingNode updatedOutscope
   -- ^ the target node is the root node of the SDRS
+  | isOnRF s dv && (not $ hasParents s dv) = trace (show "below root") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
+  -- ^ the target node is not the root node of the SDRS, but it is right underneath it (does not have incoming edges)
   | isOnRF s dv && isCrd rel &&
-    isTopic rel                             = trace (show "2") updateRelations sdrsWithRel rest attachingNode updatedOutscope
+    isTopic rel                            = trace (show "not root, topic") updateRelations sdrsWithRel rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint
-  | isOnRF s dv && isCrd rel                = trace (show "4") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
+  | isOnRF s dv && isCrd rel               = trace (show "not root, normal crd") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is coordinating, but doesn't impose a topic constraint
-  | isOnRF s dv                             = trace (show "5") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
+  | isOnRF s dv                            = trace (show "not root, sub") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is subordinating
-  | otherwise                               = trace (show "6") updateRelations s rest attachingNode updatedOutscope
+  | otherwise                              = trace (show "neither") updateRelations s rest attachingNode updatedOutscope
   -- ^ skipping this relation because the target node is not on the RF of the SDRS
   where sdrsWithRightArgUpdate = updateRightArgs s dv updatedOutscope -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
         swapRels = calcLeftArgRels s dv
@@ -174,6 +176,17 @@ removeRel s _                        = s
 ---------------------------------------------------------------------------
 isRoot :: SDRS -> DisVar -> Bool
 isRoot s dv = dv == root s
+
+---------------------------------------------------------------------------
+-- | checks whether 'DisVar' @dv@ in 'SDRS' @s@ has any incoming edges.
+---------------------------------------------------------------------------
+hasParents :: SDRS -> DisVar -> Bool
+hasParents (SDRS m _) dv = any incoming $ M.elems m
+  where incoming :: SDRSFormula -> Bool
+        incoming (Relation _ _ dv2) = dv == dv2
+        incoming (And sf1 sf2)        = incoming sf1 || incoming sf2
+        incoming (Not sf1)            = incoming sf1
+        incoming (Segment _)          = False
 
 ---------------------------------------------------------------------------
 -- | checks whether the given 'SDRSRelation' @rel@ is of relation type
