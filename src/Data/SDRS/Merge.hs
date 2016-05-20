@@ -48,10 +48,11 @@ import Data.DRS.Merge ((<<+>>))
 sdrsMerge :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
 sdrsMerge s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
   where convMap = buildConvMap s1 s2 -- 1.
-        drsRefs1 = concat $ map drsUniverse $ drss s1 -- 3a.
+        drsRefs1 = concat $ map drsUniverse $ accDRSs -- 3a.
         drsRefs2 = concat $ map drsUniverse $ drss s2DVConv -- 3b.
         drsRefOverlap = drsRefs1 `intersect` drsRefs2 -- order? 3c.
         drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap -- 3d.
+        accDRSs = accessibleDRSs sdrsMerged attachingNode
         updatedLast = sdrsLast s2DVConv
         attachingNode = root s2DVConv
         updatedOutscope = max (fst $ M.findMax m1) (fst $ M.findMax (sdrsMap s2DVConv)) + 1
@@ -64,12 +65,12 @@ sdrsMerge s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
         alphaConvDRSs :: SDRS -> [DisVar] -> SDRS
         alphaConvDRSs s []                 = s
         alphaConvDRSs (SDRS m l) (dv:rest) = alphaConvDRSs (SDRS m' l) rest
-          where m' = M.adjust alphaConvDRS dv m
-        alphaConvDRS :: SDRSFormula -> SDRSFormula
-        alphaConvDRS (Segment d) = Segment $ renameSubDRS d gd drsRefConvMap
-          where gd = foldl (<<+>>) (DRS [] []) accDRSs
-                accDRSs = accessibleDRSs sdrsMerged updatedLast
-        alphaConvDRS sf          = sf -- other cases don't matter currently
+          where m' = M.adjustWithKey alphaConvDRS dv m
+                alphaConvDRS :: DisVar -> SDRSFormula -> SDRSFormula
+                alphaConvDRS key (Segment d) = Segment $ renameSubDRS d gd' drsRefConvMap
+                  where gd' = foldl (<<+>>) (DRS [] []) accDRSs'
+                        accDRSs' = accessibleDRSs sdrsMerged key
+                alphaConvDRS _ sf          = sf -- other cases don't matter currently
         
 
 ---------------------------------------------------------------------------
