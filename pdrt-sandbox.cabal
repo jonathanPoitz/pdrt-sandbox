@@ -58,8 +58,8 @@ library
                        Data.PDRS.Variables, Data.SDRS, Data.SDRS.Binding,
                        Data.SDRS.Composition, Data.SDRS.DataType, 
                        Data.SDRS.DiscourseGraph, Data.SDRS.LambdaCalculus,
-                       Data.SDRS.Merge, Data.SDRS.Properties, Data.SDRS.Show,
-                       Data.SDRS.Input.String, Data.SDRS.Structure
-  ghc-options:         -Wall -Werror
+                       Data.SDRS.Merge, Data.SDRS.Properties, Data.SDRS.Relation
+                       Data.SDRS.Show, Data.SDRS.Input.String, Data.SDRS.Structure
+  ghc-options:         -Wall -Werror 
   build-depends:       base >=4, containers >=0.3
   hs-source-dirs:      src

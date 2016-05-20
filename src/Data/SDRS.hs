@@ -22,6 +22,7 @@ import Data.SDRS.DiscourseGraph as SDRS
 import Data.SDRS.LambdaCalculus as SDRS
 import Data.SDRS.Merge as SDRS
 import Data.SDRS.Properties as SDRS
+import Data.SDRS.Relation as SDRS
 import Data.SDRS.Show as SDRS 
 import Data.SDRS.Input.String as SDRS
 import Data.SDRS.Structure as SDRS

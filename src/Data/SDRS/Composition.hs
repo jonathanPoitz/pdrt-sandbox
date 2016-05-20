@@ -28,6 +28,7 @@ import Data.SDRS.DataType
 import Data.SDRS.DiscourseGraph
 import Data.SDRS.Structure (lookupKey)
 import Data.SDRS.LambdaCalculus (buildDRSRefConvMap)
+import Data.SDRS.Relation
 
 -- import Data.DRS.Variables (drsVariables)
 import Data.DRS.Structure (drsUniverse)
@@ -142,20 +143,6 @@ calcLeftArgRels (SDRS m _) old = reverse $ M.foldl putSwapRel [] m -- needs to b
         putSwapRel acc (Not sf1)     = putSwapRel acc sf1
 
 ---------------------------------------------------------------------------
--- | Within an 'SDRS' @s@ replaces all references of a given 'DisVar'
--- @old@ with @new@ iff @old@ occurs as a right argument of a relation.
----------------------------------------------------------------------------
-updateRightArgs :: SDRS -> DisVar -> DisVar -> SDRS
-updateRightArgs (SDRS m l) old new = SDRS (M.map updateR m) l
-  where updateR :: SDRSFormula -> SDRSFormula
-        updateR seg@(Segment {}) = seg
-        updateR r@(Relation rel dv1 dv2)
-          | dv2 == old           = Relation rel dv1 new
-          | otherwise            = r
-        updateR (And sf1 sf2)    = And (updateR sf1) (updateR sf2)
-        updateR (Not sf1)        = Not (updateR sf1)
-
----------------------------------------------------------------------------
 -- | removes all of the given 'SDRSFormula'e from the map of 'SDRSFormula'e
 -- in an 'SDRS'.
 ---------------------------------------------------------------------------
@@ -172,35 +159,18 @@ removeRel (SDRS m l) r@(Relation {}) = SDRS (M.map (removeRelFromSF r) m) l
 removeRel s _                        = s
 
 ---------------------------------------------------------------------------
--- | checks whether 'DisVar' @dv@ in 'SDRS' @s@ is the root node.
+-- | Within an 'SDRS' @s@ replaces all references of a given 'DisVar'
+-- @old@ with @new@ iff @old@ occurs as a right argument of a relation.
 ---------------------------------------------------------------------------
-isRoot :: SDRS -> DisVar -> Bool
-isRoot s dv = dv == root s
-
----------------------------------------------------------------------------
--- | checks whether 'DisVar' @dv@ in 'SDRS' @s@ has any incoming edges.
----------------------------------------------------------------------------
-hasParents :: SDRS -> DisVar -> Bool
-hasParents (SDRS m _) dv = any incoming $ M.elems m
-  where incoming :: SDRSFormula -> Bool
-        incoming (Relation _ _ dv2) = dv == dv2
-        incoming (And sf1 sf2)        = incoming sf1 || incoming sf2
-        incoming (Not sf1)            = incoming sf1
-        incoming (Segment _)          = False
-
----------------------------------------------------------------------------
--- | checks whether the given 'SDRSRelation' @rel@ is of relation type
--- Coordinating 
----------------------------------------------------------------------------
-isCrd :: SDRSRelation -> Bool
-isCrd rel = relType rel == Crd
-
----------------------------------------------------------------------------
--- | checks whether a given 'DisVar' @dv@ is on the right frontier of 
--- 'SDRS' @s@.
----------------------------------------------------------------------------
-isOnRF :: SDRS -> DisVar -> Bool
-isOnRF s dv = dv `elem` rf s
+updateRightArgs :: SDRS -> DisVar -> DisVar -> SDRS
+updateRightArgs (SDRS m l) old new = SDRS (M.map updateR m) l
+  where updateR :: SDRSFormula -> SDRSFormula
+        updateR seg@(Segment {}) = seg
+        updateR r@(Relation rel dv1 dv2)
+          | dv2 == old           = Relation rel dv1 new
+          | otherwise            = r
+        updateR (And sf1 sf2)    = And (updateR sf1) (updateR sf2)
+        updateR (Not sf1)        = Not (updateR sf1)
 
 ---------------------------------------------------------------------------
 -- | Given a conjunction of 'SDRSFormula'e @sf@, removes the subrelation @r@

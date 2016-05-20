@@ -16,10 +16,13 @@ module Data.SDRS.DiscourseGraph
 , accessibleNodes
 , accessibleDRSs
 , rf
+, isOnRF
 , immediateOutscopes
 , Label
 , DGraph
 , root
+, isRoot
+, hasParents
 ) where
 
 import Data.SDRS.DataType
@@ -125,6 +128,12 @@ rf s@(SDRS _ l) = walkEdges [l]
                           (relType rel == Sub)) = True
           | otherwise                           = isOnRF dv rest
 
+---------------------------------------------------------------------------
+-- | checks whether a given 'DisVar' @dv@ is on the right frontier of 
+-- 'SDRS' @s@.
+---------------------------------------------------------------------------
+isOnRF :: SDRS -> DisVar -> Bool
+isOnRF s dv = dv `elem` rf s
 
 ---------------------------------------------------------------------------
 -- | Return the root node of the discourse graph. If the graph has more than
@@ -132,3 +141,20 @@ rf s@(SDRS _ l) = walkEdges [l]
 ---------------------------------------------------------------------------
 root :: SDRS -> DisVar
 root s = ((sort $ nub (dus s)) \\ (sort $ nub (relLabels s))) !! 0
+
+---------------------------------------------------------------------------
+-- | checks whether 'DisVar' @dv@ in 'SDRS' @s@ is the root node.
+---------------------------------------------------------------------------
+isRoot :: SDRS -> DisVar -> Bool
+isRoot s dv = dv == root s
+
+---------------------------------------------------------------------------
+-- | checks whether 'DisVar' @dv@ in 'SDRS' @s@ has any incoming edges.
+---------------------------------------------------------------------------
+hasParents :: SDRS -> DisVar -> Bool
+hasParents (SDRS m _) dv = any incoming $ M.elems m
+  where incoming :: SDRSFormula -> Bool
+        incoming (Relation _ _ dv2) = dv == dv2
+        incoming (And sf1 sf2)        = incoming sf1 || incoming sf2
+        incoming (Not sf1)            = incoming sf1
+        incoming (Segment _)          = False

@@ -12,8 +12,8 @@ SDRS binding
 
 module Data.SDRS.Binding
 (
-  noUndeclaredVars
-, noSelfRefs
+  allRelArgsBound
+, selfRefs
 , allSegmentsBound
 ) where
 
@@ -23,19 +23,17 @@ import Data.Set hiding (map)
 import Data.SDRS.Structure (relLabels)
 
 ---------------------------------------------------------------------------
--- | Checks if all labels are declared in an SDRS, i.e. that LAST is part 
--- of the keys of the map and that the arguments of all relations are as
--- well
+-- | Checks whether any relation in the 'SDRS' @s@ uses labels as arguments
+-- that are not a 'Segment' in @s@.
 ---------------------------------------------------------------------------
-noUndeclaredVars :: SDRS -> Bool
-noUndeclaredVars s@(SDRS m l) = 
-  (l `member` disVars) && -- LAST is in the list of discourse variables
-  relVars `isProperSubsetOf` disVars -- the discourse variables used as arguments in relations are declared labels
-    where relVars = fromList $ relLabels s
-          disVars = fromList $ M.keys m
+allRelArgsBound :: SDRS -> Bool
+allRelArgsBound s@(SDRS m l) = relVars `isProperSubsetOf` disVars
+  where relVars = fromList $ relLabels s
+        disVars = fromList $ M.keys m
 
 ---------------------------------------------------------------------------
--- | Returns whether a given SDRS has any self referencing relations
+-- | Returns 'True' if the given 'SDRS' has no self-referencing relations
+-- such as 3:Narration(4,4) or 3:Narration(3,4), otherwise returns 'False'.
 ---------------------------------------------------------------------------
 noSelfRefs :: SDRS -> Bool
 noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
@@ -46,8 +44,8 @@ noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
         noSelfRef _                         = True  
 
 ---------------------------------------------------------------------------
--- | Checks whether all Segments (directly labeled and labeled in recursive
--- SDRSFormulas) are bound in a Relation.
+-- | Checks for the given 'SDRS' @s@ whether all Segments are bound as an 
+-- argument in a relation.
 -- FIX: This doesn't produce right results when DRSs are introduced weirdly
 -- within recursive SDRSFormulae
 ---------------------------------------------------------------------------
@@ -59,13 +57,5 @@ allSegmentsBound s@(SDRS m _) = allSegmentLabels `isSubsetOf` relArgs
         segmentLabels []                       = empty
         segmentLabels ((dv, Segment _):rest)   = insert dv $ segmentLabels rest
         segmentLabels ((dv, And sf1 sf2):rest) = segmentLabels [(dv, sf1)] `union` segmentLabels [(dv, sf2)] `union` segmentLabels rest
-        segmentLabels ((dv, Not sf1):rest)     =  segmentLabels [(dv, sf1)] `union` segmentLabels rest
+        segmentLabels ((dv, Not sf1):rest)     = segmentLabels [(dv, sf1)] `union` segmentLabels rest
         segmentLabels ((_, Relation {}):rest)  = segmentLabels rest
-
--- how to make an sdrs unvalid:
--- 2. l not in m.keys
--- 3. rel labels not in m.keys
--- 4. rel labels same to referencing label
--- 5. rel labels not accessible
--- 6. last points to sth but Segment
--- 7. relations between sth but Segment
