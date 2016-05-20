@@ -13,7 +13,7 @@ SDRS binding
 module Data.SDRS.Binding
 (
   allRelArgsBound
-, selfRefs
+, noSelfRefs
 , allSegmentsBound
 ) where
 
@@ -27,7 +27,7 @@ import Data.SDRS.Structure (relLabels)
 -- that are not a 'Segment' in @s@.
 ---------------------------------------------------------------------------
 allRelArgsBound :: SDRS -> Bool
-allRelArgsBound s@(SDRS m l) = relVars `isProperSubsetOf` disVars
+allRelArgsBound s@(SDRS m _) = relVars `isProperSubsetOf` disVars
   where relVars = fromList $ relLabels s
         disVars = fromList $ M.keys m
 

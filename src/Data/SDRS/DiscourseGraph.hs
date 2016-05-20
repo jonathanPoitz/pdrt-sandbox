@@ -117,16 +117,16 @@ rf s@(SDRS _ l) = walkEdges [l]
         walkEdges []       = []
         walkEdges (v:rest) = (walkEdges rest) `union` walkEdges (parents v) `union` (parents v) `union` [v]
         parents :: DisVar -> [DisVar]
-        parents dv = nub (M.keys (M.filter (isOnRF dv) g))
-        isOnRF :: DisVar -> [(DisVar, SDRSRelation)] -> Bool
-        isOnRF _ []                             = False
-        isOnRF dv ((dv',Outscopes):rest)
+        parents dv = nub (M.keys (M.filter (onRF dv) g))
+        onRF :: DisVar -> [(DisVar, SDRSRelation)] -> Bool
+        onRF _ []                             = False
+        onRF dv ((dv',Outscopes):rest)
           | dv == dv'                           = True
-          | otherwise                           = isOnRF dv rest
-        isOnRF dv ((dv',rel@(SDRSRelation {})):rest)
+          | otherwise                           = onRF dv rest
+        onRF dv ((dv',rel@(SDRSRelation {})):rest)
           | dv == dv' && ((isStructured rel) ||                                 -- FIX, here we're only working with a label, how do we check the label's structuredness etc?
                           (relType rel == Sub)) = True
-          | otherwise                           = isOnRF dv rest
+          | otherwise                           = onRF dv rest
 
 ---------------------------------------------------------------------------
 -- | checks whether a given 'DisVar' @dv@ is on the right frontier of 

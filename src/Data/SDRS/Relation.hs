@@ -16,6 +16,8 @@ module Data.SDRS.Relation
 , isSub
 ) where
 
+import Data.SDRS.DataType
+
 ---------------------------------------------------------------------------
 -- | checks whether the given 'SDRSRelation' @rel@ is of relation type
 -- Coordinating 
