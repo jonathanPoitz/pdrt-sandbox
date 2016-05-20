@@ -28,7 +28,7 @@ module Data.SDRS.DiscourseGraph
 import Data.SDRS.DataType
 import qualified Data.Map as M
 import Data.List (union, nub, sort, (\\))
-import Data.SDRS.Structure (relLabels, dus)
+import Data.SDRS.Structure (relArgs, dus)
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -140,7 +140,7 @@ isOnRF s dv = dv `elem` rf s
 -- one root node, only the first one in the list will be returned. 
 ---------------------------------------------------------------------------
 root :: SDRS -> DisVar
-root s = ((sort $ nub (dus s)) \\ (sort $ nub (relLabels s))) !! 0
+root s = ((sort $ nub (dus s)) \\ (sort $ nub (relArgs s))) !! 0
 
 ---------------------------------------------------------------------------
 -- | checks whether 'DisVar' @dv@ in 'SDRS' @s@ is the root node.

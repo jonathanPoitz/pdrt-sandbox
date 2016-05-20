@@ -20,7 +20,7 @@ module Data.SDRS.Binding
 import Data.SDRS.DataType
 import qualified Data.Map as M
 import Data.Set hiding (map)
-import Data.SDRS.Structure (relLabels)
+import Data.SDRS.Structure (relArgs)
 
 ---------------------------------------------------------------------------
 -- | Checks whether any relation in the 'SDRS' @s@ uses labels as arguments
@@ -28,7 +28,7 @@ import Data.SDRS.Structure (relLabels)
 ---------------------------------------------------------------------------
 allRelArgsBound :: SDRS -> Bool
 allRelArgsBound s@(SDRS m _) = relVars `isProperSubsetOf` disVars
-  where relVars = fromList $ relLabels s
+  where relVars = fromList $ relArgs s
         disVars = fromList $ M.keys m
 
 ---------------------------------------------------------------------------
@@ -52,7 +52,7 @@ noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
 allSegmentsBound :: SDRS -> Bool
 allSegmentsBound s@(SDRS m _) = allSegmentLabels `isSubsetOf` relArgs
   where allSegmentLabels = segmentLabels (M.assocs m)
-        relArgs = fromList $ relLabels s
+        relArgs = fromList $ relArgs s
         segmentLabels :: [(DisVar, SDRSFormula)] -> Set DisVar
         segmentLabels []                       = empty
         segmentLabels ((dv, Segment _):rest)   = insert dv $ segmentLabels rest
