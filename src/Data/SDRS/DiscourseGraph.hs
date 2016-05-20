@@ -43,8 +43,6 @@ import Data.SDRS.Structure (relArgs, dus)
 --instance Show DGraph where
   --show dg = '\n' : showDGraph dg
 
-
-
 ---------------------------------------------------------------------------
 -- | DGraph
 ---------------------------------------------------------------------------

@@ -12,8 +12,7 @@ SDRS composition
 
 module Data.SDRS.Composition
 (
-  buildFromDRSs
-, drsToSDRS 
+  drsToSDRS 
 , addDRS
 , removeRel
 , updateRelations
@@ -30,7 +29,6 @@ import Data.SDRS.Structure (lookupKey)
 import Data.SDRS.LambdaCalculus (buildDRSRefConvMap)
 import Data.SDRS.Relation
 
--- import Data.DRS.Variables (drsVariables)
 import Data.DRS.Structure (drsUniverse)
 import Data.DRS.LambdaCalculus (renameSubDRS)
 import Data.DRS.Merge ((<<+>>))
@@ -42,18 +40,10 @@ drsToSDRS :: DRS -> SDRS
 drsToSDRS d = SDRS (M.fromList [(0, Segment d)]) 0
 
 ---------------------------------------------------------------------------
--- | Builds a new 'SDRS' using two 'DRS's and their relations
--- TODO clumsy and redundant, remove?
----------------------------------------------------------------------------
-buildFromDRSs :: [SDRSRelation] -> DRS -> DRS -> SDRS
-buildFromDRSs rels d1 d2 = addDRS sdrs1 d2 edges
-  where sdrs1 = drsToSDRS d1
-        edges = zip (repeat $ root sdrs1) rels
-
----------------------------------------------------------------------------
 -- | adds a 'DRS' to an 'SDRS' given a number of edges, represented by
 -- tuples consisting of the target node and the relation to that node.
--- TODO is it possible that more than one new outscope will be created?
+-- TODO is it possible that more than one new outscope will be created (i.e.
+-- Narration twice with different target nodes?)?
 ---------------------------------------------------------------------------
 addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
 addDRS s@(SDRS m _) d edges = sdrsWithNewLast
@@ -74,7 +64,7 @@ addDRS s@(SDRS m _) d edges = sdrsWithNewLast
 -- @attachingNode@ and one or several target nodes on the right frontier of @s@.
 -- This involves making the necessary adjustments to the discourse structure
 -- that depend on the place of attachment and the kind of attaching relation.
--- This function is exported b/c it's used by merge but it shouldn't be called
+-- This function is exported because it's used by merge but it shouldn't be called
 -- by the user. 
 ---------------------------------------------------------------------------
 updateRelations :: SDRS -> [(DisVar, SDRSRelation)] -> DisVar -> DisVar -> SDRS
