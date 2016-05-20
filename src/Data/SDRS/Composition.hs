@@ -26,10 +26,11 @@ import Data.SDRS.Show()
 
 import Data.SDRS.DataType
 import Data.SDRS.DiscourseGraph
-import Data.SDRS.Structure (lookupKey, drss)
+import Data.SDRS.Structure (lookupKey)
 import Data.SDRS.LambdaCalculus (buildDRSRefConvMap)
 
-import Data.DRS.Variables (drsVariables)
+-- import Data.DRS.Variables (drsVariables)
+import Data.DRS.Structure (drsUniverse)
 import Data.DRS.LambdaCalculus (renameSubDRS)
 import Data.DRS.Merge ((<<+>>))
 
@@ -64,8 +65,8 @@ addDRS s@(SDRS m _) d edges = sdrsWithNewLast
         accDRSs = accessibleDRSs sdrsWithRelations updatedLast -- note: this only works because the new drs is not in the sdrs yet, however the relation using its label is! this is of importance since in order to calculate the list of accessible drs, the new relation has to be there (as opposed to the new drs which first needs to be drsref-adjusted before being added)
         updatedOutscope = (fst $ M.findMax m) + 2 -- FIX this is very hacky
         drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap
-        drsRefs1 = concat $ map drsVariables $ drss s
-        drsRefOverlap = drsRefs1 `intersect` (drsVariables d)
+        drsRefs1 = concat $ map drsUniverse $ accDRSs -- FIXED, "drss s" takes all DRSs into account. we only want to calculate overlap with those that are actually accessible
+        drsRefOverlap = drsRefs1 `intersect` (drsUniverse d) -- FIXED this should not be drsVariables here, cause then it looks in both the universe and the conds. but we only wanna replace those refs that have binding overlap (thus overlap in universes), right?
 
 ---------------------------------------------------------------------------
 -- | adds one or more relations to the 'SDRS' @s@ between the newly added 'DisVar'
