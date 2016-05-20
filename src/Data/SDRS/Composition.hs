@@ -82,22 +82,15 @@ updateRelations s ((dv, rel):rest) attachingNode updatedOutscope
   | isOnRF s dv && isRoot s dv              = trace (show "1") updateRelations sdrsWithRel rest attachingNode updatedOutscope
   -- ^ the target node is the root node of the SDRS
   | isOnRF s dv && isCrd rel &&
-    isTopic rel && entailsTopic rel         = trace (show "2") updateRelations sdrsWithRel rest attachingNode updatedOutscope
+    isTopic rel                             = trace (show "2") updateRelations sdrsWithRel rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint
-  | isOnRF s dv && isCrd rel && 
-    isTopic rel && (not $ entailsTopic rel) = trace (show "3") updateRelations sdrsWithRel rest attachingNode updatedOutscope
-  -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint,
-  -- not sure if something changes here, we might have to make an explicit \Downarrow relation
   | isOnRF s dv && isCrd rel                = trace (show "4") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is coordinating, but doesn't impose a topic constraint
   | isOnRF s dv                             = trace (show "5") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is subordinating
   | otherwise                               = trace (show "6") updateRelations s rest attachingNode updatedOutscope
   -- ^ skipping this relation because the target node is not on the RF of the SDRS
-  where entailsTopic :: SDRSRelation -> Bool
-        entailsTopic _ = True -- TODO implement, which subRels entail \Downarrow?
-        -----------
-        sdrsWithRightArgUpdate = updateRightArgs s dv updatedOutscope -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
+  where sdrsWithRightArgUpdate = updateRightArgs s dv updatedOutscope -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
         swapRels = calcLeftArgRels s dv
         sdrsWithRemovedSwapRels = removeRels sdrsWithRightArgUpdate swapRels -- 3. 
         sdrsWithSwapRels = addRels sdrsWithRemovedSwapRels updatedOutscope swapRels -- 4. 
