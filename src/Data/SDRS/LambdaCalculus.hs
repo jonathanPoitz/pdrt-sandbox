@@ -86,7 +86,7 @@ buildDRSRefConvMap rs (ref:rest) = (ref,newRef) : buildDRSRefConvMap (newRef:rs)
           | otherwise    = dr
 
 ---------------------------------------------------------------------------
--- | Builds a conversion map for all overlapping 'DisVar' from 
+-- | Builds a conversion map for all overlapping 'DisVar' from two 'SDRS's
 ---------------------------------------------------------------------------
 buildConvMap :: SDRS -> SDRS -> M.Map DisVar DisVar
 buildConvMap (SDRS m1 _) (SDRS m2 _) = build M.empty s1Keys s2Keys

@@ -311,9 +311,6 @@ sdrsneg1 = SDRS (M.fromList [(0, Not (Relation (relationFromLabel "Explanation")
 --                                 (2, recsf3),
 --                                 (3, recsf4)]) 0
 
--- "because"
-sdrs_because d1 d2 = buildFromDRSs [relationFromLabel "Explanation"] d1 d2
-
 -- One plaintiff was passed over for promotion three times.
 -- Another didn't get a raise for five years.
 -- A third plaintiff was given a lower wage compared to others.

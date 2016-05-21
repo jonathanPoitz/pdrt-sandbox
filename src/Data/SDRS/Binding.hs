@@ -13,23 +13,51 @@ SDRS binding
 module Data.SDRS.Binding
 (
   allRelArgsBound
+, sdrsFreeRefs
 , noSelfRefs
 , allSegmentsBound
 ) where
 
-import Data.SDRS.DataType
 import qualified Data.Map as M
-import Data.Set hiding (map)
-import Data.SDRS.Structure (relArgs)
+import qualified Data.Set as S -- because of conflict with foldl and union
+import Data.List (union)
+
+import Data.DRS.Binding
+import Data.DRS.Merge
+
+import Data.SDRS.DataType
+import Data.SDRS.Structure
+import Data.SDRS.DiscourseGraph
+
+---------------------------------------------------------------------------
+-- | Returns whether 'DRSRef' @r@ is bound in the 'SDRS' @s@.
+---------------------------------------------------------------------------
+--sdrsBoundRef :: DRSRef -> SDRS -> Bool
+--sdrsBoundRef r s@(SDRS m _) d = 
+--  where gd = foldl (<<+>>) (DRS [] []) accDRSs
+--        accDRSs = accessibleDRSs s dv
+--        dv = lookupKey s 
+
+---------------------------------------------------------------------------
+-- | Returns the list of free 'DRSRef's in the 'SDRS' @s@.
+---------------------------------------------------------------------------
+sdrsFreeRefs :: SDRS -> [DRSRef]
+sdrsFreeRefs s = free $ segments s
+  where free :: [(DisVar, SDRSFormula)] -> [DRSRef]
+        free []                    = []
+        free ((dv,Segment d):rest) = drsFreeRefs d gd `union` free rest
+          where gd = foldl (<<+>>) (DRS [] []) accDRSs
+                accDRSs = accessibleDRSs s dv
+        free (_:rest)              = free rest
 
 ---------------------------------------------------------------------------
 -- | Checks whether any relation in the 'SDRS' @s@ uses labels as arguments
 -- that are not a 'Segment' in @s@.
 ---------------------------------------------------------------------------
 allRelArgsBound :: SDRS -> Bool
-allRelArgsBound s@(SDRS m _) = relVars `isProperSubsetOf` disVars
-  where relVars = fromList $ relArgs s
-        disVars = fromList $ M.keys m
+allRelArgsBound s@(SDRS m _) = relVars `S.isProperSubsetOf` disVars
+  where relVars = S.fromList $ relArgs s
+        disVars = S.fromList $ M.keys m
 
 ---------------------------------------------------------------------------
 -- | Returns 'True' if the given 'SDRS' has no self-referencing relations
@@ -50,12 +78,12 @@ noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
 -- within recursive SDRSFormulae
 ---------------------------------------------------------------------------
 allSegmentsBound :: SDRS -> Bool
-allSegmentsBound s@(SDRS m _) = allSegmentLabels `isSubsetOf` relArgs
+allSegmentsBound s@(SDRS m _) = allSegmentLabels `S.isSubsetOf` allRelArgs
   where allSegmentLabels = segmentLabels (M.assocs m)
-        relArgs = fromList $ relArgs s
-        segmentLabels :: [(DisVar, SDRSFormula)] -> Set DisVar
-        segmentLabels []                       = empty
-        segmentLabels ((dv, Segment _):rest)   = insert dv $ segmentLabels rest
-        segmentLabels ((dv, And sf1 sf2):rest) = segmentLabels [(dv, sf1)] `union` segmentLabels [(dv, sf2)] `union` segmentLabels rest
-        segmentLabels ((dv, Not sf1):rest)     = segmentLabels [(dv, sf1)] `union` segmentLabels rest
+        allRelArgs = S.fromList $ relArgs s
+        segmentLabels :: [(DisVar, SDRSFormula)] -> S.Set DisVar
+        segmentLabels []                       = S.empty
+        segmentLabels ((dv, Segment _):rest)   = S.insert dv $ segmentLabels rest
+        segmentLabels ((dv, And sf1 sf2):rest) = segmentLabels [(dv, sf1)] `S.union` segmentLabels [(dv, sf2)] `S.union` segmentLabels rest
+        segmentLabels ((dv, Not sf1):rest)     = segmentLabels [(dv, sf1)] `S.union` segmentLabels rest
         segmentLabels ((_, Relation {}):rest)  = segmentLabels rest

@@ -33,17 +33,6 @@ import Data.DRS.Merge ((<<+>>))
 -------------------------------------------------------------------------
 -- | Applies merge to 'SDRS' @s1@ and 'SDRS' @s2@. The latter is attached
 -- with its root node to a node @dv1@ that must be on the RF of @s1@, using relation @r@.  
--- TODO the issue here is that in order to DRSRef alpha conv the refs from s2
--- one needs to attach s2 to s1 first (in order to calculate each new drs's accessible drs)
--- so we can't do the trick that we did in addDRS where we first added the relation,
--- calculated the accDRSs using the new relation, drsalphaconv the new drs
--- and finally added the new drs. because it's already an sdrs
--- we could, after having added the sdrs, get the node labels and drsrefalphaconv each
--- new drs. this might be a good option also for addDRS, making it a general
--- solution for both scenarios. -> sort of solved
--- next problem: in order to add the new relation, one needs a wellformed SDRS
--- thus, add the relation already on s1 just with the new outscopes label.
--- however, in order to get the new outscopes label
 -------------------------------------------------------------------------
 sdrsMerge :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
 sdrsMerge s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
