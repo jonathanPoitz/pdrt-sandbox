@@ -3,7 +3,7 @@ Module      :  Data.SDRS.Binding
 Copyright   :  (c) Jonathan Poitz, Harm Brouwer and Noortje Venhuizen
 License     :  Apache-2.0
 
-Maintainer  :  jonathanpoitz@gmail.com me@hbrouwer.eu, n.j.venhuizen@rug.nl
+Maintainer  :  jonathanpoitz@gmail.com, me@hbrouwer.eu, n.j.venhuizen@rug.nl
 Stability   :  provisional
 Portability :  portable
 
@@ -14,6 +14,7 @@ module Data.SDRS.Binding
 (
   allRelArgsBound
 , sdrsFreeRefs
+, sdrsBoundRef
 , noSelfRefs
 , allSegmentsBound
 ) where
@@ -30,13 +31,18 @@ import Data.SDRS.Structure
 import Data.SDRS.DiscourseGraph
 
 ---------------------------------------------------------------------------
--- | Returns whether 'DRSRef' @r@ is bound in the 'SDRS' @s@.
+-- | Returns whether 'DRSRef' @r@ is bound in the 'SDRS' @s@ relative to its
+-- introduction side labeled by 'DisVar' @dv@.
 ---------------------------------------------------------------------------
---sdrsBoundRef :: DRSRef -> SDRS -> Bool
---sdrsBoundRef r s@(SDRS m _) d = 
---  where gd = foldl (<<+>>) (DRS [] []) accDRSs
---        accDRSs = accessibleDRSs s dv
---        dv = lookupKey s 
+sdrsBoundRef :: DRSRef -> DisVar -> SDRS -> Bool
+sdrsBoundRef r dv s@(SDRS m _)
+  | M.lookup dv m == Nothing = False
+  | otherwise                = case (m M.! dv) of (Segment d) -> bound d
+                                                  _           -> bound (DRS [] [])
+  where bound :: DRS -> Bool
+        bound d = drsBoundRef r d gd
+          where gd = foldl (<<+>>) (DRS [] []) accDRSs
+                accDRSs = accessibleDRSs s dv
 
 ---------------------------------------------------------------------------
 -- | Returns the list of free 'DRSRef's in the 'SDRS' @s@.
