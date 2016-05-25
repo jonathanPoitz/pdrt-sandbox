@@ -16,7 +16,7 @@ module Data.SDRS.Properties
 , sdrsPureDRSs
 , sdrsAllDRSRefUnique
 , validLast
-, strucIsomorphic
+, isStrucIsomorphic
 ) where
 
 import qualified Data.Map as M
@@ -68,8 +68,8 @@ sdrsAllDRSRefUnique s = universes == nub universes
   where universes = concat $ map drsUniverse (drss s)
 
 ---------------------------------------------------------------------------
--- | checks whether the discourse unit pointed to by LAST is meaningful, i.e.
---  * that it is an EDU, i.e. a Segment denoting a DRS, and
+-- | checks whether the 'SDRSFormula' pointed to by LAST is meaningful, i.e.
+--  * that it is an EDU, i.e. a Segment denoting a 'DRS', and
 --  * that it is part of a relation, in which it is not the left argument
 -- TODO interactions with root/rf
 ---------------------------------------------------------------------------
@@ -86,8 +86,8 @@ validLast s@(SDRS m l) = isSegment (m M.! l) &&
 -- | Checks whether two 'SDRS's @s1@ and @s2@ are structural isomorphic, i.e.,
 -- their graph structure does not differ except for different labeling of DUs
 ---------------------------------------------------------------------------
-strucIsomorphic :: SDRS -> SDRS -> Bool
-strucIsomorphic s1@(SDRS m1 _) s2@(SDRS m2 _) =
+isStrucIsomorphic :: SDRS -> SDRS -> Bool
+isStrucIsomorphic s1@(SDRS m1 _) s2@(SDRS m2 _) =
   length m1 == length m2 && 
          g1 == g2_conv
   where g1 = discourseGraph s1

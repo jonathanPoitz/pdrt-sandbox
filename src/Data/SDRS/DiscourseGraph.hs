@@ -117,7 +117,7 @@ rf s@(SDRS _ l) = walkEdges [l]
         parents :: DisVar -> [DisVar]
         parents dv = nub (M.keys (M.filter (onRF dv) g))
         onRF :: DisVar -> [(DisVar, SDRSRelation)] -> Bool
-        onRF _ []                             = False
+        onRF _ []                               = False
         onRF dv ((dv',Outscopes):rest)
           | dv == dv'                           = True
           | otherwise                           = onRF dv rest

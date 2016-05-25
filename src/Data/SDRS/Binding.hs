@@ -57,8 +57,9 @@ sdrsFreeRefs s = free $ segments s
         free (_:rest)              = free rest
 
 ---------------------------------------------------------------------------
--- | Checks whether any relation in the 'SDRS' @s@ uses labels as arguments
--- that are not a 'Segment' in @s@.
+-- | Checks if all relations in the 'SDRS' @s@ use labels as arguments
+-- that are valid 'DisVar's, i.e. they are mapped to an 'SDRSFormula' in the
+-- internal map of @s@.
 ---------------------------------------------------------------------------
 allRelArgsBound :: SDRS -> Bool
 allRelArgsBound s@(SDRS m _) = relVars `S.isProperSubsetOf` disVars

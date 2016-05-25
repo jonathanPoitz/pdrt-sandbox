@@ -123,23 +123,7 @@ outscopesmap = M.fromList [(0,[1,6]),
                               (6,[2,7,5]),
                               (7,[3,4])]
 
---graphmap = M.fromList [(0,[1,6]),
---                          (1,[]),
---                          (6,[2,7,5]),
---                          (2,[]),
---                          (5,[]),
---                          (7,[3,4]),
---                          (3,[]),
---                          (4,[])]
-
 recsf1 = And (Segment drs0) (Not (Segment drs0))
---recsf2 = And (Relation "sljs" 2 4)
---                (And 
---                  (Not
---                    (And 
---                      (Segment drs0) 
---                      (Relation "bla" 3 6)))
---                  (Segment drs0))
 
 recsf2b = And (Segment drs0) (And (Not (And (Segment drs0) (Segment drs0))) (Segment drs0))
 

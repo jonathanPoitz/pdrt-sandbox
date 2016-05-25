@@ -42,7 +42,7 @@ import Data.DRS.Merge ((<<+>>))
 -- for all embedded 'DisVar's.
 ---------------------------------------------------------------------------
 sdrsAlphaConvert :: SDRS -> M.Map DisVar DisVar -> SDRS
-sdrsAlphaConvert (SDRS m l) convMap = SDRS (M.fromList (convert' (M.assocs m) convMap)) (M.findWithDefault l l convMap)
+sdrsAlphaConvert (SDRS m l) cm = SDRS (M.fromList (convert' (M.assocs m) cm)) (M.findWithDefault l l cm)
   where convert' :: [(DisVar, SDRSFormula)] -> M.Map DisVar DisVar -> [(DisVar, SDRSFormula)]
         convert' [] _           = []
         convert' (t:rest) nm    = (convertTuple t nm) : (convert' rest nm)
@@ -86,7 +86,7 @@ buildDRSRefConvMap rs (ref:rest) = (ref,newRef) : buildDRSRefConvMap (newRef:rs)
           | otherwise    = dr
 
 ---------------------------------------------------------------------------
--- | Builds a conversion map for all overlapping 'DisVar' from two 'SDRS's
+-- | Builds a conversion map for all overlapping 'DisVar' from two 'SDRS's.
 ---------------------------------------------------------------------------
 buildConvMap :: SDRS -> SDRS -> M.Map DisVar DisVar
 buildConvMap (SDRS m1 _) (SDRS m2 _) = build M.empty s1Keys s2Keys
@@ -100,7 +100,9 @@ buildConvMap (SDRS m1 _) (SDRS m2 _) = build M.empty s1Keys s2Keys
         s2Keys = M.keys m2
 
 ---------------------------------------------------------------------------
--- | normalizes the nodes in an SDRS.
+-- | Normalizes the nodes in the 'SDRS' @s@, i.e., maps the @s@'s 'DisVar's
+-- to a sequence from 0 to n, where n is equal to the number of unique 'DisVar's
+-- in the 'SDRS'.
 ---------------------------------------------------------------------------
 normalize :: SDRS -> SDRS
 normalize s = sdrsAlphaConvert s normMap
