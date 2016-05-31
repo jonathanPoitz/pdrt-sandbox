@@ -55,10 +55,10 @@ type DGraph = M.Map DisVar [(DisVar, SDRSRelation)]
 discourseGraph :: SDRS -> DGraph
 discourseGraph (SDRS m _) = M.foldlWithKey build M.empty m
   where build :: (M.Map DisVar [(DisVar, SDRSRelation)]) -> DisVar -> SDRSFormula -> M.Map DisVar [(DisVar, SDRSRelation)]
-        build acc dv0 (Relation rel dv1 dv2) = M.insertWith (++) dv1 [(dv2,rel)] (M.insertWith (union) dv0 [(dv1,Outscopes),(dv2,Outscopes)] acc)
-        build acc dv0 (And sf1 sf2)            = build (build acc dv0 sf1) dv0 sf2
-        build acc dv0 (Not sf1)                = build acc dv0 sf1
-        build acc _ _                          = acc
+        build acc dv0 (CDU (Relation rel dv1 dv2)) = M.insertWith (++) dv1 [(dv2,rel)] (M.insertWith (union) dv0 [(dv1,Outscopes),(dv2,Outscopes)] acc)
+        build acc dv0 (CDU (And sf1 sf2))            = build (build acc dv0 (CDU sf1)) dv0 (CDU sf2)
+        build acc dv0 (CDU (Not sf1))                = build acc dv0 (CDU sf1)
+        build acc _ _                              = acc
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS', returns a map from 'DisVar's to 'DisVar's that it outscopes
@@ -66,9 +66,9 @@ discourseGraph (SDRS m _) = M.foldlWithKey build M.empty m
 immediateOutscopes :: SDRS -> M.Map DisVar [DisVar]
 immediateOutscopes (SDRS m _) = M.foldlWithKey build M.empty m
   where build :: (M.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> M.Map DisVar [DisVar]
-        build acc dv0 (Relation _ dv1 dv2) = M.insertWith (union) dv0 [dv1,dv2] acc
-        build acc dv0 (And sf1 sf2)            = build (build acc dv0 sf2) dv0 sf1
-        build acc dv0 (Not sf1)                = build acc dv0 sf1
+        build acc dv0 (CDU (Relation _ dv1 dv2)) = M.insertWith (union) dv0 [dv1,dv2] acc
+        build acc dv0 (CDU (And sf1 sf2))            = build (build acc dv0 (CDU sf2)) dv0 (CDU sf1)
+        build acc dv0 (CDU (Not sf1))                = build acc dv0 (CDU sf1)
         build acc _ _                          = acc
 
 ---------------------------------------------------------------------------
@@ -100,7 +100,7 @@ accessibleDRSs :: SDRS -> DisVar -> [DRS]
 accessibleDRSs s@(SDRS m _) dv = accDRSs
   where accDisVars = accessibleNodes s dv
         accDUs = map (\i -> m M.! i) accDisVars
-        accDRSs = [ drs | (Segment drs) <- accDUs]
+        accDRSs = [ drs | (EDU drs) <- accDUs]
 
 ---------------------------------------------------------------------------
 -- | computes the right frontier of an 'SDRS', in order of locality
@@ -153,7 +153,7 @@ isRoot s dv = dv == root s
 hasParents :: SDRS -> DisVar -> Bool
 hasParents (SDRS m _) dv = any incoming $ M.elems m
   where incoming :: SDRSFormula -> Bool
-        incoming (Relation _ _ dv2) = dv == dv2
-        incoming (And sf1 sf2)        = incoming sf1 || incoming sf2
-        incoming (Not sf1)            = incoming sf1
-        incoming (Segment _)          = False
+        incoming (CDU (Relation _ _ dv2)) = dv == dv2
+        incoming (CDU (And sf1 sf2))        = incoming (CDU sf1) || incoming (CDU sf2)
+        incoming (CDU (Not sf1))            = incoming (CDU sf1)
+        incoming (EDU _)          = False

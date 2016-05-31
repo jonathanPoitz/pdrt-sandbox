@@ -34,7 +34,7 @@ import Data.DRS.Structure (drsUniverse)
 -- | Builds a new 'SDRS' from a single 'DRS'.
 ---------------------------------------------------------------------------
 drsToSDRS :: DRS -> SDRS
-drsToSDRS d = SDRS (M.fromList [(0, Segment d)]) 0
+drsToSDRS d = SDRS (M.fromList [(0, EDU d)]) 0
 
 ---------------------------------------------------------------------------
 -- | adds a 'DRS' to an 'SDRS' given a number of edges, represented by
@@ -46,7 +46,7 @@ addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
 addDRS s@(SDRS m _) d edges = sdrsDRSRefAlphaConved
   where updatedLast = (fst $ M.findMax m) + 1 -- new reference to last 
         sdrsWithRelations = updateRelations s edges updatedLast updatedOutscope -- 1. step update relations (this must be before new segment to ensure right calculation of RF)
-        sdrsWithSegment = addSF sdrsWithRelations updatedLast (Segment d) -- 2. step - new segment
+        sdrsWithSegment = addSF sdrsWithRelations updatedLast (EDU d) -- 2. step - new segment
         sdrsWithNewLast = updateLast sdrsWithSegment updatedLast -- 3. step new last
         sdrsDRSRefAlphaConved = sdrsAlphaConvertDRS sdrsWithNewLast updatedLast drsRefConvMap
         accDRSs = accessibleDRSs sdrsWithRelations updatedLast -- note: this only works because the new drs is not in the sdrs yet, however the relation using its label is! this is of importance since in order to calculate the list of accessible drs, the new relation has to be there (as opposed to the new drs which first needs to be drsref-adjusted before being added)
@@ -83,8 +83,8 @@ updateRelations s ((dv, rel):rest) attachingNode updatedOutscope
         swapRels = calcLeftArgRels s dv
         sdrsWithRemovedSwapRels = removeRels sdrsWithRightArgUpdate swapRels -- 3. 
         sdrsWithSwapRels = addSFs sdrsWithRemovedSwapRels updatedOutscope swapRels -- 4. 
-        sdrsWithRel = addSF sdrsWithSwapRels updatedOutscope (Relation rel dv attachingNode) -- 5. step - new relation
-        sdrsWithNewConj = addSF s (lookupKey s dv) (Relation rel dv attachingNode) -- FIX order?
+        sdrsWithRel = addSF sdrsWithSwapRels updatedOutscope (CDU $ Relation rel dv attachingNode) -- 5. step - new relation
+        sdrsWithNewConj = addSF s (lookupKey s dv) (CDU $ Relation rel dv attachingNode) -- FIX order?
 
 ---------------------------------------------------------------------------
 -- | Private
@@ -108,10 +108,11 @@ addSFs s new (sf:rest)  = addSFs (addSF s new sf) new rest
 -- | Given an 'SDRS' @s@, adds an SDRSFormula @sf@ as a new conjunct to an
 -- existing 'SDRSFormula' that is labeled by the 'DisVar' @new@. If @new@
 -- is not yet part of the 'SDRS', create it and have it label @sf@.
+-- FIX apply flip on CDU And?
 ---------------------------------------------------------------------------
 addSF :: SDRS -> DisVar -> SDRSFormula -> SDRS
 addSF (SDRS m l) new sf 
-  | M.member new m = SDRS (M.adjust (flip And sf) new m) l -- TODO switch args around?
+  | M.member new m = SDRS (M.adjust ((CDU . And) sf) new m) l
   | otherwise      = SDRS (M.insert new sf m) l
 
 ---------------------------------------------------------------------------
@@ -121,12 +122,12 @@ addSF (SDRS m l) new sf
 calcLeftArgRels :: SDRS -> DisVar -> [SDRSFormula]
 calcLeftArgRels (SDRS m _) old = reverse $ M.foldl putSwapRel [] m -- needs to be reversed in order to get right ordering in conjunction later
   where putSwapRel :: [SDRSFormula] -> SDRSFormula -> [SDRSFormula]
-        putSwapRel acc (Segment {})  = acc
-        putSwapRel acc r@(Relation _ dv1 _)
+        putSwapRel acc (EDU {})  = acc
+        putSwapRel acc r@(CDU (Relation _ dv1 _))
           | dv1 == old               = r:acc
           | otherwise                = acc
-        putSwapRel acc (And sf1 sf2) = putSwapRel (putSwapRel acc sf1) sf2
-        putSwapRel acc (Not sf1)     = putSwapRel acc sf1
+        putSwapRel acc (CDU (And sf1 sf2)) = putSwapRel (putSwapRel acc (CDU sf1)) (CDU sf2)
+        putSwapRel acc (CDU (Not sf1))     = putSwapRel acc (CDU sf1)
 
 ---------------------------------------------------------------------------
 -- | removes all of the given 'SDRSFormula'e from the map of 'SDRSFormula'e
@@ -147,34 +148,36 @@ removeRel s _                        = s
 ---------------------------------------------------------------------------
 -- | Within an 'SDRS' @s@ replaces all references of a given 'DisVar'
 -- @old@ with @new@ iff @old@ occurs as a right argument of a relation.
+-- HERE
 ---------------------------------------------------------------------------
 updateRightArgs :: SDRS -> DisVar -> DisVar -> SDRS
 updateRightArgs (SDRS m l) old new = SDRS (M.map updateR m) l
-  where updateR :: SDRSFormula -> SDRSFormula
-        updateR seg@(Segment {}) = seg
-        updateR r@(Relation rel dv1 dv2)
+  where updateR :: CDU -> SDRSFormula
+        updateR seg@(CDU (Segment {})) = seg
+        updateR r@(CDU (Relation rel dv1 dv2))
           | dv2 == old           = Relation rel dv1 new
           | otherwise            = r
-        updateR (And sf1 sf2)    = And (updateR sf1) (updateR sf2)
-        updateR (Not sf1)        = Not (updateR sf1)
+        updateR (CDU (And sf1 sf2))    = CDU $ And (updateR sf1) (updateR sf2)
+        updateR (CDU (Not sf1))        = CDU $ Not (updateR sf1)
 
 ---------------------------------------------------------------------------
 -- | Given a conjunction of 'SDRSFormula'e @sf@, removes the subrelation @r@
 -- from the conjunction.
+-- HERE
 ---------------------------------------------------------------------------
 removeRelFromSF :: SDRSFormula -> SDRSFormula -> SDRSFormula
-removeRelFromSF r@(Relation {}) sf@(And {}) = recurse sf
-  where recurse :: SDRSFormula -> SDRSFormula
-        recurse (And sf1@(And {}) sf2@(And {})) = And (recurse sf1) (recurse sf2)
-        recurse (And sf1@(And {}) sf2@(Relation {}))
+removeRelFromSF   (CDU r@(Relation {})) (CDU sf@(And {})) = recurse sf
+  where recurse :: CDU -> SDRSFormula
+        recurse (And sf1@(And {}) sf2@(And {})) = CDU $ And (recurse sf1) (recurse sf2)
+        recurse (And sf1@(CDU (And {})) sf2@(CDU (Relation {})))
           | r == sf2                            = recurse sf1
-          | otherwise                           = And (recurse sf1) sf2
-        recurse (And sf1@(Relation {}) sf2@(And {}))
+          | otherwise                           = CDU $ And (recurse sf1) sf2
+        recurse (CDU (And sf1@(CDU (Relation {})) sf2@(CDU (And {}))))
           | r == sf1                            = recurse sf2
-          | otherwise                           = And sf1 (recurse sf2)
-        recurse a@(And sf1@(Relation {}) sf2@(Relation {}))
-          | r == sf1                            = sf2
-          | r == sf2                            = sf1
+          | otherwise                           = CDU $ And sf1 (recurse sf2)
+        recurse a@(CDU (And sf1@(CDU (Relation {})) sf2@(CDU (Relation {}))))
+          | r == sf1                            = CDU sf2
+          | r == sf2                            = CDU sf1
           | otherwise                           = a
-        recurse sf'                             = sf'
+        recurse sf'                             = CDU sf'
 removeRelFromSF _ sf = sf

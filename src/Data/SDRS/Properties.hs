@@ -33,13 +33,13 @@ import Data.DRS.Merge
 import Data.DRS.Structure
 
 ---------------------------------------------------------------------------
--- | Checks, given 'SDRS' s@@, whether all its embedded 'DRS's are proper.
+-- | Checks, given 'SDRS' @s@, whether all its embedded 'DRS's are proper.
 ---------------------------------------------------------------------------
 sdrsProperDRSs :: SDRS -> Bool
 sdrsProperDRSs s = proper $ segments s
  where proper :: [(DisVar, SDRSFormula)] -> Bool
        proper []                    = True
-       proper ((dv,Segment d):rest) = (properDRS dv d) && proper rest
+       proper ((dv,EDU d):rest) = (properDRS dv d) && proper rest
        proper ((_,_):rest)          = proper rest
        properDRS :: DisVar -> DRS -> Bool
        properDRS dv d = isProperDRS ((foldl (<<+>>) (DRS [] []) accDRSs) <<+>> d) -- is merging with empty DRS the only way for this?
@@ -52,7 +52,7 @@ sdrsPureDRSs :: SDRS -> Bool
 sdrsPureDRSs s = pure' $ segments s
   where pure' :: [(DisVar, SDRSFormula)] -> Bool
         pure' []                    = True
-        pure' ((dv,Segment d):rest) = (pureDRS dv d) && pure' rest
+        pure' ((dv,EDU d):rest) = (pureDRS dv d) && pure' rest
         pure' ((_,_):rest)          = pure' rest
         pureDRS :: DisVar -> DRS -> Bool
         pureDRS dv d = (nub accUs) == accUs
@@ -70,7 +70,7 @@ sdrsUniqueDRSRefs s = universes == nub universes
 
 ---------------------------------------------------------------------------
 -- | checks whether the 'SDRSFormula' pointed to by LAST is meaningful, i.e.
---  * that it is an EDU, i.e. a Segment denoting a 'DRS', and
+--  * that it is an EDU, i.e. a EDU denoting a 'DRS', and
 --  * that it is part of a relation, in which it is not the left argument
 -- TODO interactions with root/rf
 ---------------------------------------------------------------------------
@@ -79,8 +79,8 @@ validLast s@(SDRS m l) = isSegment (m M.! l) &&
                          any (\(Relation _ _ dv') -> dv' == l) allRelations &&
                          not (any (\(Relation _ dv _) -> dv == l) allRelations) -- why doesn't "not $ any (\(Relation _ dv _) -> dv == l) allRelations" work?
   where isSegment :: SDRSFormula -> Bool
-        isSegment (Segment _) = True
-        isSegment _           = False -- isn't there an easier way? but idk how to pattern match on Segment when not in a function. note, this also ignores the possibility that the last node is introduced in a rec. SDRSFormula
+        isSegment (EDU _) = True
+        isSegment _           = False -- isn't there an easier way? but idk how to pattern match on EDU when not in a function. note, this also ignores the possibility that the last node is introduced in a rec. SDRSFormula
         allRelations = map snd $ relations s
 
 ---------------------------------------------------------------------------
@@ -142,7 +142,7 @@ isSemIsomorphic' s1@(SDRS m1 _) s2@(SDRS m2 _) =
 
 ---------------------------------------------------------------------------
 -- | Checks whether all Segments are attached to a node that's on the RF of
--- the graph before adding this Segment. It'll be difficult to check that
+-- the graph before adding this EDU. It'll be difficult to check that
 -- directly (to go to each node and to check whether the node that it was
 -- added to on the RF of the graph before having added that node). Maybe
 -- the problem is translatable in some way?

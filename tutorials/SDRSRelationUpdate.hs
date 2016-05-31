@@ -8,17 +8,17 @@ drs0 = DRS [] []
 -- case 1. the reference to be manipulated is the right arg of a relation, for example when adding a drs to sdrsfullal07_to3 with addDRS sdrsfullal07_to3 drs0 [(3,relationFromLabel "Narration")].
 
 sdrsfullal07_to3 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 3)),
-                (1, Segment drs0),
-                (2, Segment drs0),
-                (3, Segment drs0)]) 3
+                (1, EDU drs0),
+                (2, EDU drs0),
+                (3, EDU drs0)]) 3
 
 -- this then correctly yields:
 
 sdrsfullal07_to4 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 5)),
-                                       (1, Segment drs0),
-                                       (2, Segment drs0),
-                                       (3, Segment drs0),
-                                       (4, Segment drs0),
+                                       (1, EDU drs0),
+                                       (2, EDU drs0),
+                                       (3, EDU drs0),
+                                       (4, EDU drs0),
                                        (5, Relation (relationFromLabel "Narration") 3 4)]) 4
 
 -- only leaf nodes have to be modified, thus no other relation's outscoping label changes
@@ -26,35 +26,35 @@ sdrsfullal07_to4 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elabo
 -- case 2. The reference to be updated is on the left of a relation, but doesn't have any incoming relations, e.g.
 
 sdrs_updateRefCase2_to2 = SDRS (M.fromList [(0, Relation (relationFromLabel "Elaboration") 1 2),
-                                          (1, Segment drs0),
-                                          (2, Segment drs0)]) 2
+                                          (1, EDU drs0),
+                                          (2, EDU drs0)]) 2
 
 -- if one adds a DRS to 2 with Narration (addDRS sdrs_updateRefCase2_to2 drs0 [(2, relationFromLabel "Narration")]), then one should get:
 
 sdrs_updateRefCase2_to3 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Narration") 1 3)),
-                                          (1, Segment drs0),
-                                          (2, Segment drs0),
-                                          (3, Segment drs0)]) 3
+                                          (1, EDU drs0),
+                                          (2, EDU drs0),
+                                          (3, EDU drs0)]) 3
 
 -- but now, the tricky case: case 3. The reference to be updated is on the left side of a relation and has incoming edges, then it would look as follows:
 -- addDRS sdrsfullal07_to4 drs0 [(2, relationFromLabel "Narration")]
 
 sdrsfullal07_to4_2 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 5)),
-                                       (1, Segment drs0),
-                                       (2, Segment drs0),
-                                       (3, Segment drs0),
-                                       (4, Segment drs0),
+                                       (1, EDU drs0),
+                                       (2, EDU drs0),
+                                       (3, EDU drs0),
+                                       (4, EDU drs0),
                                        (5, Relation (relationFromLabel "Narration") 3 4)]) 4
 
 -- should yield:
 
 sdrsfullal07 = SDRS (M.fromList [(0, And (Relation (relationFromLabel "Elaboration") 1 7) (Relation (relationFromLabel "Elaboration") 2 5)),
-                                 (1, Segment drs0),
-                                 (2, Segment drs0),
-                                 (3, Segment drs0),
-                                 (4, Segment drs0),
+                                 (1, EDU drs0),
+                                 (2, EDU drs0),
+                                 (3, EDU drs0),
+                                 (4, EDU drs0),
                                  (5, Relation (relationFromLabel "Narration") 3 4),
-                                 (6, Segment drs0),
+                                 (6, EDU drs0),
                                  (7, And (Relation (relationFromLabel "Narration") 2 6)
                                          (Relation (relationFromLabel "Explanation") 2 5))]) 6
 

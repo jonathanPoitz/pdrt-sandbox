@@ -153,20 +153,20 @@ showSDRSBox (SDRS f ll) = showHorizontalLine l boxTopLeft boxTopRight
 showFunction :: [(DisVar,SDRSFormula)] -> String
 showFunction f = foldr ((++) . showFunc) "" f
   where showFunc :: (DisVar,SDRSFormula) -> String
-        showFunc (dv,sf@(Segment _))      = showModifier (show dv ++ ":") (modifierPos form) form
+        showFunc (dv,sf@(EDU _))      = showModifier (show dv ++ ":") (modifierPos form) form
           where form = showFormula sf
-        showFunc (dv,sf@(Relation _ _ _)) = showModifier (show dv ++ ":") (modifierPos form) form
+        showFunc (dv,sf@(CDU (Relation _ _ _))) = showModifier (show dv ++ ":") (modifierPos form) form
           where form = showFormula sf
-        showFunc (dv,(And f1 f2))         = showModifier (show dv ++ ":") (modifierPos form) form
-          where form = showConjunction f1 f2
-        showFunc (dv,(Not f1))            = showModifier (show dv ++ ":") (modifierPos form) form
-          where form = showNegation f1
+        showFunc (dv,(CDU (And f1 f2)))         = showModifier (show dv ++ ":") (modifierPos form) form
+          where form = showConjunction (CDU f1) (CDU f2)
+        showFunc (dv,(CDU (Not f1)))            = showModifier (show dv ++ ":") (modifierPos form) form
+          where form = showNegation (CDU f1)
 
 showFormula :: SDRSFormula -> String
-showFormula (Segment d)          = showDRS (DRS.Boxes d)
-showFormula (Relation r dv1 dv2) = label r ++ "(" ++ show dv1 ++ "," ++ show dv2 ++")\n"
-showFormula (And f1 f2)          = showConjunction f1 f2 
-showFormula (Not f1)             = showNegation f1
+showFormula (EDU d)          = showDRS (DRS.Boxes d)
+showFormula (CDU (Relation r dv1 dv2)) = label r ++ "(" ++ show dv1 ++ "," ++ show dv2 ++")\n"
+showFormula (CDU (And f1 f2))          = showConjunction (CDU f1) (CDU f2) 
+showFormula (CDU (Not f1))             = showNegation (CDU f1)
 
 modifierPos :: String -> Int
 modifierPos s

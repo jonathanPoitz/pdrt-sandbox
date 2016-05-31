@@ -16,6 +16,7 @@ module Data.SDRS.DataType
   SDRS (..)
 , SDRSFormula (..)
 , SDRSRelation (..)
+, CDU (..)
 , DisVar
 , Label
 , RelType (..)
@@ -95,13 +96,25 @@ type DisVar = Int
 ---------------------------------------------------------------------------
 -- | An SDRS formula
 ---------------------------------------------------------------------------
-data SDRSFormula =
-  Segment DRS
--- ^ A DRS
-  | Relation SDRSRelation DisVar DisVar
+--data SDRSFormula =
+--  Segment DRS
+---- ^ A DRS
+--  | Relation SDRSRelation DisVar DisVar
+---- ^ A rhetorical relation between two speech act discourse referents
+--  | And SDRSFormula SDRSFormula
+--  | Not SDRSFormula
+--  deriving (Read, Eq)
+
+data SDRSFormula = 
+  EDU DRS
+  | CDU CDU
+  deriving (Read, Eq)
+
+data CDU =
+  Relation SDRSRelation DisVar DisVar
 -- ^ A rhetorical relation between two speech act discourse referents
-  | And SDRSFormula SDRSFormula
-  | Not SDRSFormula
+  | And CDU CDU
+  | Not CDU
   deriving (Read, Eq)
 
 ---------------------------------------------------------------------------

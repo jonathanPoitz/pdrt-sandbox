@@ -37,7 +37,7 @@ import Data.SDRS.DiscourseGraph
 sdrsBoundRef :: DRSRef -> DisVar -> SDRS -> Bool
 sdrsBoundRef r dv s@(SDRS m _)
   | M.lookup dv m == Nothing = False
-  | otherwise                = case (m M.! dv) of (Segment d) -> bound d
+  | otherwise                = case (m M.! dv) of (EDU d) -> bound d
                                                   _           -> bound (DRS [] [])
   where bound :: DRS -> Bool
         bound d = drsBoundRef r d gd
@@ -51,7 +51,7 @@ sdrsFreeRefs :: SDRS -> [DRSRef]
 sdrsFreeRefs s = free $ segments s
   where free :: [(DisVar, SDRSFormula)] -> [DRSRef]
         free []                    = []
-        free ((dv,Segment d):rest) = drsFreeRefs d gd `union` free rest
+        free ((dv,EDU d):rest) = drsFreeRefs d gd `union` free rest
           where gd = foldl (<<+>>) (DRS [] []) accDRSs
                 accDRSs = accessibleDRSs s dv
         free (_:rest)              = free rest
@@ -73,24 +73,16 @@ allRelArgsBound s@(SDRS m _) = relVars `S.isProperSubsetOf` disVars
 noSelfRefs :: SDRS -> Bool
 noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
   where noSelfRef :: (DisVar, SDRSFormula) -> Bool
-        noSelfRef (dv0, Relation _ dv1 dv2) = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
-        noSelfRef (dv0, And sf1 sf2)        = noSelfRef (dv0,sf1) && noSelfRef (dv0,sf2)
-        noSelfRef (dv0, Not sf1)            = noSelfRef (dv0,sf1)
-        noSelfRef _                         = True  
+        noSelfRef (dv0, CDU Relation _ dv1 dv2) = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
+        noSelfRef (dv0, CDU And sf1 sf2)        = noSelfRef (dv0,sf1) && noSelfRef (dv0,sf2)
+        noSelfRef (dv0, CDU Not sf1)            = noSelfRef (dv0,sf1)
+        noSelfRef _                             = True  
 
 ---------------------------------------------------------------------------
 -- | Checks for the given 'SDRS' @s@ whether all Segments are bound as an 
 -- argument in a relation.
--- FIX: This doesn't produce right results when DRSs are introduced weirdly
--- within recursive SDRSFormulae
 ---------------------------------------------------------------------------
 allSegmentsBound :: SDRS -> Bool
 allSegmentsBound s@(SDRS m _) = allSegmentLabels `S.isSubsetOf` allRelArgs
-  where allSegmentLabels = segmentLabels (M.assocs m)
+  where allSegmentLabels = S.fromList $ M.keys $ segments s
         allRelArgs = S.fromList $ relArgs s
-        segmentLabels :: [(DisVar, SDRSFormula)] -> S.Set DisVar
-        segmentLabels []                       = S.empty
-        segmentLabels ((dv, Segment _):rest)   = S.insert dv $ segmentLabels rest
-        segmentLabels ((dv, And sf1 sf2):rest) = segmentLabels [(dv, sf1)] `S.union` segmentLabels [(dv, sf2)] `S.union` segmentLabels rest
-        segmentLabels ((dv, Not sf1):rest)     = segmentLabels [(dv, sf1)] `S.union` segmentLabels rest
-        segmentLabels ((_, Relation {}):rest)  = segmentLabels rest

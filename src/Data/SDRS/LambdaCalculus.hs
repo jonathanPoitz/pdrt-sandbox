@@ -42,6 +42,7 @@ import Data.DRS.Merge ((<<+>>))
 ---------------------------------------------------------------------------
 -- | Applies alpha conversion to an 'SDRS' on the basis of a conversion list
 -- for all embedded 'DisVar's.
+-- TODO FIX! And needs to take a CDU and not an SDRSFormula
 ---------------------------------------------------------------------------
 sdrsAlphaConvert :: SDRS -> M.Map DisVar DisVar -> SDRS
 sdrsAlphaConvert (SDRS m l) cm = SDRS (M.fromList (convert' (M.assocs m) cm)) (M.findWithDefault l l cm)
@@ -51,10 +52,11 @@ sdrsAlphaConvert (SDRS m l) cm = SDRS (M.fromList (convert' (M.assocs m) cm)) (M
         convertTuple :: (DisVar, SDRSFormula) -> M.Map DisVar DisVar -> (DisVar, SDRSFormula)
         convertTuple (dv, sf) nm = (M.findWithDefault dv dv nm, convertSF sf nm)
         convertSF :: SDRSFormula -> M.Map DisVar DisVar -> SDRSFormula
-        convertSF d@(Segment _) _             = d
-        convertSF (Relation rel dv1 dv2) nm = Relation rel (M.findWithDefault dv1 dv1 nm) (M.findWithDefault dv2 dv2 nm)
-        convertSF (And sf1 sf2) nm            = And (convertSF sf1 nm) (convertSF sf2 nm)
-        convertSF (Not sf1) nm                = Not (convertSF sf1 nm)
+        convertSF sf _ = sf
+        --convertSF d@(EDU _) _             = d
+        --convertSF (CDU (Relation rel dv1 dv2)) nm = CDU $ Relation rel (M.findWithDefault dv1 dv1 nm) (M.findWithDefault dv2 dv2 nm)
+        --convertSF (CDU (And sf1 sf2)) nm            = CDU $ And (convertSF (CDU sf1) nm) (convertSF (CDU sf2) nm)
+        --convertSF (CDU (Not sf1)) nm                = CDU $ Not (convertSF (CDU sf1) nm)
 
 -----------------------------------------------------------------------------
 ---- | Applies drt alpha conversion on all embedded 'DRS's of the given 'SDRS'
@@ -64,7 +66,7 @@ sdrsAlphaConvert (SDRS m l) cm = SDRS (M.fromList (convert' (M.assocs m) cm)) (M
 --sdrsDRSRefsAlphaConvert s@(SDRS m l) rs = SDRS mConv l
 --  where mConv = M.mapWithKey convert m
 --        convert :: DisVar -> SDRSFormula -> SDRSFormula
---        convert dv (Segment d) = Segment $ renameSubDRS d gd rs
+--        convert dv (EDU d) = EDU $ renameSubDRS d gd rs
 --          where gd = foldl (<<+>>) (DRS [] []) accDRSs
 --                accDRSs = accessibleDRSs s dv
 --        convert _ r@(Relation {}) = r
@@ -79,11 +81,11 @@ sdrsAlphaConvertDRS :: SDRS -> DisVar -> [(DRSRef,DRSRef)] -> SDRS
 sdrsAlphaConvertDRS s@(SDRS m l) dv cm = SDRS m' l
   where m' = M.adjustWithKey conv dv m
         conv :: DisVar -> SDRSFormula -> SDRSFormula
-        conv key (Segment d) = Segment $ renameSubDRS d gd' cm
+        conv key (EDU d) = EDU $ renameSubDRS d gd' cm
           where gd' = foldl (<<+>>) (DRS [] []) accDRSs'
                 accDRSs' = accessibleDRSs s key
         conv _ sf            = sf
-        -- ^ the SDRSFormula labeled by @key@ was not a Segment, skip it.
+        -- ^ the SDRSFormula labeled by @key@ was not a EDU, skip it.
 
 ---------------------------------------------------------------------------
 -- | For an 'SDRS' @s@, a list of 'DisVar's @dvs@ and a DRSRef conversion map
