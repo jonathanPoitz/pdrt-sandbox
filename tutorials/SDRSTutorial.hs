@@ -26,6 +26,13 @@ drs3 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "man") [(DRSRef "x")],
 drs4 = DRS [DRSRef "z"] [Rel (DRSRel "=") [(DRSRef "z"), (DRSRef "y")], 
                          Rel (DRSRel "break") [(DRSRef "z")]]
 
+drs3b = DRS [DRSRef "x", DRSRef "y", DRSRef "x1", DRSRef "y1"] [Rel (DRSRel "man") [(DRSRef "x")],
+                                     Rel (DRSRel "glass") [(DRSRef "y")],
+                                     Rel (DRSRel "drop") [(DRSRef "x"), (DRSRef "y")]]
+
+drs4b = DRS [DRSRef "z", DRSRef "z1"] [Rel (DRSRel "=") [(DRSRef "z"), (DRSRef "y")], 
+                         Rel (DRSRel "break") [(DRSRef "z")]]
+
 drs5 = DRS [DRSRef "x"] [Rel (DRSRel "Fred") [(DRSRef "x")], 
                          Rel (DRSRel "has_bad_mood") [(DRSRef "x")]]
 
@@ -160,8 +167,8 @@ sdrsmerge1 = SDRS (M.fromList [(0, Relation (relationFromLabel "Result") 1 2),
                                     (2, Segment drs4)]) 2
 
 sdrsmerge2 = SDRS (M.fromList [(0, Relation (relationFromLabel "Result") 1 2),
-                                    (1, Segment drs3),
-                                    (2, Segment drs4)]) 2
+                                    (1, Segment drs3b),
+                                    (2, Segment drs4b)]) 2
 
 sdrs1 = SDRS (M.fromList [(0, Relation (relationFromLabel "Result") 1 2),
                                     (1, Segment drs3),

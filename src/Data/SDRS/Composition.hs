@@ -19,19 +19,16 @@ module Data.SDRS.Composition
 ) where
 
 import qualified Data.Map as M
-import Data.List (intersect)
 import Debug.Trace
 import Data.SDRS.Show()
 
 import Data.SDRS.DataType
 import Data.SDRS.DiscourseGraph
 import Data.SDRS.Structure (lookupKey)
-import Data.SDRS.LambdaCalculus (buildDRSRefConvMap)
+import Data.SDRS.LambdaCalculus
 import Data.SDRS.Relation
 
 import Data.DRS.Structure (drsUniverse)
-import Data.DRS.LambdaCalculus (renameSubDRS)
-import Data.DRS.Merge ((<<+>>))
 
 ---------------------------------------------------------------------------
 -- | Builds a new 'SDRS' from a single 'DRS'.
@@ -46,18 +43,17 @@ drsToSDRS d = SDRS (M.fromList [(0, Segment d)]) 0
 -- Narration twice with different target nodes?)?
 ---------------------------------------------------------------------------
 addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
-addDRS s@(SDRS m _) d edges = sdrsWithNewLast
+addDRS s@(SDRS m _) d edges = sdrsDRSRefAlphaConved
   where updatedLast = (fst $ M.findMax m) + 1 -- new reference to last 
         sdrsWithRelations = updateRelations s edges updatedLast updatedOutscope -- 1. step update relations (this must be before new segment to ensure right calculation of RF)
-        sdrsWithSegment = addRel sdrsWithRelations updatedLast (Segment alphaConvD) -- 2. step - new segment
+        sdrsWithSegment = addSF sdrsWithRelations updatedLast (Segment d) -- 2. step - new segment
         sdrsWithNewLast = updateLast sdrsWithSegment updatedLast -- 3. step new last
-        alphaConvD = renameSubDRS d gd drsRefConvMap
-        gd = foldl (<<+>>) (DRS [] []) accDRSs
+        sdrsDRSRefAlphaConved = sdrsAlphaConvertDRS sdrsWithNewLast updatedLast drsRefConvMap
         accDRSs = accessibleDRSs sdrsWithRelations updatedLast -- note: this only works because the new drs is not in the sdrs yet, however the relation using its label is! this is of importance since in order to calculate the list of accessible drs, the new relation has to be there (as opposed to the new drs which first needs to be drsref-adjusted before being added)
         updatedOutscope = (fst $ M.findMax m) + 2 -- FIX this is very hacky
-        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap
-        drsRefs1 = concat $ map drsUniverse $ accDRSs -- FIXED, "drss s" takes all DRSs into account. we only want to calculate overlap with those that are actually accessible
-        drsRefOverlap = drsRefs1 `intersect` (drsUniverse d) -- FIXED this should not be drsVariables here, cause then it looks in both the universe and the conds. but we only wanna replace those refs that have binding overlap (thus overlap in universes), right?
+        drsRefConvMap = trace (show drsRefs1) buildDRSRefConvMap drsRefs1 drsRefs2
+        drsRefs1 = concat $ map drsUniverse $ accDRSs
+        drsRefs2 = drsUniverse d
 
 ---------------------------------------------------------------------------
 -- | adds one or more relations to the 'SDRS' @s@ between the newly added 'DisVar'
@@ -86,9 +82,9 @@ updateRelations s ((dv, rel):rest) attachingNode updatedOutscope
   where sdrsWithRightArgUpdate = updateRightArgs s dv updatedOutscope -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
         swapRels = calcLeftArgRels s dv
         sdrsWithRemovedSwapRels = removeRels sdrsWithRightArgUpdate swapRels -- 3. 
-        sdrsWithSwapRels = addRels sdrsWithRemovedSwapRels updatedOutscope swapRels -- 4. 
-        sdrsWithRel = addRel sdrsWithSwapRels updatedOutscope (Relation rel dv attachingNode) -- 5. step - new relation
-        sdrsWithNewConj = addRel s (lookupKey s dv) (Relation rel dv attachingNode) -- FIX order?
+        sdrsWithSwapRels = addSFs sdrsWithRemovedSwapRels updatedOutscope swapRels -- 4. 
+        sdrsWithRel = addSF sdrsWithSwapRels updatedOutscope (Relation rel dv attachingNode) -- 5. step - new relation
+        sdrsWithNewConj = addSF s (lookupKey s dv) (Relation rel dv attachingNode) -- FIX order?
 
 ---------------------------------------------------------------------------
 -- | Private
@@ -101,20 +97,20 @@ updateLast :: SDRS -> DisVar -> SDRS
 updateLast (SDRS m _) l' = SDRS m l'
 
 ---------------------------------------------------------------------------
--- | Adds a given list of 'SDRSFormula'e as new conjuncts to an existing
--- 'SDRSFormula' that is labeled by the 'DisVar' @new@.
+-- | Conjuncts a given list of 'SDRSFormula'e to a given 'DisVar' @new@ in an
+-- 'SDRS' @s@. If @new@ does not yet exist, it is created first.
 ---------------------------------------------------------------------------
-addRels :: SDRS -> DisVar -> [SDRSFormula] -> SDRS
-addRels s _ []           = s
-addRels s new (sf:rest) = addRels (addRel s new sf) new rest
+addSFs :: SDRS -> DisVar -> [SDRSFormula] -> SDRS
+addSFs s _ []           = s
+addSFs s new (sf:rest)  = addSFs (addSF s new sf) new rest
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' @s@, adds an SDRSFormula @sf@ as a new conjunct to an
 -- existing 'SDRSFormula' that is labeled by the 'DisVar' @new@. If @new@
 -- is not yet part of the 'SDRS', create it and have it label @sf@.
 ---------------------------------------------------------------------------
-addRel :: SDRS -> DisVar -> SDRSFormula -> SDRS
-addRel (SDRS m l) new sf 
+addSF :: SDRS -> DisVar -> SDRSFormula -> SDRS
+addSF (SDRS m l) new sf 
   | M.member new m = SDRS (M.adjust (flip And sf) new m) l -- TODO switch args around?
   | otherwise      = SDRS (M.insert new sf m) l
 

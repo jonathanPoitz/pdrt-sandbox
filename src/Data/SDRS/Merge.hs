@@ -16,9 +16,8 @@ module Data.SDRS.Merge
 ) where
 
 import qualified Data.Map as M
-import Data.List (intersect)
--- import Debug.Trace
--- import Data.SDRS.Show()
+--import Debug.Trace
+--import Data.SDRS.Show()
 
 import Data.SDRS.DataType
 import Data.SDRS.Structure
@@ -27,8 +26,6 @@ import Data.SDRS.LambdaCalculus
 import Data.SDRS.Composition (updateRelations)
 
 import Data.DRS.Structure (drsUniverse)
-import Data.DRS.LambdaCalculus (renameSubDRS)
-import Data.DRS.Merge ((<<+>>))
 
 -------------------------------------------------------------------------
 -- | Applies merge to 'SDRS' @s1@ and 'SDRS' @s2@. The latter is attached
@@ -38,9 +35,11 @@ sdrsMerge :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
 sdrsMerge s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
   where convMap = buildConvMap s1 s2 -- 1.
         drsRefs1 = concat $ map drsUniverse $ accDRSs -- 3a.
+        -- ^ a list of all DRSRefs that is accessible from the attaching node after the merge
         drsRefs2 = concat $ map drsUniverse $ drss s2DVConv -- 3b.
-        drsRefOverlap = drsRefs1 `intersect` drsRefs2 -- order? 3c.
-        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefOverlap -- 3d.
+        -- ^ a list of all DRSRefs in the attaching SDRS
+        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefs2
+        -- ^ a conversion map of all overlapping variables to new ones from both sdrss
         accDRSs = accessibleDRSs sdrsMerged attachingNode
         updatedLast = sdrsLast s2DVConv
         attachingNode = root s2DVConv
@@ -50,18 +49,8 @@ sdrsMerge s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
         s1WithNewRelation = updateRelations s1 edges attachingNode updatedOutscope
         sdrsMerged = SDRS ((sdrsMap s1WithNewRelation) `M.union` (sdrsMap s2DVConv)) updatedLast -- merged maps and updated last
         newDRSKeys = map fst $ segments s2DVConv -- 2a. the labels of the drss that are to be added. these later need to be drsRefAlphaConv'ed
-        sdrsDRSRefAlphaConved = alphaConvDRSs sdrsMerged newDRSKeys
-        alphaConvDRSs :: SDRS -> [DisVar] -> SDRS
-        alphaConvDRSs s []                 = s
-        alphaConvDRSs (SDRS m l) (dv:rest) = alphaConvDRSs (SDRS m' l) rest
-          where m' = M.adjustWithKey alphaConvDRS dv m
-                alphaConvDRS :: DisVar -> SDRSFormula -> SDRSFormula
-                alphaConvDRS key (Segment d) = Segment $ renameSubDRS d gd' drsRefConvMap
-                  where gd' = foldl (<<+>>) (DRS [] []) accDRSs'
-                        accDRSs' = accessibleDRSs sdrsMerged key
-                alphaConvDRS _ sf          = sf -- other cases don't matter currently
+        sdrsDRSRefAlphaConved = sdrsAlphaConvertDRSs sdrsMerged newDRSKeys drsRefConvMap
         
-
 ---------------------------------------------------------------------------
 -- | Private
 ---------------------------------------------------------------------------

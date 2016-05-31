@@ -14,9 +14,10 @@ module Data.SDRS.Properties
 (
   sdrsProperDRSs
 , sdrsPureDRSs
-, sdrsAllDRSRefUnique
+, sdrsUniqueDRSRefs
 , validLast
 , isStrucIsomorphic
+, isSemIsomorphic'
 ) where
 
 import qualified Data.Map as M
@@ -32,7 +33,7 @@ import Data.DRS.Merge
 import Data.DRS.Structure
 
 ---------------------------------------------------------------------------
--- | Checks, given an 'SDRS', whether all embedded 'DRS's are proper
+-- | Checks, given 'SDRS' s@@, whether all its embedded 'DRS's are proper.
 ---------------------------------------------------------------------------
 sdrsProperDRSs :: SDRS -> Bool
 sdrsProperDRSs s = proper $ segments s
@@ -45,7 +46,7 @@ sdrsProperDRSs s = proper $ segments s
          where accDRSs = accessibleDRSs s dv
        
 ---------------------------------------------------------------------------
--- | Checks, given an 'SDRS', whether all embedded 'DRS's are pure
+-- | Checks, given 'SDRS' s@@, whether all its embedded 'DRS's are pure.
 ---------------------------------------------------------------------------
 sdrsPureDRSs :: SDRS -> Bool
 sdrsPureDRSs s = pure' $ segments s
@@ -54,8 +55,8 @@ sdrsPureDRSs s = pure' $ segments s
         pure' ((dv,Segment d):rest) = (pureDRS dv d) && pure' rest
         pure' ((_,_):rest)          = pure' rest
         pureDRS :: DisVar -> DRS -> Bool
-        pureDRS dv d = isPureDRS ((foldl (<<+>>) (DRS [] []) accDRSs) <<+>> d) -- is merging with empty DRS the only way for this?
-          where accDRSs = accessibleDRSs s dv
+        pureDRS dv d = (nub accUs) == accUs
+          where accUs = (concat $ map drsUniverse $ accessibleDRSs s dv) ++ (drsUniverse d)
 
 ---------------------------------------------------------------------------
 -- | Checks if the 'SDRS' @s@ only has unique DRSRefs where, i.e.:
@@ -63,8 +64,8 @@ sdrsPureDRSs s = pure' $ segments s
 --  * no embedded 'DRS' declares 'DRSRef's that are declared in any other
 -- embedded 'DRS' of @s@. 
 ---------------------------------------------------------------------------
-sdrsAllDRSRefUnique :: SDRS -> Bool
-sdrsAllDRSRefUnique s = universes == nub universes
+sdrsUniqueDRSRefs :: SDRS -> Bool
+sdrsUniqueDRSRefs s = universes == nub universes
   where universes = concat $ map drsUniverse (drss s)
 
 ---------------------------------------------------------------------------
@@ -84,7 +85,7 @@ validLast s@(SDRS m l) = isSegment (m M.! l) &&
 
 ---------------------------------------------------------------------------
 -- | Checks whether two 'SDRS's @s1@ and @s2@ are structural isomorphic, i.e.,
--- their graph structure does not differ except for different labeling of DUs
+-- their graph structure does not differ except for different labeling of DUs.
 ---------------------------------------------------------------------------
 isStrucIsomorphic :: SDRS -> SDRS -> Bool
 isStrucIsomorphic s1@(SDRS m1 _) s2@(SDRS m2 _) =
@@ -101,7 +102,37 @@ isStrucIsomorphic s1@(SDRS m1 _) s2@(SDRS m2 _) =
                     rel1 == rel2 = M.insert dv2 dv1 (build rest1 rest2 cm)
                   | ((M.lookup dv1 g1) == Nothing) &&
                     ((M.lookup dv2 g2) == Nothing) &&
-                    rel1 /= rel2 = cm -- if both are leaves, but their relation is different, abort this branch of recursion
+                    rel1 /= rel2 = cm 
+                    -- ^ if both are leaves, but their relation is different, abort this branch of recursion
+                  | ((M.lookup dv1 g1) == Nothing) ||
+                    ((M.lookup dv2 g2) == Nothing) = cm -- if only one of both nodes is a leaf, abort this branch of the recursion
+                  | rel1 == rel2 = M.insert dv2 dv1 (build (rest1 `union` (g1 M.! dv1))
+                                                           (rest2 `union` (g2 M.! dv2))
+                                                           cm)
+                build _ _ cm = cm -- if one SDRS is finished, return the map? 
+
+---------------------------------------------------------------------------
+-- | Checks whether two 'SDRS's @s1@ and @s2@ are strictly semantically 
+-- isomorphic, i.e., they do not differ except for different labeling of DUs.
+-- TODO!
+---------------------------------------------------------------------------
+isSemIsomorphic' :: SDRS -> SDRS -> Bool
+isSemIsomorphic' s1@(SDRS m1 _) s2@(SDRS m2 _) =
+  length m1 == length m2 && 
+         g1 == g2_conv
+  where g1 = discourseGraph s1
+        g2 = discourseGraph s2
+        g2_conv = discourseGraph $ sdrsAlphaConvert s2 convMap
+        convMap = build (zip [root s1] (repeat Outscopes)) (zip [root s2] (repeat Outscopes)) M.empty -- Outscopes is just dummy here
+          where build :: [(DisVar,SDRSRelation)] -> [(DisVar,SDRSRelation)] -> M.Map DisVar DisVar -> M.Map DisVar DisVar
+                build ((dv1,rel1):rest1) ((dv2,rel2):rest2) cm
+                  | ((M.lookup dv1 g1) == Nothing) &&
+                    ((M.lookup dv2 g2) == Nothing) &&
+                    rel1 == rel2 = M.insert dv2 dv1 (build rest1 rest2 cm)
+                  | ((M.lookup dv1 g1) == Nothing) &&
+                    ((M.lookup dv2 g2) == Nothing) &&
+                    rel1 /= rel2 = cm 
+                    -- ^ if both are leaves, but their relation is different, abort this branch of recursion
                   | ((M.lookup dv1 g1) == Nothing) ||
                     ((M.lookup dv2 g2) == Nothing) = cm -- if only one of both nodes is a leaf, abort this branch of the recursion
                   | rel1 == rel2 = M.insert dv2 dv1 (build (rest1 `union` (g1 M.! dv1))

@@ -72,9 +72,10 @@ immediateOutscopes (SDRS m _) = M.foldlWithKey build M.empty m
         build acc _ _                          = acc
 
 ---------------------------------------------------------------------------
--- | Given an 'SDRS' and a discourse variable, lists the accessible
--- variables from this variable in order of proximity to local discourse
--- variable, with the first entry being the farthest and the last the closest
+-- | Given the 'SDRS' @s@ and the 'DisVar' @dv1@, lists all accessible 'DisVar's
+-- using the discourse graph of @s@. The output list's elements are ordered
+-- with the first element being the farthest and the last the closest to @dv1@
+-- in the discourse graph.
 -- TODO might be simplified. currently a lot of steps, maybe rec can be simplified.
 -- TODO structural relations? def. 15 book
 ---------------------------------------------------------------------------
@@ -93,7 +94,7 @@ accessibleNodes s dv1 = walkEdges [dv1]
           | otherwise = findKey dv rest
 
 ---------------------------------------------------------------------------
--- | returns all accessible 'DRS's from a given 'DisVar' @dv@ in the 'SDRS' @s@. 
+-- | Returns all 'DRS's accessible from a given 'DisVar' @dv@ in the 'SDRS' @s@.
 ---------------------------------------------------------------------------
 accessibleDRSs :: SDRS -> DisVar -> [DRS]
 accessibleDRSs s@(SDRS m _) dv = accDRSs
