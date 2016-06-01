@@ -73,9 +73,9 @@ allRelArgsBound s@(SDRS m _) = relVars `S.isProperSubsetOf` disVars
 noSelfRefs :: SDRS -> Bool
 noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
   where noSelfRef :: (DisVar, SDRSFormula) -> Bool
-        noSelfRef (dv0, CDU Relation _ dv1 dv2) = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
-        noSelfRef (dv0, CDU And sf1 sf2)        = noSelfRef (dv0,sf1) && noSelfRef (dv0,sf2)
-        noSelfRef (dv0, CDU Not sf1)            = noSelfRef (dv0,sf1)
+        noSelfRef (dv0, CDU (Relation _ dv1 dv2)) = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
+        noSelfRef (dv0, CDU (And sf1 sf2))        = noSelfRef (dv0,CDU sf1) && noSelfRef (dv0,CDU sf2)
+        noSelfRef (dv0, CDU (Not sf1))            = noSelfRef (dv0,CDU sf1)
         noSelfRef _                             = True  
 
 ---------------------------------------------------------------------------
@@ -83,6 +83,6 @@ noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
 -- argument in a relation.
 ---------------------------------------------------------------------------
 allSegmentsBound :: SDRS -> Bool
-allSegmentsBound s@(SDRS m _) = allSegmentLabels `S.isSubsetOf` allRelArgs
-  where allSegmentLabels = S.fromList $ M.keys $ segments s
+allSegmentsBound s = allSegmentLabels `S.isSubsetOf` allRelArgs
+  where allSegmentLabels = S.fromList $ map fst $ segments s
         allRelArgs = S.fromList $ relArgs s

@@ -76,8 +76,8 @@ sdrsUniqueDRSRefs s = universes == nub universes
 ---------------------------------------------------------------------------
 validLast :: SDRS -> Bool
 validLast s@(SDRS m l) = isSegment (m M.! l) &&
-                         any (\(Relation _ _ dv') -> dv' == l) allRelations &&
-                         not (any (\(Relation _ dv _) -> dv == l) allRelations) -- why doesn't "not $ any (\(Relation _ dv _) -> dv == l) allRelations" work?
+                         any (\(CDU (Relation _ _ dv')) -> dv' == l) allRelations &&
+                         not (any (\(CDU (Relation _ dv _)) -> dv == l) allRelations) -- why doesn't "not $ any (\(Relation _ dv _) -> dv == l) allRelations" work?
   where isSegment :: SDRSFormula -> Bool
         isSegment (EDU _) = True
         isSegment _           = False -- isn't there an easier way? but idk how to pattern match on EDU when not in a function. note, this also ignores the possibility that the last node is introduced in a rec. SDRSFormula
