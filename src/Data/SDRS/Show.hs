@@ -59,6 +59,9 @@ instance {-# OVERLAPPING #-} Show [SDRSFormula] where
 
 instance {-# OVERLAPPING #-} Show SDRSFormula where
   show sf = showFormula sf
+
+instance {-# OVERLAPPING #-} Show CDU where
+  show cdu = showCDU cdu
 -- DEBUG // DEBUG // DEBUG --
 
 
@@ -161,6 +164,12 @@ showFunction f = foldr ((++) . showFunc) "" f
           where form = showConjunction (CDU f1) (CDU f2)
         showFunc (dv,(CDU (Not f1)))            = showModifier (show dv ++ ":") (modifierPos form) form
           where form = showNegation (CDU f1)
+
+-- DEBUG / DEBUG / DEBUG
+showCDU :: CDU -> String
+showCDU (Relation r dv1 dv2) = label r ++ "(" ++ show dv1 ++ "," ++ show dv2 ++")\n"
+showCDU (And f1 f2)          = showConjunction (CDU f1) (CDU f2) 
+showCDU (Not f1)             = showNegation (CDU f1)
 
 showFormula :: SDRSFormula -> String
 showFormula (EDU d)          = showDRS (DRS.Boxes d)

@@ -21,6 +21,7 @@ module Data.SDRS.DataType
 , Label
 , RelType (..)
 , relationFromLabel
+, extractCDU
 , module Data.DRS.DataType
 ) where
 
@@ -109,6 +110,14 @@ data SDRSFormula =
   EDU DRS
   | CDU CDU
   deriving (Read, Eq)
+
+---------------------------------------------------------------------------
+-- | Extracts the 'CDU' from a given 'SDRSFormula' @sf@ or throws an error
+-- if @sf@ is not created from a 'CDU'.
+---------------------------------------------------------------------------
+extractCDU :: SDRSFormula -> CDU
+extractCDU (CDU cdu) = cdu
+extractCDU _ = error ("Cannot convert non-CDU SDRSFormula")
 
 data CDU =
   Relation SDRSRelation DisVar DisVar

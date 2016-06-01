@@ -46,12 +46,12 @@ addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
 addDRS s@(SDRS m _) d edges = sdrsDRSRefAlphaConved
   where updatedLast = (fst $ M.findMax m) + 1 -- new reference to last 
         sdrsWithRelations = updateRelations s edges updatedLast updatedOutscope -- 1. step update relations (this must be before new segment to ensure right calculation of RF)
-        sdrsWithSegment = addSF sdrsWithRelations updatedLast (EDU d) -- 2. step - new segment
+        sdrsWithSegment = addEDU sdrsWithRelations updatedLast (EDU d) -- 2. step - new segment
         sdrsWithNewLast = updateLast sdrsWithSegment updatedLast -- 3. step new last
         sdrsDRSRefAlphaConved = sdrsAlphaConvertDRS sdrsWithNewLast updatedLast drsRefConvMap
         accDRSs = accessibleDRSs sdrsWithRelations updatedLast -- note: this only works because the new drs is not in the sdrs yet, however the relation using its label is! this is of importance since in order to calculate the list of accessible drs, the new relation has to be there (as opposed to the new drs which first needs to be drsref-adjusted before being added)
         updatedOutscope = (fst $ M.findMax m) + 2 -- FIX this is very hacky
-        drsRefConvMap = trace (show drsRefs1) buildDRSRefConvMap drsRefs1 drsRefs2
+        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefs2
         drsRefs1 = concat $ map drsUniverse $ accDRSs
         drsRefs2 = drsUniverse d
 
@@ -82,9 +82,9 @@ updateRelations s ((dv, rel):rest) attachingNode updatedOutscope
   where sdrsWithRightArgUpdate = updateRightArgs s dv updatedOutscope -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
         swapRels = calcLeftArgRels s dv
         sdrsWithRemovedSwapRels = removeRels sdrsWithRightArgUpdate swapRels -- 3. 
-        sdrsWithSwapRels = addSFs sdrsWithRemovedSwapRels updatedOutscope swapRels -- 4. 
-        sdrsWithRel = addSF sdrsWithSwapRels updatedOutscope (CDU $ Relation rel dv attachingNode) -- 5. step - new relation
-        sdrsWithNewConj = addSF s (lookupKey s dv) (CDU $ Relation rel dv attachingNode) -- FIX order?
+        sdrsWithSwapRels = addCDUs sdrsWithRemovedSwapRels updatedOutscope swapRels -- 4. 
+        sdrsWithRel = addCDU sdrsWithSwapRels updatedOutscope (Relation rel dv attachingNode) -- 5. step - new relation
+        sdrsWithNewConj = addCDU s (lookupKey s dv) (Relation rel dv attachingNode) -- FIX order?
 
 ---------------------------------------------------------------------------
 -- | Private
@@ -97,52 +97,61 @@ updateLast :: SDRS -> DisVar -> SDRS
 updateLast (SDRS m _) l' = SDRS m l'
 
 ---------------------------------------------------------------------------
--- | Conjuncts a given list of 'SDRSFormula'e to a given 'DisVar' @new@ in an
+-- | Conjuncts a given list of 'CDU's to a given 'DisVar' @new@ in an
 -- 'SDRS' @s@. If @new@ does not yet exist, it is created first.
 ---------------------------------------------------------------------------
-addSFs :: SDRS -> DisVar -> [SDRSFormula] -> SDRS
-addSFs s _ []           = s
-addSFs s new (sf:rest)  = addSFs (addSF s new sf) new rest
+addCDUs :: SDRS -> DisVar -> [CDU] -> SDRS
+addCDUs s _ []           = s
+addCDUs s new (cdu:rest)  = addCDUs (addCDU s new cdu) new rest
 
 ---------------------------------------------------------------------------
--- | Given an 'SDRS' @s@, adds an SDRSFormula @sf@ as a new conjunct to an
--- existing 'SDRSFormula' that is labeled by the 'DisVar' @new@. If @new@
--- is not yet part of the 'SDRS', create it and have it label @sf@.
--- FIX apply flip on CDU And?
+-- | Given an 'SDRS' @s@, adds a CDU @cdu@ as a new conjunct to an
+-- existing 'CDU' which is embedded in an 'SDRSFormula' that is labeled by
+-- the 'DisVar' @new@. If @new@ is not yet part of the 'SDRS', create it
+-- and have it label a new 'SDRSFormula' containing @cdu@.
 ---------------------------------------------------------------------------
-addSF :: SDRS -> DisVar -> SDRSFormula -> SDRS
-addSF (SDRS m l) new sf 
-  --M.member new m = SDRS (M.adjust ((CDU . And) sf) new m) l
-  | otherwise      = SDRS (M.insert new sf m) l
+addCDU :: SDRS -> DisVar -> CDU -> SDRS
+addCDU (SDRS m l) new cdu 
+  | M.member new m = SDRS (M.insert new newSF m) l
+  | otherwise      = SDRS (M.insert new (CDU cdu) m) l
+  where newSF = CDU $ And cdu $ extractCDU $ m M.! new
+
+---------------------------------------------------------------------------
+-- | Given an 'SDRS' @s@, a 'DisVar' @new@ and an 'SDRSFormula' @edu@, adds
+-- @edu@ to the 'SDRS' labeled by @new@. If @new@ already is a label in the map,
+-- replace its value by @edu@.
+---------------------------------------------------------------------------
+addEDU :: SDRS -> DisVar -> SDRSFormula -> SDRS
+addEDU (SDRS m l) new edu = SDRS (M.insert new edu m) l
 
 ---------------------------------------------------------------------------
 -- | Calculates all relations within an 'SDRS' @s@ that have the 'DisVar' @old@
 -- as their left argument.
 ---------------------------------------------------------------------------
-calcLeftArgRels :: SDRS -> DisVar -> [SDRSFormula]
+calcLeftArgRels :: SDRS -> DisVar -> [CDU]
 calcLeftArgRels (SDRS m _) old = reverse $ M.foldl putSwapRel [] m -- needs to be reversed in order to get right ordering in conjunction later
-  where putSwapRel :: [SDRSFormula] -> SDRSFormula -> [SDRSFormula]
+  where putSwapRel :: [CDU] -> SDRSFormula -> [CDU]
         putSwapRel acc (EDU {})  = acc
-        putSwapRel acc r@(CDU (Relation _ dv1 _))
+        putSwapRel acc (CDU r@(Relation _ dv1 _))
           | dv1 == old               = r:acc
           | otherwise                = acc
         putSwapRel acc (CDU (And sf1 sf2)) = putSwapRel (putSwapRel acc (CDU sf1)) (CDU sf2)
         putSwapRel acc (CDU (Not sf1))     = putSwapRel acc (CDU sf1)
 
 ---------------------------------------------------------------------------
--- | removes all of the given 'SDRSFormula'e from the map of 'SDRSFormula'e
+-- | removes all of the given 'CDU's from the map of 'SDRSFormula'e
 -- in an 'SDRS'.
 ---------------------------------------------------------------------------
-removeRels :: SDRS -> [SDRSFormula] -> SDRS
+removeRels :: SDRS -> [CDU] -> SDRS
 removeRels s []        = s
-removeRels s (sf:rest) = removeRels (removeRel s sf) rest
+removeRels s (cdu:rest) = removeRels (removeRel s cdu) rest
 
 ---------------------------------------------------------------------------
--- | removes a given 'SDRSFormula' @r@ from a given SDRS @s@ iff @r@ is a
+-- | removes a given 'CDU' @r@ from a given SDRS @s@ iff @r@ is a
 -- Relation.
 ---------------------------------------------------------------------------
-removeRel :: SDRS -> SDRSFormula -> SDRS
-removeRel (SDRS m l) r@(CDU (Relation {})) = SDRS (M.map (removeRelFromSF r) m) l
+removeRel :: SDRS -> CDU -> SDRS
+removeRel (SDRS m l) r@(Relation {}) = SDRS (M.map (removeRelFromSF r) m) l
 removeRel s _                        = s
 
 ---------------------------------------------------------------------------
@@ -165,8 +174,8 @@ updateRightArgs (SDRS m l) old new = SDRS (M.map updateR m) l
 -- | Given a conjunction of 'SDRSFormula'e @sf@, removes the subrelation @r@
 -- from the conjunction.
 ---------------------------------------------------------------------------
-removeRelFromSF :: SDRSFormula -> SDRSFormula -> SDRSFormula
-removeRelFromSF (CDU r@(Relation {})) (CDU a@(And {})) = CDU $ recurse a
+removeRelFromSF :: CDU -> SDRSFormula -> SDRSFormula
+removeRelFromSF r@(Relation {}) (CDU a@(And {})) = CDU $ recurse a
   where recurse :: CDU -> CDU
         recurse (And sf1@(And {}) sf2@(And {})) = And (recurse sf1) (recurse sf2)
         recurse (And sf1@(And {}) sf2@(Relation {}))
