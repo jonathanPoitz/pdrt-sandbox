@@ -112,7 +112,7 @@ addSFs s new (sf:rest)  = addSFs (addSF s new sf) new rest
 ---------------------------------------------------------------------------
 addSF :: SDRS -> DisVar -> SDRSFormula -> SDRS
 addSF (SDRS m l) new sf 
-  | M.member new m = SDRS (M.adjust ((CDU . And) sf) new m) l
+  --M.member new m = SDRS (M.adjust ((CDU . And) sf) new m) l
   | otherwise      = SDRS (M.insert new sf m) l
 
 ---------------------------------------------------------------------------
@@ -142,42 +142,42 @@ removeRels s (sf:rest) = removeRels (removeRel s sf) rest
 -- Relation.
 ---------------------------------------------------------------------------
 removeRel :: SDRS -> SDRSFormula -> SDRS
-removeRel (SDRS m l) r@(Relation {}) = SDRS (M.map (removeRelFromSF r) m) l
+removeRel (SDRS m l) r@(CDU (Relation {})) = SDRS (M.map (removeRelFromSF r) m) l
 removeRel s _                        = s
 
 ---------------------------------------------------------------------------
 -- | Within an 'SDRS' @s@ replaces all references of a given 'DisVar'
 -- @old@ with @new@ iff @old@ occurs as a right argument of a relation.
--- HERE
 ---------------------------------------------------------------------------
 updateRightArgs :: SDRS -> DisVar -> DisVar -> SDRS
 updateRightArgs (SDRS m l) old new = SDRS (M.map updateR m) l
-  where updateR :: CDU -> SDRSFormula
-        updateR seg@(CDU (Segment {})) = seg
-        updateR r@(CDU (Relation rel dv1 dv2))
+  where updateR :: SDRSFormula -> SDRSFormula
+        updateR edu@(EDU {}) = edu
+        updateR (CDU cdu) = CDU $ updateCDU cdu
+        updateCDU :: CDU -> CDU
+        updateCDU r@(Relation rel dv1 dv2)
           | dv2 == old           = Relation rel dv1 new
           | otherwise            = r
-        updateR (CDU (And sf1 sf2))    = CDU $ And (updateR sf1) (updateR sf2)
-        updateR (CDU (Not sf1))        = CDU $ Not (updateR sf1)
+        updateCDU (And sf1 sf2)    = And (updateCDU sf1) (updateCDU sf2)
+        updateCDU (Not sf1)        = Not (updateCDU sf1)
 
 ---------------------------------------------------------------------------
 -- | Given a conjunction of 'SDRSFormula'e @sf@, removes the subrelation @r@
 -- from the conjunction.
--- HERE
 ---------------------------------------------------------------------------
 removeRelFromSF :: SDRSFormula -> SDRSFormula -> SDRSFormula
-removeRelFromSF   (CDU r@(Relation {})) (CDU sf@(And {})) = recurse sf
-  where recurse :: CDU -> SDRSFormula
-        recurse (And sf1@(And {}) sf2@(And {})) = CDU $ And (recurse sf1) (recurse sf2)
-        recurse (And sf1@(CDU (And {})) sf2@(CDU (Relation {})))
+removeRelFromSF (CDU r@(Relation {})) (CDU a@(And {})) = CDU $ recurse a
+  where recurse :: CDU -> CDU
+        recurse (And sf1@(And {}) sf2@(And {})) = And (recurse sf1) (recurse sf2)
+        recurse (And sf1@(And {}) sf2@(Relation {}))
           | r == sf2                            = recurse sf1
-          | otherwise                           = CDU $ And (recurse sf1) sf2
-        recurse (CDU (And sf1@(CDU (Relation {})) sf2@(CDU (And {}))))
+          | otherwise                           = And (recurse sf1) sf2
+        recurse (And sf1@(Relation {}) sf2@(And {}))
           | r == sf1                            = recurse sf2
-          | otherwise                           = CDU $ And sf1 (recurse sf2)
-        recurse a@(CDU (And sf1@(CDU (Relation {})) sf2@(CDU (Relation {}))))
-          | r == sf1                            = CDU sf2
-          | r == sf2                            = CDU sf1
-          | otherwise                           = a
-        recurse sf'                             = CDU sf'
+          | otherwise                           = And sf1 (recurse sf2)
+        recurse a'@(And sf1@(Relation {}) sf2@(Relation {}))
+          | r == sf1                            = sf2
+          | r == sf2                            = sf1
+          | otherwise                           = a'
+        recurse sf'                             = sf'
 removeRelFromSF _ sf = sf
