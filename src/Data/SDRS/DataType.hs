@@ -117,7 +117,7 @@ data SDRSFormula =
 ---------------------------------------------------------------------------
 extractCDU :: SDRSFormula -> CDU
 extractCDU (CDU cdu) = cdu
-extractCDU _ = error ("Cannot convert non-CDU SDRSFormula")
+extractCDU _ = error ("Cannot extract non-CDU SDRSFormula")
 
 data CDU =
   Relation SDRSRelation DisVar DisVar
