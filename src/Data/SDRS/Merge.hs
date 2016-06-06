@@ -12,7 +12,7 @@ SDRS merge
 
 module Data.SDRS.Merge
 (
-  sdrsMerge
+  mergeSDRSs
 ) where
 
 import qualified Data.Map as M
@@ -31,8 +31,8 @@ import Data.DRS.Structure (drsUniverse)
 -- | Applies merge to 'SDRS' @s1@ and 'SDRS' @s2@. The latter is attached
 -- with its root node to a node @dv1@ that must be on the RF of @s1@, using relation @r@.  
 -------------------------------------------------------------------------
-sdrsMerge :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
-sdrsMerge s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
+mergeSDRSs :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
+mergeSDRSs s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
   where convMap = buildConvMap s1 s2 -- 1.
         drsRefs1 = concat $ map drsUniverse $ accDRSs -- 3a.
         -- ^ a list of all DRSRefs that is accessible from the attaching node after the merge
@@ -62,7 +62,7 @@ sdrsMerge s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
 --sdrsMergeStrict :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
 --sdrsMergeStrict s1 s2 edges
 --  | isWellformedSDRS s1 &&
---    isWellformedSDRS s2 = sdrsMerge s1 s2 edges
+--    isWellformedSDRS s2 = mergeSDRSs s1 s2 edges
 --  | otherwise           = error "The merge SDRSs are not wellformed."
 
 
