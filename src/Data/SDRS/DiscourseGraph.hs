@@ -16,6 +16,7 @@ module Data.SDRS.DiscourseGraph
 , accessibleNodes
 , accessibleDRSs
 , rf
+, inferLast
 , isOnRF
 , immediateOutscopes
 , Label
@@ -25,10 +26,12 @@ module Data.SDRS.DiscourseGraph
 , hasParents
 ) where
 
-import Data.SDRS.DataType
 import qualified Data.Map as M
 import Data.List (union, nub, sort, (\\))
-import Data.SDRS.Structure (relArgs, dus)
+
+import Data.SDRS.DataType
+import Data.SDRS.Relation
+import Data.SDRS.Structure
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -100,7 +103,7 @@ accessibleDRSs :: SDRS -> DisVar -> [DRS]
 accessibleDRSs s@(SDRS m _) dv = accDRSs
   where accDisVars = accessibleNodes s dv
         accDUs = map (\i -> m M.! i) accDisVars
-        accDRSs = [ drs | (EDU drs) <- accDUs]
+        accDRSs = [drs | (EDU drs) <- accDUs]
 
 ---------------------------------------------------------------------------
 -- | computes the right frontier of an 'SDRS', in order of locality
@@ -108,13 +111,21 @@ accessibleDRSs s@(SDRS m _) dv = accDRSs
 -- TODO debug structural checks -> does this work in every situation?
 -- If the last node is wrong or even an unvalid pointer, this function will
 -- return a wrong rf. FIX, walk from root instead to avoid that?
+-- TODO de-uglify. possibly implement function to rewind an sdrs by one step, which could get arbitrarily complex
 ---------------------------------------------------------------------------
 rf :: SDRS -> [DisVar]
-rf s@(SDRS _ l) = walkEdges [l]
-  where g = discourseGraph s
+rf s@(SDRS _ l) = case M.member ((parents l) !! 0) outscopes &&
+                       (all (\(Relation rel _ _) -> isSub rel) lastRels) of True -> walkEdges [l] `union` rf rewindedSDRSWithNewLast
+                                                                            False -> walkEdges [l]
+  where rewindedSDRSWithNewLast = updateLast rewindedSDRS rewindedLast 
+        rewindedLast = inferLast rewindedSDRS
+        rewindedSDRS = removeRels s lastRels
+        lastRels = [rel | (rel@(Relation {})) <- calcRightArgRels s l]
+        g = discourseGraph s
+        outscopes = immediateOutscopes s
         walkEdges :: [DisVar] -> [DisVar]
         walkEdges []       = []
-        walkEdges (v:rest) = (walkEdges rest) `union` walkEdges (parents v) `union` (parents v) `union` [v]
+        walkEdges (v:rest) =  (walkEdges rest) `union` walkEdges (parents v) `union` (parents v) `union` [v]
         parents :: DisVar -> [DisVar]
         parents dv = nub (M.keys (M.filter (onRF dv) g))
         onRF :: DisVar -> [(DisVar, SDRSRelation)] -> Bool
@@ -126,6 +137,19 @@ rf s@(SDRS _ l) = walkEdges [l]
           | dv == dv' && ((isStructured rel) ||                                 -- FIX, here we're only working with a label, how do we check the label's structuredness etc?
                           (relType rel == Sub)) = True
           | otherwise                           = onRF dv rest
+
+---------------------------------------------------------------------------
+-- | Given an 'SDRS' @s@, infers the last node from the discourse structure
+---------------------------------------------------------------------------
+inferLast :: SDRS -> DisVar
+inferLast s@(SDRS m _) = walk (root s)
+  where walk :: DisVar -> DisVar
+        walk dv = case (m M.! dv) of (EDU _)   -> dv
+                                     (CDU cdu) -> walk $ getNext cdu
+          where getNext :: CDU -> DisVar
+                getNext (Relation _ _ next) = next
+                getNext (And _ cdu2) = getNext cdu2
+                getNext (Not cdu1) = getNext cdu1
 
 ---------------------------------------------------------------------------
 -- | checks whether a given 'DisVar' @dv@ is on the right frontier of 
