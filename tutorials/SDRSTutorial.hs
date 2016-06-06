@@ -162,7 +162,7 @@ discourseGraphRFExt = M.fromList [(0,[(1,Outscopes),(2,Outscopes),(3,relationFro
 ---------------------------------------------------------------------------
 -- | SDRSs
 ---------------------------------------------------------------------------
-sdrsmerge1 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Result") 1 2)),
+sdrsmerge1 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 2)),
                                     (1, EDU drs3),
                                     (2, EDU drs4)]) 2
 
@@ -256,8 +256,8 @@ sdrsfullal07 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaborati
                                  (3, EDU _al07_3),
                                  (4, EDU _al07_4),
                                  (5, EDU _al07_5),
-                                 (6, CDU (And (Relation (relationFromLabel "Narration") 2 5)
-                                          (Relation (relationFromLabel "Explanation") 2 7))),
+                                 (6, CDU (And (Relation (relationFromLabel "Explanation") 2 7)
+                                          (Relation (relationFromLabel "Narration ") 2 5))),
                                  (7, CDU (Relation (relationFromLabel "Narration") 3 4))]) 5
 
 sdrsfullal07_to8 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 6)),
@@ -318,10 +318,19 @@ sdrs_plaintiff = SDRS (M.fromList [(0, CDU (Not (Relation (relationFromLabel "Ex
                                 (5, CDU (Relation (relationFromLabel "Topic") 0 4)),
                                 (7, CDU (Relation (relationFromLabel "Contrast") 4 6))]) 3
 
-sdrsRFExt = SDRS (M.fromList [(5, CDU (Relation (relationFromLabel "Explanation") 0 3)),
-                              (0, CDU (And (Relation (relationFromLabel "Parallel") 1 2)
-                                      (Relation (relationFromLabel "Entity_Elaboration") 2 4)))]) 3
+sdrsRFExt = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Explanation") 1 4)),
+                              (2, EDU drs0),
+                              (3, EDU drs0),
+                              (4, EDU drs0),
+                              (5, EDU drs0),
+                              (1, CDU (And (Relation (relationFromLabel "Parallel") 2 3)
+                                      (Relation (relationFromLabel "Entity_Elaboration") 3 5)))]) 5
 
+sdrsRFExtBefore = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Explanation") 1 4)),
+                                    (1, CDU (Relation (relationFromLabel "Parallel") 2 3)),
+                                    (2, EDU drs0),
+                                    (3, EDU drs0),
+                                    (4, EDU drs0)]) 4
 
 ---------------------------------------------------------------------------
 -- | malformed SDRSs
@@ -407,8 +416,8 @@ sdrsfullal07_wo5 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elabo
 -- | Merges
 ---------------------------------------------------------------------------
 
---mergeRes = sdrsMerge sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Result")]
---merge2NarElab = sdrsMerge sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Narration"),(2, relationFromLabel "Elaboration")]
+--mergeRes = mergeSDRSs sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Result")]
+--merge2NarElab = mergeSDRSs sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Narration"),(2, relationFromLabel "Elaboration")]
 
 
 
