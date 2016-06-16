@@ -222,7 +222,7 @@ addCDU :: SDRS -> DisVar -> CDU -> SDRS
 addCDU (SDRS m l) new cdu 
   | M.member new m = SDRS (M.insert new newSF m) l
   | otherwise      = SDRS (M.insert new (CDU cdu) m) l
-  where newSF = CDU $ And cdu $ extractCDU $ m M.! new
+  where newSF = CDU $ And (extractCDU $ m M.! new) cdu
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' @s@, a 'DisVar' @new@ and an 'SDRSFormula' @edu@, adds
