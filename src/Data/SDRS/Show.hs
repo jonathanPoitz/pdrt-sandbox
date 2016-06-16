@@ -72,8 +72,8 @@ class ShowableSDRS s where
   resolve :: s -> SDRS
 
 -- | Derive appropriate instances of 'ShowableSDRS'.
--- instance ShowableSDRS SDRS where
---   resolve s = s
+instance ShowableSDRS SDRS where
+  resolve s = s
 -- instance (ShowableSDRS s) => ShowableSDRS (DRS -> s) where
 --   resolve s
 
@@ -88,11 +88,13 @@ data SDRSNotation s =
   Set s      -- ^ Set notation
   | Linear s -- ^ Linear notation
   | Boxes s  -- ^ Box notation
+  | Graph s  -- ^ underspecified Box notation
   | Debug s  -- ^ Debug notation
 
 -- | Derive an instance of Show for 'SDRSNotation'.
 instance (ShowableSDRS s) => Show (SDRSNotation s) where
   show (Boxes s)  = '\n' : showSDRS (Boxes  (resolve s))
+  show (Graph s)  = '\n' : showSDRS (Graph  (resolve s))
   show (Linear s) = '\n' : showSDRS (Linear (resolve s))
   show (Set s)    = '\n' : showSDRS (Set    (resolve s))
   show (Debug s)  = '\n' : showSDRS (Debug  (resolve s))
@@ -104,6 +106,7 @@ showSDRS :: SDRSNotation SDRS -> String
 showSDRS n = 
   case n of
     (Boxes s)  -> showSDRSBox s
+    (Graph s)  -> showSDRSGraph s
     (Linear s) -> showSDRSBox s -- showSDRSLinear s ++ "\n"
     (Set s)    -> showSDRSBox s -- showSDRSSet s ++ "\n"
     (Debug s)  -> showSDRSBox s -- showSDRSDebug s ++ "\n"
@@ -143,27 +146,69 @@ showSDRSBox (SDRS f ll) = showHorizontalLine l boxTopLeft boxTopRight
   ++ showContent l vl ++ showHorizontalLine l boxMiddleLeft boxMiddleRight
   ++ showContent l fl ++ showHorizontalLine l boxBottomLeft boxBottomRight
   where vl
-          | not(null dvs) = (showDisVars dvs "  ") ++ "   last:" ++ show ll
+          | not(null dvs) = showDisVars dvs "  "
           | otherwise     = " "
           where dvs = Map.keys f
-        fl = showFunction (Map.toList f)
+        fl = showFunction (Map.toList f) ll
+        l = 4 + maximum (map length (lines vl) `union` map length (lines fl))
+
+showSDRSGraph :: SDRS -> String
+showSDRSGraph (SDRS f ll) = showHorizontalLine l boxTopLeft boxTopRight
+  ++ showContent l vl ++ showHorizontalLine l boxMiddleLeft boxMiddleRight
+  ++ showContent l fl ++ showHorizontalLine l boxBottomLeft boxBottomRight
+  where vl
+          | not(null dvs) = showDisVars dvs "  "
+          | otherwise     = " "
+          where dvs = Map.keys f
+        fl = showUnspecFunction (Map.toList f) ll
         l = 4 + maximum (map length (lines vl) `union` map length (lines fl))
 
 ---------------------------------------------------------------------------
 -- **  Showing the subparts of an SDRS
 ---------------------------------------------------------------------------
 
-showFunction :: [(DisVar,SDRSFormula)] -> String
-showFunction f = foldr ((++) . showFunc) "" f
-  where showFunc :: (DisVar,SDRSFormula) -> String
-        showFunc (dv,sf@(EDU _))      = showModifier (show dv ++ ":") (modifierPos form) form
-          where form = showFormula sf
-        showFunc (dv,sf@(CDU (Relation _ _ _))) = showModifier (show dv ++ ":") (modifierPos form) form
-          where form = showFormula sf
-        showFunc (dv,(CDU (And f1 f2)))         = showModifier (show dv ++ ":") (modifierPos form) form
-          where form = showConjunction (CDU f1) (CDU f2)
-        showFunc (dv,(CDU (Not f1)))            = showModifier (show dv ++ ":") (modifierPos form) form
-          where form = showNegation (CDU f1)
+showFunction :: [(DisVar,SDRSFormula)] -> DisVar -> String
+showFunction f ll = foldr ((++) . ((flip showFunc) ll)) "" f
+
+---------------------------------------------------------------------------
+-- **  Showing the subparts of an 'SDRS' in underspecified form, i.e., with
+-- the 'DRS's replaced by placeholders.
+---------------------------------------------------------------------------
+showUnspecFunction :: [(DisVar,SDRSFormula)] -> DisVar -> String
+showUnspecFunction f ll = foldr ((++) . ((flip showUnspecFunc) ll)) "" f
+
+---------------------------------------------------------------------------
+-- | Helper function for showUnspecFunction
+---------------------------------------------------------------------------
+showUnspecFunc :: (DisVar,SDRSFormula) -> DisVar -> String
+showUnspecFunc (dv,sf@(EDU _)) ll
+  | ll == dv      = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
+  | otherwise     = showModifier (show dv ++ ":") (modifierPos form) form
+  where form = showUnspecFormula sf dv
+showUnspecFunc (dv,sf) ll = showFunc (dv,sf) ll
+
+---------------------------------------------------------------------------
+-- | Helper function for showFunction and showUnspecFunction
+---------------------------------------------------------------------------
+showFunc :: (DisVar,SDRSFormula) -> DisVar -> String
+showFunc (dv,sf@(EDU _)) ll
+  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
+  | otherwise = showModifier (show dv ++ ":") (modifierPos form) form
+  where form = showFormula sf
+showFunc (dv,sf@(CDU (Relation _ _ _))) ll
+  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
+  | otherwise = showModifier (show dv ++ ":") (modifierPos form) form
+  where form = showFormula sf
+showFunc (dv,(CDU (And f1 f2))) ll
+  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
+  | otherwise = showModifier (show dv ++ ":") (modifierPos form) form
+  where form = showConjunction (CDU f1) (CDU f2)
+showFunc (dv,(CDU (Not f1))) ll
+  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
+  | otherwise = showModifier (show dv ++ ":") (modifierPos form) form
+  where form = showNegation (CDU f1)
+
+
 
 -- DEBUG / DEBUG / DEBUG
 showCDU :: CDU -> String
@@ -176,6 +221,10 @@ showFormula (EDU d)          = showDRS (DRS.Boxes d)
 showFormula (CDU (Relation r dv1 dv2)) = label r ++ "(" ++ show dv1 ++ "," ++ show dv2 ++")\n"
 showFormula (CDU (And f1 f2))          = showConjunction (CDU f1) (CDU f2) 
 showFormula (CDU (Not f1))             = showNegation (CDU f1)
+
+showUnspecFormula :: SDRSFormula -> DisVar -> String
+showUnspecFormula (EDU _) dv          = "K" ++ show dv
+showUnspecFormula sf _ = showFormula sf
 
 modifierPos :: String -> Int
 modifierPos s
