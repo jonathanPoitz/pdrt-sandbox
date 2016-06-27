@@ -1,3 +1,6 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {- |
 Module      :  Data.SDRS.DiscourseGraph
 Copyright   :  (c) Jonathan Poitz, Harm Brouwer and Noortje Venhuizen
@@ -40,11 +43,20 @@ import Data.SDRS.Structure
 ---------------------------------------------------------------------------
 -- | Shows a discourse graph
 ---------------------------------------------------------------------------
---showDGraph :: DGraph -> String
---showDGraph (DGraph graph labels) = show graph ++ "\n" ++ show labels
+instance {-# OVERLAPPING #-} Show DGraph where
+  show dg = showDGraph dg
 
---instance Show DGraph where
-  --show dg = '\n' : showDGraph dg
+showDGraph :: DGraph -> String
+showDGraph graph = "[" ++ graphToString (M.assocs graph) ++ "]"
+  where graphToString :: [(DisVar,[(DisVar, SDRSRelation)])] -> String
+        graphToString []                  = "\n"
+        graphToString ((node,edges):rest) = "\n" ++
+                                            "(" ++
+                                            show node ++
+                                            ", " ++
+                                            show edges ++
+                                            ")" ++
+                                            graphToString rest
 
 ---------------------------------------------------------------------------
 -- | DGraph
