@@ -30,10 +30,12 @@ module Data.SDRS.Structure
 , addEDU
 , addCDUs
 , addCDU
+, negateCDU
 ) where
 
 import Data.SDRS.DataType
 import qualified Data.Map as M
+import Debug.Trace
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -56,6 +58,13 @@ sdrsLast (SDRS _ l) = l
 ---------------------------------------------------------------------------
 dus :: SDRS -> [DisVar]
 dus (SDRS m _) = M.keys m
+
+---------------------------------------------------------------------------
+-- | Returns True if the given 'SDRSFormula' is a 'CDU', False if it is an 'EDU'
+---------------------------------------------------------------------------
+--isCDU :: SDRSFormula -> Bool
+--isCDU (CDU _) = True
+--isCDU (EDU _) = False
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' @s@, returns all labels that directly label the 'SDRSFormula'
@@ -90,11 +99,11 @@ lookupKey s dv = findKey $ relations s
 relArgs :: SDRS -> [DisVar]
 relArgs (SDRS m _) = relArgs' $ M.elems m
   where relArgs' :: [SDRSFormula] -> [DisVar]
-        relArgs' []                          = []
+        relArgs' []                                = []
         relArgs' ((CDU (Relation _ dv1 dv2)):rest) = dv1:dv2:relArgs' rest 
         relArgs' ((CDU (And sf1 sf2)):rest)        = relArgs' [CDU sf1] ++ relArgs' [CDU sf2] ++ relArgs' rest
         relArgs' ((CDU (Not sf1)):rest)            = relArgs' [CDU sf1] ++ relArgs' rest
-        relArgs' ((EDU _):rest)          = relArgs' rest
+        relArgs' ((EDU _):rest)                    = relArgs' rest
 
 ---------------------------------------------------------------------------
 -- | Lists, given an SDRS, its relations along with each respective label
@@ -102,11 +111,11 @@ relArgs (SDRS m _) = relArgs' $ M.elems m
 relations :: SDRS -> [(DisVar, SDRSFormula)]
 relations (SDRS m _) = relations' (M.assocs m)
   where relations' :: [(DisVar, SDRSFormula)] -> [(DisVar, SDRSFormula)]
-        relations' []                        = []
+        relations' []                              = []
         relations' (t@(_, CDU (Relation {})):rest) = t:(relations' rest)
         relations' ((dv, CDU (And sf1 sf2)):rest)  = relations' [(dv, CDU sf1)] ++ relations' [(dv, CDU sf2)] ++ relations' rest
         relations' ((dv, CDU (Not sf1)):rest)      = relations' [(dv, CDU sf1)] ++ relations' rest
-        relations' (_:rest)                  = relations' rest
+        relations' (_:rest)                        = relations' rest
 
 ---------------------------------------------------------------------------
 -- | Similar to listRelations, lists Segments of an SDRS, along with their
@@ -116,7 +125,7 @@ segments :: SDRS -> [(DisVar, SDRSFormula)]
 segments (SDRS m _) = segments' (M.assocs m)
   where segments' :: [(DisVar, SDRSFormula)] -> [(DisVar, SDRSFormula)]
         segments' []                       = []
-        segments' (t@(_, EDU _):rest)  = t:(segments' rest)
+        segments' (t@(_, EDU _):rest)      = t:(segments' rest)
         segments' (_:rest)                 = segments' rest
 
 ---------------------------------------------------------------------------
@@ -126,7 +135,7 @@ drss :: SDRS -> [DRS]
 drss (SDRS m _) = drss' (map snd $ M.assocs m)
   where drss' :: [SDRSFormula] -> [DRS]
         drss' []                 = []
-        drss' (EDU d:rest)   = d:(drss' rest)
+        drss' (EDU d:rest)       = d:(drss' rest)
         drss' (_:rest)           = drss' rest
 
 ---------------------------------------------------------------------------
@@ -149,8 +158,9 @@ removeRels s (cdu:rest) = removeRels (removeRel s cdu) rest
 -- If it is directly labeled in @s@, remove the label along with @r@.
 ---------------------------------------------------------------------------
 removeRel :: SDRS -> CDU -> SDRS
-removeRel s@(SDRS m l) r@(Relation {}) = case elem (CDU r) (M.elems m) of True -> SDRS mapWithDeletedDUs l -- <- this l right or should we infer it?
-                                                                          False -> SDRS (M.map (removeRelFromSF r) m) l
+removeRel s@(SDRS m l) r@(Relation {}) = case elem (CDU r) (M.elems m) of
+                                          True  -> SDRS mapWithDeletedDUs l -- <- this l right or should we infer it?
+                                          False -> SDRS (M.map (removeRelFromSF r) m) l
   where delDVs = getDisVars (CDU r) s
         mapWithDeletedDUs = foldl (flip M.delete) m delDVs 
 removeRel s _                        = s
@@ -220,9 +230,9 @@ addCDUs s new (cdu:rest)  = addCDUs (addCDU s new cdu) new rest
 ---------------------------------------------------------------------------
 addCDU :: SDRS -> DisVar -> CDU -> SDRS
 addCDU (SDRS m l) new cdu 
-  | M.member new m = SDRS (M.insert new newSF m) l
+  | new `M.member` m = SDRS (M.insert new newSF m) l
   | otherwise      = SDRS (M.insert new (CDU cdu) m) l
-  where newSF = CDU $ And (extractCDU $ m M.! new) cdu
+  where newSF = trace "here?" CDU $ And (extractCDU $ m M.! new) cdu
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' @s@, a 'DisVar' @new@ and an 'SDRSFormula' @edu@, adds
@@ -247,3 +257,15 @@ updateRightArgs (SDRS m l) old new = SDRS (M.map updateR m) l
           | otherwise            = r
         updateCDU (And sf1 sf2)    = And (updateCDU sf1) (updateCDU sf2)
         updateCDU (Not sf1)        = Not (updateCDU sf1)
+
+---------------------------------------------------------------------------
+-- | Given an 'SDRS' @s@ and a 'DisVar' @dv@, negates the 'SDRSFormula' @sf@
+-- which @dv@ labels iff @sf@ is a 'CDU'.
+---------------------------------------------------------------------------
+negateCDU :: SDRS -> DisVar -> SDRS
+negateCDU s@(SDRS m l) dv 
+  | dv `M.member` m = case (m M.! dv) of
+                        (CDU cdu) -> SDRS (M.insert dv (CDU $ Not cdu) m) l
+                        (EDU _)   -> s
+  | otherwise                      = s
+
