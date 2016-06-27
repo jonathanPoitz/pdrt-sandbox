@@ -131,8 +131,8 @@ data CDU =
 ---------------------------------------------------------------------------
 data SDRS =
   SDRS (M.Map DisVar SDRSFormula) DisVar
-  -- ^ An SDRS (a set of speech act discourse referents, a map assigning
-  -- SDRS formulas to referents and the referent last added to the discourse)
+  -- ^ An SDRS (a map assigning SDRS-formulas to discourse variables and the
+  -- pointer to the last added element to the discourse)
   deriving (Read, Eq)
 
 ---------------------------------------------------------------------------
@@ -158,5 +158,5 @@ relations = [SDRSRelation "elaboration" Sub False False,
              SDRSRelation "parallel" Crd True False,
              SDRSRelation "continuation" Crd False True,
              SDRSRelation "alternation" Crd False False,
-             SDRSRelation "conditional" Crd False False,
+             SDRSRelation "consequence" Crd False False,
              Outscopes]
