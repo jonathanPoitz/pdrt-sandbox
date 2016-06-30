@@ -69,9 +69,16 @@ data SDRSRelation =
                }
   | Outscopes deriving (Eq, Read)
 
+-- | Outscopes symbol
+opOutsc :: String
+opOutsc = "\8827"
+
+---------------------------------------------------------------------------
+-- | Derive an instance of the 'Show' typeclass for 'SDRSRelation'.
+---------------------------------------------------------------------------
 instance Show SDRSRelation where
   show r@(SDRSRelation {}) = label r
-  show Outscopes = ""
+  show Outscopes = opOutsc
 
 ---------------------------------------------------------------------------
 -- | The type of relation (Crd = Coordinating, Sub = Subordinating or None for outscoping relation)
@@ -97,15 +104,6 @@ type DisVar = Int
 ---------------------------------------------------------------------------
 -- | An SDRS formula
 ---------------------------------------------------------------------------
---data SDRSFormula =
---  Segment DRS
----- ^ A DRS
---  | Relation SDRSRelation DisVar DisVar
----- ^ A rhetorical relation between two speech act discourse referents
---  | And SDRSFormula SDRSFormula
---  | Not SDRSFormula
---  deriving (Read, Eq)
-
 data SDRSFormula = 
   EDU DRS
   | CDU CDU
@@ -119,9 +117,13 @@ extractCDU :: SDRSFormula -> CDU
 extractCDU (CDU cdu) = cdu
 extractCDU _ = error ("Cannot extract non-CDU SDRSFormula")
 
+---------------------------------------------------------------------------
+-- | A complex discourse unit, which can be recursively combined using
+-- conjunction or negation.
+---------------------------------------------------------------------------
 data CDU =
   Relation SDRSRelation DisVar DisVar
--- ^ A rhetorical relation between two speech act discourse referents
+  -- ^ A rhetorical relation between two speech act discourse referents
   | And CDU CDU
   | Not CDU
   deriving (Read, Eq)
