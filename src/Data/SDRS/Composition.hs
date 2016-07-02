@@ -14,8 +14,8 @@ module Data.SDRS.Composition
 (
   drsToSDRS 
 , addDRS
+, addSDRS
 , removeRels
-, updateRelations
 ) where
 
 import qualified Data.Map as M
@@ -50,18 +50,41 @@ addDRS s@(SDRS m _) d edges = sdrsDRSRefAlphaConved
         sdrsWithNewLast = updateLast sdrsWithSegment updatedLast -- 3. step new last
         sdrsDRSRefAlphaConved = sdrsAlphaConvertDRS sdrsWithNewLast updatedLast drsRefConvMap
         accDRSs = accessibleDRSs sdrsWithRelations updatedLast -- note: this only works because the new drs is not in the sdrs yet, however the relation using its label is! this is of importance since in order to calculate the list of accessible drs, the new relation has to be there (as opposed to the new drs which first needs to be drsref-adjusted before being added)
-        updatedOutscope = (fst $ M.findMax m) + 2 -- FIX this is very hacky
+        updatedOutscope = (fst $ M.findMax m) + 2 -- FIX this hack
         drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefs2
         drsRefs1 = concat $ map drsUniverse $ accDRSs
         drsRefs2 = drsUniverse d
+
+-------------------------------------------------------------------------
+-- | Adds 'SDRS' @s2@ and 'SDRS' @s1@. @s2@ is attached with its root node
+-- to a node @dv1@ that must be on the RF of @s1@, using relation @r@.  
+-------------------------------------------------------------------------
+addSDRS :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
+addSDRS s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
+  where convMap = buildConvMap s1 s2 -- 1.
+        drsRefs1 = concat $ map drsUniverse $ accDRSs -- 3a.
+        -- ^ a list of all DRSRefs that is accessible from the attaching node after the update
+        drsRefs2 = concat $ map drsUniverse $ drss s2DVConv -- 3b.
+        -- ^ a list of all DRSRefs in the attaching SDRS
+        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefs2
+        -- ^ a conversion map of all overlapping variables to new ones from both sdrss
+        accDRSs = accessibleDRSs sdrsMerged attachingNode
+        updatedLast = sdrsLast s2DVConv
+        attachingNode = root s2DVConv
+        updatedOutscope = (max (fst $ M.findMax m1) (fst $ M.findMax (sdrsMap s2DVConv))) + 1
+        -----
+        s2DVConv = renameDisVars s2 convMap -- 2.
+        s1WithNewRelation = updateRelations s1 edges attachingNode updatedOutscope
+        sdrsMerged = SDRS ((sdrsMap s1WithNewRelation) `M.union` (sdrsMap s2DVConv)) updatedLast -- merged maps and updated last
+        newDRSKeys = map fst $ segments s2DVConv -- 2a. the labels of the drss that are to be added. these later need to be drsRefAlphaConv'ed
+        sdrsDRSRefAlphaConved = sdrsAlphaConvertDRSs sdrsMerged newDRSKeys drsRefConvMap
+        
 
 ---------------------------------------------------------------------------
 -- | adds one or more relations to the 'SDRS' @s@ between the newly added 'DisVar'
 -- @attachingNode@ and one or several target nodes on the right frontier of @s@.
 -- This involves making the necessary adjustments to the discourse structure
 -- that depend on the place of attachment and the kind of attaching relation.
--- This function is exported because it's used by merge but it shouldn't be called
--- by the user. 
 ---------------------------------------------------------------------------
 updateRelations :: SDRS -> [(DisVar, SDRSRelation)] -> DisVar -> DisVar -> SDRS
 updateRelations s [] _ _                   = s
