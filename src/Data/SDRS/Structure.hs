@@ -30,7 +30,7 @@ module Data.SDRS.Structure
 , addEDU
 , addCDUs
 , addCDU
-, negateCDU
+, negateRelation
 ) where
 
 import Data.SDRS.DataType
@@ -259,13 +259,27 @@ updateRightArgs (SDRS m l) old new = SDRS (M.map updateR m) l
         updateCDU (Not sf1)        = Not (updateCDU sf1)
 
 ---------------------------------------------------------------------------
--- | Given an 'SDRS' @s@ and a 'DisVar' @dv@, negates the 'SDRSFormula' @sf@
--- which @dv@ labels iff @sf@ is a 'CDU'.
+-- | Given an 'SDRS' @s@ and the unique description of one of its embedded 
+-- relations, i.e., an 'SDRSRelation' @r@ and its start and end 'DisVar'
+-- @dv1@ and @dv2@, negates the 'CDU' of this relation.
 ---------------------------------------------------------------------------
-negateCDU :: SDRS -> DisVar -> SDRS
-negateCDU s@(SDRS m l) dv 
-  | dv `M.member` m = case (m M.! dv) of
-                        (CDU cdu) -> SDRS (M.insert dv (CDU $ Not cdu) m) l
-                        (EDU _)   -> s
-  | otherwise                      = s
+negateRelation :: SDRS -> SDRSRelation -> DisVar -> DisVar -> SDRS
+negateRelation (SDRS m l) r dv1 dv2 = SDRS m' l
+  where cdu = Relation r dv1 dv2
+        m' = M.map (neg cdu) m
+        neg :: CDU -> SDRSFormula -> SDRSFormula
+        neg _ sf@(EDU _) = sf
+        neg cdu' (CDU c@_) = CDU $ neg' cdu' c
+        neg' :: CDU -> CDU -> CDU
+        neg' cdu' c@(Relation {})
+          | cdu' == c = Not c
+          | otherwise = c
+        neg' cdu' (Not c)
+                      = Not $ neg' cdu' c
+        neg' cdu' (And c1 c2)
+                      = And (neg' cdu' c1) (neg' cdu' c2)
+
+
+
+
 
