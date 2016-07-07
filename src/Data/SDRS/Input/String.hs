@@ -52,13 +52,12 @@ parseMap s@(b:_)
         parseSDRSFormula [] = error "empty input string" -- FIX what to do here? throw error?
         parseSDRSFormula s'@(b':_)
           | b' == '<' = EDU $ parseDRS s' -- convert to DRS
-          | b' == '(' = parseRelation (dropOuterBrackets s') -- Relation
-          -- | b' == -- And / Not ...
+          | b' == '(' = parseRelation (dropOuterBrackets s') -- Relation, TODO And/Not
           | otherwise = error ("parseSDRSFormula: infelicitous input string " ++ show b')
           where parseRelation :: String -> SDRSFormula
                 parseRelation [] = error "parseRelation: empty input string" -- what do here?
                 parseRelation s''@(b'':_)
-                  | isAlpha b''  = CDU $ Relation (relationFromLabel (splitRel !! 0)) (read $ splitRel !! 1) (read $ splitRel !! 2) -- FIX number errors not handled?
+                  | isAlpha b''  = CDU $ Relation (relationFromRelName (splitRel !! 0)) (read $ splitRel !! 1) (read $ splitRel !! 2) -- FIX number errors not handled?
                   | otherwise    = error ("parseRelation: infelicitous input string " ++ show b'')
                   where splitRel = splitOn ',' s''
 

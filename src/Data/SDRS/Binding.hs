@@ -37,8 +37,9 @@ import Data.SDRS.DiscourseGraph
 sdrsBoundRef :: DRSRef -> DisVar -> SDRS -> Bool
 sdrsBoundRef r dv s@(SDRS m _)
   | M.lookup dv m == Nothing = False
-  | otherwise                = case (m M.! dv) of (EDU d) -> bound d
-                                                  _           -> bound (DRS [] [])
+  | otherwise                = case (m M.! dv) of
+                                (EDU n) -> bound n
+                                _       -> bound (DRS [] [])
   where bound :: DRS -> Bool
         bound d = drsBoundRef r d gd
           where gd = foldl (<<+>>) (DRS [] []) accDRSs
@@ -60,6 +61,8 @@ sdrsFreeRefs s = free $ segments s
 -- | Checks if all relations in the 'SDRS' @s@ use labels as arguments
 -- that are valid 'DisVar's, i.e. they are mapped to an 'SDRSFormula' in the
 -- internal map of @s@.
+-- CHECK If we define binding for DVs, then this would basically check whether
+-- all DVs are bound 
 ---------------------------------------------------------------------------
 allRelArgsBound :: SDRS -> Bool
 allRelArgsBound s@(SDRS m _) = relVars `S.isProperSubsetOf` disVars
@@ -83,6 +86,6 @@ noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
 -- argument in a relation.
 ---------------------------------------------------------------------------
 allSegmentsBound :: SDRS -> Bool
-allSegmentsBound s = allSegmentLabels `S.isSubsetOf` allRelArgs
-  where allSegmentLabels = S.fromList $ map fst $ segments s
+allSegmentsBound s = allSegmentRelNames `S.isSubsetOf` allRelArgs
+  where allSegmentRelNames = S.fromList $ map fst $ segments s
         allRelArgs = S.fromList $ relArgs s

@@ -16,17 +16,17 @@ module Data.SDRS.Properties
 , sdrsPureDRSs
 , sdrsUniqueDRSRefs
 , validLast
-, isStrucIsomorphic
-, isSemIsomorphic'
+, sfsStrucIsomorphic
+, sfsSemIsomorphic
 ) where
 
 import qualified Data.Map as M
-import Data.List (nub, union)
+import Data.List
 
 import Data.SDRS.DataType
 import Data.SDRS.Structure
 import Data.SDRS.DiscourseGraph
-import Data.SDRS.LambdaCalculus
+--import Data.SDRS.LambdaCalculus
 
 import Data.DRS.Properties
 import Data.DRS.Merge
@@ -39,7 +39,7 @@ sdrsProperDRSs :: SDRS -> Bool
 sdrsProperDRSs s = proper $ segments s
  where proper :: [(DisVar, SDRSFormula)] -> Bool
        proper []                    = True
-       proper ((dv,EDU d):rest) = (properDRS dv d) && proper rest
+       proper ((dv,EDU d):rest)     = (properDRS dv d) && proper rest
        proper ((_,_):rest)          = proper rest
        properDRS :: DisVar -> DRS -> Bool
        properDRS dv d = isProperDRS ((foldl (<<+>>) (DRS [] []) accDRSs) <<+>> d) -- is merging with empty DRS the only way for this?
@@ -52,7 +52,7 @@ sdrsPureDRSs :: SDRS -> Bool
 sdrsPureDRSs s = pure' $ segments s
   where pure' :: [(DisVar, SDRSFormula)] -> Bool
         pure' []                    = True
-        pure' ((dv,EDU d):rest) = (pureDRS dv d) && pure' rest
+        pure' ((dv,EDU d):rest)     = (pureDRS dv d) && pure' rest
         pure' ((_,_):rest)          = pure' rest
         pureDRS :: DisVar -> DRS -> Bool
         pureDRS dv d = (nub accUs) == accUs
@@ -80,65 +80,63 @@ validLast s@(SDRS m l) = isSegment (m M.! l) &&
                          not (any (\(CDU (Relation _ dv _)) -> dv == l) allRelations) -- why doesn't "not $ any (\(Relation _ dv _) -> dv == l) allRelations" work?
   where isSegment :: SDRSFormula -> Bool
         isSegment (EDU _) = True
-        isSegment _           = False -- isn't there an easier way? but idk how to pattern match on EDU when not in a function. note, this also ignores the possibility that the last node is introduced in a rec. SDRSFormula
+        isSegment _       = False -- isn't there an easier way? but idk how to pattern match on EDU when not in a function. note, this also ignores the possibility that the last node is introduced in a rec. SDRSFormula
         allRelations = map snd $ relations s
 
 ---------------------------------------------------------------------------
--- | Checks whether two 'SDRS's @s1@ and @s2@ are structural isomorphic, i.e.,
--- their graph structure does not differ except for different labeling of DUs.
+-- | Checks whether two subgraphes within the same 'SDRS's @s@ are structurally
+-- isomorphic, i.e., their graph structure does not differ except for different
+-- labeling of DUs. These subgraphes are determined by their root nodes,
+-- two 'DisVar's @dv1@ and @dv2@ that are passed along to this function as well. 
 ---------------------------------------------------------------------------
-isStrucIsomorphic :: SDRS -> SDRS -> Bool
-isStrucIsomorphic s1@(SDRS m1 _) s2@(SDRS m2 _) =
-  length m1 == length m2 && 
-         g1 == g2_conv
-  where g1 = discourseGraph s1
-        g2 = discourseGraph s2
-        g2_conv = discourseGraph $ sdrsAlphaConvert s2 convMap
-        convMap = build (zip [root s1] (repeat Outscopes)) (zip [root s2] (repeat Outscopes)) M.empty -- Outscopes is just dummy here
-          where build :: [(DisVar,SDRSRelation)] -> [(DisVar,SDRSRelation)] -> M.Map DisVar DisVar -> M.Map DisVar DisVar
-                build ((dv1,rel1):rest1) ((dv2,rel2):rest2) cm
-                  | ((M.lookup dv1 g1) == Nothing) &&
-                    ((M.lookup dv2 g2) == Nothing) &&
-                    rel1 == rel2 = M.insert dv2 dv1 (build rest1 rest2 cm)
-                  | ((M.lookup dv1 g1) == Nothing) &&
-                    ((M.lookup dv2 g2) == Nothing) &&
-                    rel1 /= rel2 = cm 
-                    -- ^ if both are leaves, but their relation is different, abort this branch of recursion
-                  | ((M.lookup dv1 g1) == Nothing) ||
-                    ((M.lookup dv2 g2) == Nothing) = cm -- if only one of both nodes is a leaf, abort this branch of the recursion
-                  | rel1 == rel2 = M.insert dv2 dv1 (build (rest1 `union` (g1 M.! dv1))
-                                                           (rest2 `union` (g2 M.! dv2))
-                                                           cm)
-                build _ _ cm = cm -- if one SDRS is finished, return the map? 
+sfsStrucIsomorphic :: SDRS -> DisVar -> DisVar -> Bool
+sfsStrucIsomorphic (SDRS m _) dv1 dv2
+  | M.lookup dv1 m == Nothing ||
+    M.lookup dv2 m == Nothing = False
+  | otherwise                  = comp sf1 sf2
+  where sf1 = m M.! dv1
+        sf2 = m M.! dv2
+        comp :: SDRSFormula -> SDRSFormula -> Bool
+        comp (EDU _) (EDU _) = True
+        comp (CDU cdu1) (CDU cdu2) = compareCDU cdu1 cdu2
+        comp _ _ = False
+        compareCDU :: CDU -> CDU -> Bool
+        compareCDU (Relation rel1 _ _) (Relation rel2 _ _)
+          | rel1 == rel2 = True
+          | otherwise    = False
+        compareCDU (And a1 a1') (And a2 a2') = compareCDU a1 a2 &&
+                                               compareCDU a1' a2'
+        compareCDU (Not n1) (Not n2) = compareCDU n1 n2
+        compareCDU _ _ = False
 
 ---------------------------------------------------------------------------
--- | Checks whether two 'SDRS's @s1@ and @s2@ are strictly semantically 
--- isomorphic, i.e., they do not differ except for different labeling of DUs.
--- TODO!
+-- | Checks whether two subgraphes within the same 'SDRS's @s@ are structurally
+-- isomorphic, i.e., their graph structure does not differ except for different
+-- labeling of DUs. These subgraphes are determined by their root nodes,
+-- two 'DisVar's @dv1@ and @dv2@ that are passed along to this function as well. 
 ---------------------------------------------------------------------------
-isSemIsomorphic' :: SDRS -> SDRS -> Bool
-isSemIsomorphic' s1@(SDRS m1 _) s2@(SDRS m2 _) =
-  length m1 == length m2 && 
-         g1 == g2_conv
-  where g1 = discourseGraph s1
-        g2 = discourseGraph s2
-        g2_conv = discourseGraph $ sdrsAlphaConvert s2 convMap
-        convMap = build (zip [root s1] (repeat Outscopes)) (zip [root s2] (repeat Outscopes)) M.empty -- Outscopes is just dummy here
-          where build :: [(DisVar,SDRSRelation)] -> [(DisVar,SDRSRelation)] -> M.Map DisVar DisVar -> M.Map DisVar DisVar
-                build ((dv1,rel1):rest1) ((dv2,rel2):rest2) cm
-                  | ((M.lookup dv1 g1) == Nothing) &&
-                    ((M.lookup dv2 g2) == Nothing) &&
-                    rel1 == rel2 = M.insert dv2 dv1 (build rest1 rest2 cm)
-                  | ((M.lookup dv1 g1) == Nothing) &&
-                    ((M.lookup dv2 g2) == Nothing) &&
-                    rel1 /= rel2 = cm 
-                    -- ^ if both are leaves, but their relation is different, abort this branch of recursion
-                  | ((M.lookup dv1 g1) == Nothing) ||
-                    ((M.lookup dv2 g2) == Nothing) = cm -- if only one of both nodes is a leaf, abort this branch of the recursion
-                  | rel1 == rel2 = M.insert dv2 dv1 (build (rest1 `union` (g1 M.! dv1))
-                                                           (rest2 `union` (g2 M.! dv2))
-                                                           cm)
-                build _ _ cm = cm -- if one SDRS is finished, return the map? 
+sfsSemIsomorphic :: SDRS -> DisVar -> DisVar -> Bool
+sfsSemIsomorphic (SDRS m _) dv1 dv2
+  | M.lookup dv1 m == Nothing ||
+    M.lookup dv2 m == Nothing = False
+  | otherwise                 = comp sf1 sf2
+  where sf1 = m M.! dv1
+        sf2 = m M.! dv2
+        comp :: SDRSFormula -> SDRSFormula -> Bool
+        comp (EDU e1) (EDU e2)
+          | e1 == e2  = True
+          -- ^ This is the strict version, here it would be convenient to have a function drsAlphaEquivalent
+          | otherwise = False
+        comp (CDU cdu1) (CDU cdu2) = compareCDU cdu1 cdu2
+        comp _ _ = False
+        compareCDU :: CDU -> CDU -> Bool
+        compareCDU (Relation rel1 _ _) (Relation rel2 _ _)
+          | rel1 == rel2 = True
+          | otherwise    = False
+        compareCDU (And a1 a1') (And a2 a2') = compareCDU a1 a2 &&
+                                               compareCDU a1' a2'
+        compareCDU (Not n1) (Not n2) = compareCDU n1 n2
+        compareCDU _ _ = False
 
 ---------------------------------------------------------------------------
 -- | Checks whether all Segments are attached to a node that's on the RF of

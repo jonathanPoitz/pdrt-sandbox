@@ -1,4 +1,5 @@
--- This is a tutorial for creating and manipulating SDRSs with PDRT-SANDBOX.
+-- This is a sandbox used for creating and manipulating SDRSs with SDRT-SANDBOX 
+-- as part of the thesis "An Implementation of SDRT" by Jonathan Poitz.
 
 import qualified Data.Map as M
 import Data.SDRS
@@ -72,9 +73,9 @@ _al07_5 = DRS [DRSRef "x4", DRSRef "t"]
                 ,Rel (DRSRel "dancing_competition") [DRSRef "t"]
                 ,Rel (DRSRel "win") [DRSRef "x4", DRSRef "t"]]
 
-_al07_6 = DRS [DRSRef "x5"]
-                [Rel (DRSRel "=") [DRSRef "x5", DRSRef "x"]
-                ,Rel (DRSRel "dance_well") [DRSRef "x5"]]
+_al07_6 = DRS [DRSRef "x4"]
+                [Rel (DRSRel "=") [DRSRef "x4", DRSRef "x"]
+                ,Rel (DRSRel "dance_well") [DRSRef "x4"]]
 
 
 ------
@@ -117,18 +118,18 @@ _al07_2c = DRS [DRSRef "x1", DRSRef "z", DRSRef "y"]
 
 map1 = M.fromList [(1,"a"),(2,"b"),(3,"c"),(4,"d")]
 
-mapal07 = M.fromList [(0, CDU (Relation (relationFromLabel "Explanation") 1 6)),
+mapal07 = M.fromList [(0, CDU (Relation (relationFromRelName "Explanation") 1 6)),
                          (1, EDU _al07_1),
                          (2, EDU _al07_2),
                          (3, EDU _al07_3),
                          (4, EDU _al07_4),
                          (5, EDU _al07_5),
-                         (6, CDU (And (Relation (relationFromLabel "Elaboration") 2 7) (Relation (relationFromLabel "Narration") 2 5))),
-                         (7, CDU (Relation (relationFromLabel "Narration") 3 4))] :: M.Map DisVar SDRSFormula
+                         (6, CDU (And (Relation (relationFromRelName "Elaboration") 2 7) (Relation (relationFromRelName "Narration") 2 5))),
+                         (7, CDU (Relation (relationFromRelName "Narration") 3 4))] :: M.Map DisVar SDRSFormula
 
 outscopesmap = M.fromList [(0,[1,6]),
-                              (6,[2,7,5]),
-                              (7,[3,4])]
+                           (6,[2,7,5]),
+                           (7,[3,4])]
 
 --recsf1 = CDU $ And (EDU drs0) (Not (EDU drs0))
 
@@ -136,7 +137,7 @@ outscopesmap = M.fromList [(0,[1,6]),
 
 --recsf3 = CDU $ Not (Not (Not $ EDU drs0))
 
-recsf4 = CDU $ Not (Not (Not $ Relation (relationFromLabel "Explanation") 2 4))
+recsf4 = CDU $ Not (Not (Not $ Relation (relationFromRelName "Explanation") 2 4))
 
 --testSDRSs = [("sdrsrec1", sdrsrec1),
 --             ("sdrsal07", sdrsal07),
@@ -147,30 +148,30 @@ recsf4 = CDU $ Not (Not (Not $ Relation (relationFromLabel "Explanation") 2 4))
 --             ("sdrs1", sdrs1),
 --             ("sdrs2", sdrs2)]
 
-discourseGraph1 = M.fromList [(0,[(1,Outscopes),(6,Outscopes)]),
-                           (1,[(6,relationFromLabel "Elaboration")]),
-                           (2,[(5,relationFromLabel "Narration"),(7,relationFromLabel "Elaboration")]),
-                           (3,[(4,relationFromLabel "Narration")]),
-                           (6,[(2,Outscopes),(5,Outscopes),(7,Outscopes)]),
-                           (7,[(3,Outscopes),(4,Outscopes)])] :: M.Map DisVar [(DisVar, SDRSRelation)]
+--discourseGraph1 = M.fromList [(0,[(1,Outscopes),(6,Outscopes)]),
+--                           (1,[(6,relationFromRelName "Elaboration")]),
+--                           (2,[(5,relationFromRelName "Narration"),(7,relationFromRelName "Elaboration")]),
+--                           (3,[(4,relationFromRelName "Narration")]),
+--                           (6,[(2,Outscopes),(5,Outscopes),(7,Outscopes)]),
+--                           (7,[(3,Outscopes),(4,Outscopes)])] :: M.Map DisVar [(DisVar, SDRSRelation)]
 
-discourseGraphRFExt = M.fromList [(0,[(1,Outscopes),(2,Outscopes),(3,relationFromLabel "Explanation")]),
-                                  (1,[(2,relationFromLabel "Parallel")]),
-                                  --(2,[(4,relationFromLabel "Entity_Elaboration")]),
-                                  (5,[(0,Outscopes)])] :: M.Map DisVar [(DisVar, SDRSRelation)]
+--discourseGraphRFExt = M.fromList [(0,[(1,Outscopes),(2,Outscopes),(3,relationFromRelName "Explanation")]),
+--                                  (1,[(2,relationFromRelName "Parallel")]),
+--                                  --(2,[(4,relationFromRelName "Entity_Elaboration")]),
+--                                  (5,[(0,Outscopes)])] :: M.Map DisVar [(DisVar, SDRSRelation)]
 
 ---------------------------------------------------------------------------
 -- | SDRSs
 ---------------------------------------------------------------------------
-sdrsmerge1 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 2)),
+sdrsmerge1 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Result") 1 2)),
                                     (1, EDU drs3),
                                     (2, EDU drs4)]) 2
 
-sdrsmerge2 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Result") 1 2)),
+sdrsmerge2 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Result") 1 2)),
                                     (1, EDU drs3b),
                                     (2, EDU drs4b)]) 2
 
-sdrs1 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Result") 1 2)),
+sdrs1 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Result") 1 2)),
                                     (1, EDU drs3),
                                     (2, EDU drs4)]) 2
 
@@ -187,114 +188,163 @@ sdrs1_string = stringToSDRS "<{0:(Result,1,2) & (Result,2,3); 1: <{x,y},{man(x),
 
 sdrs2 = SDRS (M.fromList [(0, EDU $ DRS [] [])]) 0
 
-sdrs_updateRefCase2_to2 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 2)),
+sdrs_updateRefCase2_to2 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 2)),
                                           (1, EDU drs0),
                                           (2, EDU drs0)]) 2
 
-sdrs_updateRefCase2_to3 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Narration") 1 3))),
+sdrs_updateRefCase2_to3 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Elaboration") 1 2) (Relation (relationFromRelName "Narration") 1 3))),
                                           (1, EDU drs0),
                                           (2, EDU drs0),
                                           (3, EDU drs0)]) 3
 
 
-sdrsdanlos1 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Explanation") 1 2)),
+sdrsdanlos1 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Explanation") 1 2)),
                                             (1, EDU drs0),
-                                            (2, CDU (Relation (relationFromLabel "Continuation") 3 4)),
+                                            (2, CDU (Relation (relationFromRelName "Continuation") 3 4)),
                                             (3, EDU drs0),
                                             (4, EDU drs0)]) 4
 
-sdrsdanlos2 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromLabel "Explanation") 1 2) (Relation (relationFromLabel "Explanation") 2 3))),
+sdrsdanlos2 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Explanation") 1 2) (Relation (relationFromRelName "Explanation") 2 3))),
                                             (1, EDU drs0),
                                             (2, EDU drs0),
                                             (3, EDU drs0)]) 3
 
-sdrsdanlos3 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromLabel "Explanation") 1 2) (Relation (relationFromLabel "Narration") 1 3))),
+sdrsdanlos3 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Explanation") 1 2) (Relation (relationFromRelName "Narration") 1 3))),
                                             (1, EDU drs0),
                                             (2, EDU drs0),
                                             (3, EDU drs0)]) 3
 
-sdrsdanlos4 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Commentary") 1 2)),
-                                            (1, CDU (Relation (relationFromLabel "Explanation") 3 4)),
+sdrsdanlos4 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Commentary") 1 2)),
+                                            (1, CDU (Relation (relationFromRelName "Explanation") 3 4)),
                                             (2, EDU drs0),
                                             (3, EDU drs0),
                                             (4, EDU drs0)]) 4
 
-sdrsal07 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 6)),
-                                (1, EDU drs0),
-                                (2, EDU drs0),
-                                (3, EDU drs0),
-                                (4, EDU drs0),
-                                (5, EDU drs0),
-                                (6, CDU (And (Relation (relationFromLabel "Elaboration") 2 7) (Relation (relationFromLabel "Narration") 2 5))),
-                                (7, CDU (Relation (relationFromLabel "Narration") 3 4))]) 5
-
-
-
-sdrsfullal07_to2 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 2)),
+sdrsfullal07_to2 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 2)),
                                 (1, EDU _al07_1),
                                 (2, EDU _al07_2)]) 2
 
-
-sdrsfullal07_to3 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromLabel "Elaboration") 1 2) (Relation (relationFromLabel "Elaboration") 2 3))),
+sdrsfullal07_to3 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Elaboration") 1 2) (Relation (relationFromRelName "Elaboration") 2 3))),
                                 (1, EDU _al07_1),
                                 (2, EDU _al07_2),
                                 (3, EDU _al07_3)]) 3
 
---sdrsfullal07_to4_comp = addDRS sdrsfullal07_to3 _al07_4 [(3, (relationFromLabel "Narration"))]
-
-sdrsfullal07_to4 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromLabel "Elaboration") 1 2)
-                                             (Relation (relationFromLabel "Elaboration") 2 5))),
+sdrsfullal07_to4 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Elaboration") 1 2)
+                                             (Relation (relationFromRelName "Elaboration") 2 7))),
                                      (1, EDU _al07_1),
                                      (2, EDU _al07_2),
                                      (3, EDU _al07_3),
                                      (4, EDU _al07_4),
-                                     (5, CDU (Relation (relationFromLabel "Narration") 3 4))]) 4
+                                     (7, CDU (Relation (relationFromRelName "Narration") 3 4))]) 4
 
-sdrsfullal07 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 6)),
+sdrsfullal07 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 6)),
                                  (1, EDU _al07_1),
                                  (2, EDU _al07_2),
                                  (3, EDU _al07_3),
                                  (4, EDU _al07_4),
                                  (5, EDU _al07_5),
-                                 (6, CDU (And (Relation (relationFromLabel "Explanation") 2 7)
-                                          (Relation (relationFromLabel "Narration ") 2 5))),
-                                 (7, CDU (Relation (relationFromLabel "Narration") 3 4))]) 5
+                                 (6, CDU (And (Relation (relationFromRelName "Elaboration") 2 7)
+                                          (Relation (relationFromRelName "Narration ") 2 5))),
+                                 (7, CDU (Relation (relationFromRelName "Narration") 3 4))]) 5
 
-sdrsfullal07_to8 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 6)),
+sdrsfullal07_to8 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 6)),
                                    (1, EDU _al07_1),
                                    (2, EDU _al07_2),
                                    (3, EDU _al07_3),
                                    (4, EDU _al07_4),
                                    (5, EDU _al07_5),
                                    (8, EDU _al07_6),
-                                   (6, CDU (And (Relation (relationFromLabel "Narration") 2 5)
-                                       (And (Relation (relationFromLabel "Explanation") 2 7)
-                                       (Relation (relationFromLabel "Elaboration") 5 8)))),
-                                   (7, CDU (Relation (relationFromLabel "Narration") 3 4))]) 8
+                                   (6, CDU (And (Relation (relationFromRelName "Narration") 2 5)
+                                       (And (Relation (relationFromRelName "Elaboration") 2 7)
+                                       (Relation (relationFromRelName "Elaboration") 5 8)))),
+                                   (7, CDU (Relation (relationFromRelName "Narration") 3 4))]) 8
+
+sdrsfullal07_to8b = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 8)),
+                                   (1, EDU _al07_1),
+                                   (2, EDU _al07_2),
+                                   (3, EDU _al07_3),
+                                   (4, EDU _al07_4),
+                                   (5, EDU _al07_5),
+                                   (6, EDU _al07_6),
+                                   (8, CDU (And (Relation (relationFromRelName "Elaboration") 2 3)
+                                       (And (Relation (relationFromRelName "Narration") 2 4)
+                                       (Relation (relationFromRelName "Elaboration") 4 7)))),
+                                   (7, CDU (Relation (relationFromRelName "Narration") 5 6))]) 6
+
+sdrslotsofsub = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Elaboration") 1 2)
+                                                (And (Relation (relationFromRelName "Elaboration") 2 3)
+                                                     (Relation (relationFromRelName "Elaboration") 3 4)))),
+                                  (1, EDU drs0),
+                                  (2, EDU drs0),
+                                  (3, EDU drs0),
+                                  (4, EDU drs0)]) 4
 
 -- the order of declaration is different (does it affect the map of is it implicitly ordered?)
 -- the labels are different and have holes
 -- the sfs in the And are switched
-sdrsfullal07_iso = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 6)),
+-- the drss are different
+sdrsfullal07_iso1 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 6)),
                                 (20, EDU _al07_2),
                                 (1, EDU _al07_1),
-                                (6, CDU (And (Relation (relationFromLabel "Narration") 20 49)
-                                        (Relation (relationFromLabel "Explanation") 20 8))),
+                                (6, CDU (And (Relation (relationFromRelName "Narration") 20 49)
+                                        (Relation (relationFromRelName "Elaboration") 20 8))),
+                                (3, EDU _al07_3),
+                                (4, EDU _al07_4),
+                                (49, EDU _al07_6),
+                                (8, CDU (Relation (relationFromRelName "Narration") 3 4))]) 49
+
+-- the order of declaration is different (does it affect the map of is it implicitly ordered?)
+-- the labels are different and have holes
+-- the sfs in the And are switched
+sdrsfullal07_iso2 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 6)),
+                                (20, EDU _al07_2),
+                                (1, EDU _al07_1),
+                                (6, CDU (And (Relation (relationFromRelName "Narration") 20 49)
+                                        (Relation (relationFromRelName "Elaboration") 20 8))),
                                 (3, EDU _al07_3),
                                 (4, EDU _al07_4),
                                 (49, EDU _al07_5),
-                                (8, CDU (Relation (relationFromLabel "Narration") 3 4))]) 49
+                                (8, CDU (Relation (relationFromRelName "Narration") 3 4))]) 49
 
---sdrsfullal07_to6_comp = addDRS sdrsfullal07 _al07_6 [(5, (relationFromLabel "Elaboration"))]
+-- the order of declaration is different (does it affect the map of is it implicitly ordered?)
+-- the labels are different and have holes
+sdrsfullal07_iso3 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 6)),
+                                (20, EDU _al07_2),
+                                (1, EDU _al07_1),
+                                (6, CDU (And (Relation (relationFromRelName "Elaboration") 20 8)
+                                        (Relation (relationFromRelName "Narration") 20 49))),
+                                (3, EDU _al07_3),
+                                (4, EDU _al07_4),
+                                (49, EDU _al07_5),
+                                (8, CDU (Relation (relationFromRelName "Narration") 3 4))]) 49
 
---sdrsfullal07_to6_comp_2 = addDRS sdrsfullal07 _al07_6 [(4, (relationFromLabel "Narration"))]
+-- the order of declaration is different (does it affect the map of is it implicitly ordered?)
+-- the labels are different and have holes
+-- the drss are different
+sdrsfullal07_iso4 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 6)),
+                                (20, EDU _al07_2),
+                                (1, EDU _al07_1),
+                                (6, CDU (And (Relation (relationFromRelName "Elaboration") 20 8)
+                                        (Relation (relationFromRelName "Narration") 20 49))),
+                                (3, EDU _al07_3),
+                                (4, EDU _al07_4),
+                                (49, EDU _al07_6),
+                                (8, CDU (Relation (relationFromRelName "Narration") 3 4))]) 49
 
-sdrsneg1 = SDRS (M.fromList [(0, CDU (Not (Relation (relationFromLabel "Explanation") 1 2))),
-                                (1, EDU _neg_1),
-                                (2, EDU _neg_2),
-                                (3, EDU _neg_3),
-                                (4, CDU (Relation (relationFromLabel "Explanation") 1 3)),
-                                (5, CDU (Relation (relationFromLabel "Contrast") 2 3))]) 3
+--sdrsfullal07_to6_comp = addDRS sdrsfullal07 _al07_6 [(5, (relationFromRelName "Elaboration"))]
+
+--sdrsfullal07_to6_comp_2 = addDRS sdrsfullal07 _al07_6 [(4, (relationFromRelName "Narration"))]
+
+sdrsneg1b_to2 = SDRS (M.fromList [(0, CDU $ Relation (relationFromRelName "Explanation") 1 2),
+                                 (1, EDU _neg_1),
+                                 (2, EDU _neg_2)]) 2
+
+sdrsneg1 = SDRS (M.fromList [(0, CDU $ And (Not (Relation (relationFromRelName "Explanation") 1 2))
+                                       (And (Relation (relationFromRelName "Explanation") 1 3)
+                                           (Relation (relationFromRelName "Contrast") 2 3))),
+                             (1, EDU _neg_1),
+                             (2, EDU _neg_2),
+                             (3, EDU _neg_3)]) 3
 
 -- for recursion testing only, not felicitous
 --sdrsrec1 = SDRS (M.fromList [(0, recsf1),
@@ -307,101 +357,93 @@ sdrsneg1 = SDRS (M.fromList [(0, CDU (Not (Relation (relationFromLabel "Explanat
 -- A third plaintiff was given a lower wage compared to others.
 -- These people were badly treated.
 -- But the jury didn't believe this.
-sdrs_plaintiff = SDRS (M.fromList [(0, CDU (Not (Relation (relationFromLabel "Explanation") 1 2))),
+sdrs_plaintiff = SDRS (M.fromList [(0, CDU (Not (Relation (relationFromRelName "Explanation") 1 2))),
                                 (1, EDU drs0), -- one plaintiff
                                 (2, EDU drs0), -- another didn't
                                 (3, EDU drs0), -- a third
                                 (4, EDU drs0), -- these people
                                 (6, EDU drs0), -- but the jury
-                                (0, CDU (And (Relation (relationFromLabel "Continuation") 1 2)
-                                        (Relation (relationFromLabel "Continuation") 2 3))),
-                                (5, CDU (Relation (relationFromLabel "Topic") 0 4)),
-                                (7, CDU (Relation (relationFromLabel "Contrast") 4 6))]) 3
+                                (0, CDU (And (Relation (relationFromRelName "Continuation") 1 2)
+                                        (Relation (relationFromRelName "Continuation") 2 3))),
+                                (5, CDU (Relation (relationFromRelName "Topic") 0 4)),
+                                (7, CDU (Relation (relationFromRelName "Contrast") 4 6))]) 3
 
-sdrsRFExt = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Explanation") 1 4)),
-                              (2, EDU drs0),
-                              (3, EDU drs0),
-                              (4, EDU drs0),
-                              (5, EDU drs0),
-                              (1, CDU (And (Relation (relationFromLabel "Parallel") 2 3)
-                                      (Relation (relationFromLabel "Entity_Elaboration") 3 5)))]) 5
-
-sdrsRFExtBefore = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Explanation") 1 4)),
-                                    (1, CDU (Relation (relationFromLabel "Parallel") 2 3)),
+sdrsRFExtBefore = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Explanation") 5 3)),
+                                    (5, CDU (Relation (relationFromRelName "Parallel") 1 2)),
+                                    (1, EDU drs0),
                                     (2, EDU drs0),
-                                    (3, EDU drs0),
-                                    (4, EDU drs0)]) 4
+                                    (3, EDU drs0)]) 3
 
 ---------------------------------------------------------------------------
 -- | malformed SDRSs
 ---------------------------------------------------------------------------
 
 -- has self referencing relation
-probselfref1 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromLabel "Explanation") 1 1) (Relation (relationFromLabel "Explanation") 2 3))),
+probselfref1 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Explanation") 1 1) (Relation (relationFromRelName "Explanation") 2 3))),
                                             (1, EDU drs0),
                                             (2, EDU drs0),
                                             (3, EDU drs0)]) 3
 
 -- has self referencing relation
-probselfref2 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromLabel "Explanation") 0 1) (Relation (relationFromLabel "Explanation") 2 3))),
+probselfref2 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Explanation") 0 1) (Relation (relationFromRelName "Explanation") 2 3))),
                                             (1, EDU drs0),
                                             (2, EDU drs0),
                                             (3, EDU drs0)]) 3
 
 -- has self referencing relation
-probselfref3 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Explanation") 1 1)),
+probselfref3 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Explanation") 1 1)),
                                             (1, EDU drs0),
                                             (2, EDU drs0),
                                             (3, EDU drs0)]) 3
 
 -- This entry is problematic since it is deemed felicitous (although it isn't, since not all entries are in relations with eachother)
-probnotenoughrels = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Explanation") 1 2)),
+probnotenoughrels = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Explanation") 1 2)),
                                             (1, EDU drs0),
                                             (2, EDU drs0),
                                             (3, EDU drs0)]) 3
 
 -- the discourse graph is not well formed. TODO find out what rules exactly are broken here
-probgraphnotwellformed = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Explanation") 1 5)),
+probgraphnotwellformed = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Explanation") 1 5)),
                                                 (1, EDU drs0),
                                                 (2, EDU drs0),
                                                 (3, EDU drs0),
                                                 (4, EDU drs0),
                                                 (5, EDU drs0),
-                                                (6, CDU (And (Relation (relationFromLabel "Explanation") 2 4) (Relation (relationFromLabel "Narration") 3 7))),
-                                                (7, CDU (Relation (relationFromLabel "Narration") 4 7))]) 5
+                                                (6, CDU (And (Relation (relationFromRelName "Explanation") 2 4) (Relation (relationFromRelName "Narration") 3 7))),
+                                                (7, CDU (Relation (relationFromRelName "Narration") 4 7))]) 5
 
 -- last is not a valid discourse variable
-problast1 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Commentary") 1 2)),
-                                            (1, CDU (Relation (relationFromLabel "Explanation") 3 4)),
+problast1 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Commentary") 1 2)),
+                                            (1, CDU (Relation (relationFromRelName "Explanation") 3 4)),
                                             (2, EDU drs0),
                                             (3, EDU drs0),
                                             (4, EDU drs0)]) 7
 
 -- last is not a segment
-problast2 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Commentary") 1 2)),
-                                            (1, CDU (Relation (relationFromLabel "Explanation") 3 4)),
+problast2 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Commentary") 1 2)),
+                                            (1, CDU (Relation (relationFromRelName "Explanation") 3 4)),
                                             (2, EDU drs0),
                                             (3, EDU drs0),
                                             (4, EDU drs0)]) 1
 
-root_sdrsfullal07 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 6)),
+root_sdrsfullal07 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 6)),
                                  (1, EDU _al07_1),
                                  (2, EDU _al07_2),
                                  (3, EDU _al07_3),
                                  (4, EDU _al07_4),
                                  (5, EDU _al07_5),
-                                 (6, CDU (Relation (relationFromLabel "Narration") 2 5)),
-                                 (7, CDU (Relation (relationFromLabel "Narration") 3 4))]) 5
+                                 (6, CDU (Relation (relationFromRelName "Narration") 2 5)),
+                                 (7, CDU (Relation (relationFromRelName "Narration") 3 4))]) 5
 
 -- sdrs without added new segment (5)
-sdrsfullal07_wo5 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elaboration") 1 6)),
+sdrsfullal07_wo5 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 6)),
                                  (1, EDU _al07_1),
                                  (2, EDU _al07_2),
                                  (3, EDU _al07_3),
                                  (4, EDU _al07_4),
-                                 (6, CDU (And (Relation (relationFromLabel "Narration") 2 5)
-                                              (Relation (relationFromLabel "Explanation") 2 7))),
-                                 (7, CDU (Relation (relationFromLabel "Narration") 3 4))]) 5
+                                 (6, CDU (And (Relation (relationFromRelName "Narration") 2 5)
+                                              (Relation (relationFromRelName "Explanation") 2 7))),
+                                 (7, CDU (Relation (relationFromRelName "Narration") 3 4))]) 5
 
 
 ---------------------------------------------------------------------------
@@ -416,8 +458,8 @@ sdrsfullal07_wo5 = SDRS (M.fromList [(0, CDU (Relation (relationFromLabel "Elabo
 -- | Merges
 ---------------------------------------------------------------------------
 
---mergeRes = mergeSDRSs sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Result")]
---merge2NarElab = mergeSDRSs sdrsmerge1 sdrsmerge2 [(0,relationFromLabel "Narration"),(2, relationFromLabel "Elaboration")]
+--mergeRes = addSDRS sdrsmerge1 sdrsmerge2 [(0,relationFromRelName "Result")]
+--merge2NarElab = addSDRS sdrsmerge1 sdrsmerge2 [(0,relationFromRelName "Narration"),(2, relationFromRelName "Elaboration")]
 
 
 

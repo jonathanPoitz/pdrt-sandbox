@@ -18,9 +18,9 @@ module Data.SDRS.DataType
 , SDRSRelation (..)
 , CDU (..)
 , DisVar
-, Label
+, RelName
 , RelType (..)
-, relationFromLabel
+, relationFromRelName
 , extractCDU
 , module Data.DRS.DataType
 ) where
@@ -62,23 +62,22 @@ import qualified Data.Map as M
 -- on the discourse
 ---------------------------------------------------------------------------
 data SDRSRelation =
-  SDRSRelation { label :: Label
+  SDRSRelation { relName :: RelName
                , relType :: RelType
                , isStructured :: Bool
                , isTopic :: Bool
-               }
-  | Outscopes deriving (Eq, Read)
+               } deriving (Eq, Read)
 
--- | Outscopes symbol
-opOutsc :: String
-opOutsc = "\8827"
+---- | Outscopes symbol
+--opOutsc :: String
+--opOutsc = "\8827"
 
 ---------------------------------------------------------------------------
 -- | Derive an instance of the 'Show' typeclass for 'SDRSRelation'.
 ---------------------------------------------------------------------------
 instance Show SDRSRelation where
-  show r@(SDRSRelation {}) = label r
-  show Outscopes = opOutsc
+  show r@(SDRSRelation {}) = relName r
+  --show Outscopes = opOutsc
 
 ---------------------------------------------------------------------------
 -- | The type of relation (Crd = Coordinating, Sub = Subordinating or None for outscoping relation)
@@ -89,15 +88,15 @@ data RelType = Crd | Sub
 ---------------------------------------------------------------------------
 -- | given a relation name, returns the SDRSRelation with that name
 ---------------------------------------------------------------------------
-relationFromLabel :: Label -> SDRSRelation
-relationFromLabel l = if (length outRels > 1) || (length outRels == 0)
+relationFromRelName :: RelName -> SDRSRelation
+relationFromRelName l = if (length outRels > 1) || (length outRels == 0)
                       then error "Error finding relation"
                       else outRels !! 0
   where outRels = filter (\r -> show r == (filter (/=' ') (map toLower l))) relations
 
 ---------------------------------------------------------------------------
 -- | Discourse variable denoting a simple or complex speech act discourse  
--- referent (a label or pointer). 
+-- referent.
 ---------------------------------------------------------------------------
 type DisVar = Int
 
@@ -138,9 +137,9 @@ data SDRS =
   deriving (Read, Eq)
 
 ---------------------------------------------------------------------------
--- | relation label
+-- | relation name
 ---------------------------------------------------------------------------
-type Label = String
+type RelName = String
 
 ---------------------------------------------------------------------------
 -- | relation types
@@ -160,5 +159,4 @@ relations = [SDRSRelation "elaboration" Sub False False,
              SDRSRelation "parallel" Crd True False,
              SDRSRelation "continuation" Crd False True,
              SDRSRelation "alternation" Crd False False,
-             SDRSRelation "consequence" Crd False False,
-             Outscopes]
+             SDRSRelation "consequence" Crd False False]

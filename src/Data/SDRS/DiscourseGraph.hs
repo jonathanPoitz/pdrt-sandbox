@@ -1,6 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 {- |
 Module      :  Data.SDRS.DiscourseGraph
 Copyright   :  (c) Jonathan Poitz, Harm Brouwer and Noortje Venhuizen
@@ -15,22 +12,27 @@ SDRS discourse graph
 
 module Data.SDRS.DiscourseGraph
 ( 
-  discourseGraph
-, accessibleNodes
-, accessibleDRSs
+  accessibleDRSs
+, accessibleDRSDVs
 , rf
 , inferLast
 , isOnRF
-, immediateOutscopes
-, Label
-, DGraph
+, iOutscopesMap
+, outscopesFrom
+, RelName
 , root
 , isRoot
 , hasParents
+, iOutscopesFrom
+, subordLefts
+, subordRights
+, coordLefts
+, coordRights
 ) where
 
 import qualified Data.Map as M
-import Data.List (union, nub, sort, (\\))
+import Data.List
+--import Debug.Trace
 
 import Data.SDRS.DataType
 import Data.SDRS.Relation
@@ -41,114 +43,126 @@ import Data.SDRS.Structure
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
--- | Shows a discourse graph
----------------------------------------------------------------------------
-instance {-# OVERLAPPING #-} Show DGraph where
-  show dg = showDGraph dg
-
-showDGraph :: DGraph -> String
-showDGraph graph = "[" ++ graphToString (M.assocs graph) ++ "]"
-  where graphToString :: [(DisVar,[(DisVar, SDRSRelation)])] -> String
-        graphToString []                  = "\n"
-        graphToString ((node,edges):rest) = "\n" ++
-                                            "(" ++
-                                            show node ++
-                                            ", " ++
-                                            show edges ++
-                                            ")" ++
-                                            graphToString rest
-
----------------------------------------------------------------------------
--- | DGraph
----------------------------------------------------------------------------
-type DGraph = M.Map DisVar [(DisVar, SDRSRelation)]
-
----------------------------------------------------------------------------
--- | Given an SDRS, build a labeled graph structure, consisting of a tuple
--- of the graph itself and the last node
----------------------------------------------------------------------------
-discourseGraph :: SDRS -> DGraph
-discourseGraph (SDRS m _) = M.foldlWithKey build M.empty m
-  where build :: (M.Map DisVar [(DisVar, SDRSRelation)]) -> DisVar -> SDRSFormula -> M.Map DisVar [(DisVar, SDRSRelation)]
-        build acc dv0 (CDU (Relation rel dv1 dv2)) = M.insertWith (++) dv1 [(dv2,rel)] (M.insertWith (union) dv0 [(dv1,Outscopes),(dv2,Outscopes)] acc)
-        build acc dv0 (CDU (And sf1 sf2))            = build (build acc dv0 (CDU sf1)) dv0 (CDU sf2)
-        build acc dv0 (CDU (Not sf1))                = build acc dv0 (CDU sf1)
-        build acc _ _                              = acc
-
----------------------------------------------------------------------------
--- | Given an 'SDRS', returns a map from 'DisVar's to 'DisVar's that it outscopes
----------------------------------------------------------------------------
-immediateOutscopes :: SDRS -> M.Map DisVar [DisVar]
-immediateOutscopes (SDRS m _) = M.foldlWithKey build M.empty m
-  where build :: (M.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> M.Map DisVar [DisVar]
-        build acc dv0 (CDU (Relation _ dv1 dv2)) = M.insertWith (union) dv0 [dv1,dv2] acc
-        build acc dv0 (CDU (And sf1 sf2))            = build (build acc dv0 (CDU sf2)) dv0 (CDU sf1)
-        build acc dv0 (CDU (Not sf1))                = build acc dv0 (CDU sf1)
-        build acc _ _                          = acc
-
----------------------------------------------------------------------------
--- | Given the 'SDRS' @s@ and the 'DisVar' @dv1@, lists all accessible 'DisVar's
--- using the discourse graph of @s@. The output list's elements are ordered
--- with the first element being the farthest and the last the closest to @dv1@
--- in the discourse graph.
--- TODO might be simplified. currently a lot of steps, maybe rec can be simplified.
--- TODO structural relations? def. 15 book
----------------------------------------------------------------------------
-accessibleNodes :: SDRS -> DisVar -> [DisVar]
-accessibleNodes s dv1 = walkEdges [dv1]
-  where g = discourseGraph s
-        walkEdges :: [DisVar] -> [DisVar]
-        walkEdges []       = []
-        walkEdges (k:rest) = (walkEdges rest) `union` walkEdges (keys k) `union` (keys k)
-        keys :: DisVar -> [DisVar]
-        keys dv2 = nub (M.keys (M.filter (findKey dv2) g))
-        findKey :: DisVar -> [(DisVar, SDRSRelation)] -> Bool
-        findKey _ []  = False
-        findKey dv ((dv',_):rest)
-          | dv' == dv = True
-          | otherwise = findKey dv rest
-
----------------------------------------------------------------------------
 -- | Returns all 'DRS's accessible from a given 'DisVar' @dv@ in the 'SDRS' @s@.
 ---------------------------------------------------------------------------
 accessibleDRSs :: SDRS -> DisVar -> [DRS]
 accessibleDRSs s@(SDRS m _) dv = accDRSs
-  where accDisVars = accessibleNodes s dv
+  where accDisVars = accessibleDRSDVs s dv
         accDUs = map (\i -> m M.! i) accDisVars
         accDRSs = [drs | (EDU drs) <- accDUs]
 
 ---------------------------------------------------------------------------
+-- | helper function for accessibleDRSs
+-- TODO make more effective. currently i don't know how to avoid all the recursion
+-- TODO does "nub" always preserve order?
+---------------------------------------------------------------------------
+accessibleDRSDVs :: SDRS -> DisVar -> [DisVar]
+accessibleDRSDVs s dv = nub $ walkEdges [dv]
+  where walkEdges :: [DisVar] -> [DisVar]
+        walkEdges []         = []
+        walkEdges (dv':rest) = ss ++ cs ++ walkEdges ss ++ walkEdges rest ++ walkEdges ios
+          where ss = subordLefts dv' s -- all sub relations with dv' as end node
+                cs = coordLefts dv' s
+                ios = case ioutscope of
+                        Nothing -> []
+                        Just n  -> [n]
+                ioutscope = iOutscopesFrom dv' s
+
+---------------------------------------------------------------------------
 -- | computes the right frontier of an 'SDRS', in order of locality
--- TODO might be simplified. currently a lot of steps, maybe rec can be simplified.
--- TODO debug structural checks -> does this work in every situation?
--- If the last node is wrong or even an unvalid pointer, this function will
--- return a wrong rf. FIX, walk from root instead to avoid that?
--- TODO de-uglify. possibly implement function to rewind an sdrs by one step, which could get arbitrarily complex
+-- TODO deuglify
 ---------------------------------------------------------------------------
 rf :: SDRS -> [DisVar]
-rf s@(SDRS _ l) = case M.member ((parents l) !! 0) outscopes &&
-                       (all (\(Relation rel _ _) -> isSub rel) lastRels) of True -> walkEdges [l] `union` rf rewindedSDRSWithNewLast
-                                                                            False -> walkEdges [l]
-  where rewindedSDRSWithNewLast = updateLast rewindedSDRS rewindedLast 
+rf s@(SDRS _ l) 
+  | length lastRels == 1 &&
+    all (\(Relation r _ _) -> isSub r) lastRels && -- other way to do this that doesn't rely on lists?
+    M.member lastRelStart ioutscopes = l : walkEdges (Just l) `union` rf rewindedSDRSWithNewLast
+  | otherwise                        = l : walkEdges (Just l)
+  where ioutscopes = M.fromList $ iOutscopesMap s
+        rewindedSDRSWithNewLast = updateLast rewindedSDRS rewindedLast 
         rewindedLast = inferLast rewindedSDRS
         rewindedSDRS = removeRels s lastRels
         lastRels = [rel | (rel@(Relation {})) <- calcRightArgRels s l]
-        g = discourseGraph s
-        outscopes = immediateOutscopes s
-        walkEdges :: [DisVar] -> [DisVar]
-        walkEdges []       = []
-        walkEdges (v:rest) =  (walkEdges rest) `union` walkEdges (parents v) `union` (parents v) `union` [v]
-        parents :: DisVar -> [DisVar]
-        parents dv = nub (M.keys (M.filter (onRF dv) g))
-        onRF :: DisVar -> [(DisVar, SDRSRelation)] -> Bool
-        onRF _ []                               = False
-        onRF dv ((dv',Outscopes):rest)
-          | dv == dv'                           = True
-          | otherwise                           = onRF dv rest
-        onRF dv ((dv',rel@(SDRSRelation {})):rest)
-          | dv == dv' && ((isStructured rel) ||                                 -- FIX, here we're only working with a label, how do we check the label's structuredness etc?
-                          (relType rel == Sub)) = True
-          | otherwise                           = onRF dv rest
+        lastRelStart = head $ subordLefts l s
+        walkEdges :: Maybe DisVar -> [DisVar]
+        walkEdges Nothing   = []
+        walkEdges (Just dv) = parents `union` walkEdges ioutscope
+          where parents = ss ++ ioutscopeList
+                ioutscope = iOutscopesFrom dv s
+                ioutscopeList = case ioutscope of
+                                  Nothing -> []
+                                  Just n  -> [n]
+                ss = subordLefts dv s
+
+---------------------------------------------------------------------------
+-- | Given an 'SDRS', returns a map from 'DisVar's to 'DisVar's that it outscopes
+---------------------------------------------------------------------------
+iOutscopesMap :: SDRS -> [(DisVar,[DisVar])]
+iOutscopesMap (SDRS m _) = M.assocs $ M.foldlWithKey build M.empty m
+  where build :: (M.Map DisVar [DisVar]) -> DisVar -> SDRSFormula -> M.Map DisVar [DisVar]
+        build acc dv0 (CDU (Relation _ dv1 dv2)) = M.insertWith (union) dv0 [dv1,dv2] acc
+        build acc dv0 (CDU (And sf1 sf2))        = build (build acc dv0 (CDU sf2)) dv0 (CDU sf1)
+        build acc dv0 (CDU (Not sf1))            = build acc dv0 (CDU sf1)
+        build acc _ _                            = acc
+
+---------------------------------------------------------------------------
+-- | Given an 'SDRS', returns the 'DisVar' that i-outscopes a given 'DisVar'.
+-- If there is none, it is the root node, and the function returns Nothing.
+---------------------------------------------------------------------------
+iOutscopesFrom :: DisVar -> SDRS -> Maybe DisVar
+iOutscopesFrom dv s = case (M.null ps) of
+                        True  -> Nothing
+                        False -> Just $ head $ M.keys ps
+  where ioutscopeMap = M.fromList $ iOutscopesMap s
+        ps = M.filter (elem dv) ioutscopeMap
+
+---------------------------------------------------------------------------
+-- | Given an 'SDRS' @s@ and a 'DisVar' @dv@, returns the transitive closure
+-- of iOutscopesFrom, i.e., all variables that outscope @dv@.
+---------------------------------------------------------------------------
+outscopesFrom :: DisVar -> SDRS -> [DisVar]
+outscopesFrom dv s = outscope dv
+  where outscope :: DisVar -> [DisVar]
+        outscope dv' = case newOutscope of
+                          Nothing   -> []
+                          Just dv'' -> dv'' : outscope dv''
+          where newOutscope = iOutscopesFrom dv' s
+
+---------------------------------------------------------------------------
+-- | Given an 'SDRS' and a 'DisVar' @dv@, returns all 'DisVar's that stand in a
+-- subordinating relation with @dv@ as its right node.
+---------------------------------------------------------------------------
+subordLefts :: DisVar -> SDRS -> [DisVar]
+subordLefts dv s = ss
+  where rs = map snd $ relations s
+        ss = [ dv1 | CDU (Relation rel dv1 dv2) <- rs, isSub rel, dv2 == dv]
+
+---------------------------------------------------------------------------
+-- | Given an 'SDRS' and a 'DisVar' @dv@, returns all 'DisVar's that stand in a
+-- subordinating relation with @dv@ as its left node.
+---------------------------------------------------------------------------
+subordRights :: DisVar -> SDRS -> [DisVar]
+subordRights dv s = ss
+  where rs = map snd $ relations s
+        ss = [ dv2 | CDU (Relation rel dv1 dv2) <- rs, isSub rel, dv1 == dv]
+
+---------------------------------------------------------------------------
+-- | Given an 'SDRS' and a 'DisVar' @dv@, returns all 'DisVar's that stand in a
+-- coordinating relation with @dv@ as its right node.
+---------------------------------------------------------------------------
+coordLefts :: DisVar -> SDRS -> [DisVar]
+coordLefts dv s = ss
+  where rs = map snd $ relations s
+        ss = [ dv1 | CDU (Relation rel dv1 dv2) <- rs, isCrd rel, dv2 == dv]
+
+---------------------------------------------------------------------------
+-- | Given an 'SDRS' and a 'DisVar' @dv@, returns all 'DisVar's that stand in a
+-- coordinating relation with @dv@ as its left node.
+---------------------------------------------------------------------------
+coordRights :: DisVar -> SDRS -> [DisVar]
+coordRights dv s = ss
+  where rs = map snd $ relations s
+        ss = [ dv2 | CDU (Relation rel dv1 dv2) <- rs, isCrd rel, dv1 == dv]
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' @s@, infers the last node from the discourse structure
@@ -160,22 +174,23 @@ inferLast s@(SDRS m _) = walk (root s)
                                      (CDU cdu) -> walk $ getNext cdu
           where getNext :: CDU -> DisVar
                 getNext (Relation _ _ next) = next
-                getNext (And _ cdu2) = getNext cdu2
-                getNext (Not cdu1) = getNext cdu1
+                getNext (And _ cdu2)        = getNext cdu2
+                getNext (Not cdu1)          = getNext cdu1
 
 ---------------------------------------------------------------------------
 -- | checks whether a given 'DisVar' @dv@ is on the right frontier of 
 -- 'SDRS' @s@.
 ---------------------------------------------------------------------------
 isOnRF :: SDRS -> DisVar -> Bool
-isOnRF s dv = dv `elem` rf s
+isOnRF s dv  = dv `elem` rf s
 
 ---------------------------------------------------------------------------
 -- | Return the root node of the discourse graph. If the graph has more than
 -- one root node, only the first one in the list will be returned. 
 ---------------------------------------------------------------------------
 root :: SDRS -> DisVar
-root s = ((sort $ nub (dus s)) \\ (sort $ nub (relArgs s))) !! 0
+root s = head $ [ d | d <- cduDVs, iOutscopesFrom d s == Nothing]
+  where cduDVs = M.keys $ M.fromList $ iOutscopesMap s
 
 ---------------------------------------------------------------------------
 -- | checks whether 'DisVar' @dv@ in 'SDRS' @s@ is the root node.
