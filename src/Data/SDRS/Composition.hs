@@ -43,13 +43,13 @@ drsToSDRS d = SDRS (M.fromList [(0, EDU d)]) 0
 -- Narration twice with different target nodes?)?
 ---------------------------------------------------------------------------
 addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
-addDRS s@(SDRS m _) d edges = sdrsDRSRefAlphaConved
+addDRS s@(SDRS m _) d edges = pureSDRS
   where updatedLast = (fst $ M.findMax m) + 1 -- new reference to last 
         sdrsWithRelations = updateRelations s edges updatedLast updatedOutscope -- 1. step update relations (this must be before new segment to ensure right calculation of RF)
         sdrsWithSegment = addEDU sdrsWithRelations updatedLast (EDU d) -- 2. step - new segment
         sdrsWithNewLast = updateLast sdrsWithSegment updatedLast -- 3. step new last
-        sdrsDRSRefAlphaConved = sdrsAlphaConvertDRS sdrsWithNewLast updatedLast drsRefConvMap
-        accDRSs = accessibleDRSs sdrsWithRelations updatedLast -- note: this only works because the new drs is not in the sdrs yet, however the relation using its label is! this is of importance since in order to calculate the list of accessible drs, the new relation has to be there (as opposed to the new drs which first needs to be drsref-adjusted before being added)
+        pureSDRS = sdrsAlphaConvertDRS sdrsWithNewLast updatedLast drsRefConvMap -- 4. drsAlphaConv
+        accDRSs = accessibleDRSs sdrsWithNewLast updatedLast -- note: testwise, before it was sdrsWithRealtions -> -- note: this only works because the new drs is not in the sdrs yet, however the relation using its label is! this is of importance since in order to calculate the list of accessible drs, the new relation has to be there (as opposed to the new drs which first needs to be drsref-adjusted before being added)
         updatedOutscope = (fst $ M.findMax m) + 2 -- FIX this hack
         drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefs2
         drsRefs1 = concat $ map drsUniverse $ accDRSs
@@ -60,26 +60,25 @@ addDRS s@(SDRS m _) d edges = sdrsDRSRefAlphaConved
 -- to a node @dv1@ that must be on the RF of @s1@, using relation @r@.  
 -------------------------------------------------------------------------
 addSDRS :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
-addSDRS s1@(SDRS m1 _) s2 edges = sdrsDRSRefAlphaConved
-  where convMap = buildConvMap s1 s2 -- 1.
-        drsRefs1 = concat $ map drsUniverse $ accDRSs -- 3a.
-        -- ^ a list of all DRSRefs that is accessible from the attaching node after the update
-        drsRefs2 = concat $ map drsUniverse $ drss s2DVConv -- 3b.
-        -- ^ a list of all DRSRefs in the attaching SDRS
-        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefs2
+addSDRS s1@(SDRS m1 _) s2 edges = pureSDRS
+  where convMap = buildConvMap s1 s2 -- before 1
         -- ^ a conversion map of all overlapping variables to new ones from both sdrss
-        accDRSs = accessibleDRSs sdrsMerged attachingNode
-        updatedLast = sdrsLast s2DVConv
-        attachingNode = root s2DVConv
+        updatedLast = sdrsLast s2DVConv -- bw 1 and 2
+        attachingNode = root s2DVConv -- bw 1 and 2
         updatedOutscope = (max (fst $ M.findMax m1) (fst $ M.findMax (sdrsMap s2DVConv))) + 1
+        newDRSKeys = map fst $ segments s2DVConv -- bw 1 and 2
+        accDRSs = accessibleDRSs sdrsMerged attachingNode -- bw 4 and 5
+        drsRefs1 = concat $ map drsUniverse $ accDRSs -- bw 4 and 5
+        -- ^ a list of all DRSRefs that is accessible from the attaching node after the update
+        drsRefs2 = concat $ map drsUniverse $ drss s2DVConv -- bw 4 and 5
+        -- ^ a list of all DRSRefs in the attaching SDRS
+        drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefs2 -- bw 4 and 5
         -----
-        s2DVConv = renameDisVars s2 convMap -- 2.
-        s1WithNewRelation = updateRelations s1 edges attachingNode updatedOutscope
-        sdrsMerged = SDRS ((sdrsMap s1WithNewRelation) `M.union` (sdrsMap s2DVConv)) updatedLast -- merged maps and updated last
-        newDRSKeys = map fst $ segments s2DVConv -- 2a. the labels of the drss that are to be added. these later need to be drsRefAlphaConv'ed
-        sdrsDRSRefAlphaConved = sdrsAlphaConvertDRSs sdrsMerged newDRSKeys drsRefConvMap
+        s2DVConv = renameDisVars s2 convMap -- 1.
+        s1WithNewRelation = updateRelations s1 edges attachingNode updatedOutscope -- 2.
+        sdrsMerged = SDRS ((sdrsMap s1WithNewRelation) `M.union` (sdrsMap s2DVConv)) updatedLast -- 3. + 4.
+        pureSDRS = sdrsAlphaConvertDRSs sdrsMerged newDRSKeys drsRefConvMap -- 5.
         
-
 ---------------------------------------------------------------------------
 -- | adds one or more relations to the 'SDRS' @s@ between the newly added 'DisVar'
 -- @attachingNode@ and one or several target nodes on the right frontier of @s@.
@@ -102,9 +101,12 @@ updateRelations s ((dv, rel):rest) attachingNode updatedOutscope
   -- ^ the target node is not the root node and the relation is subordinating
   | otherwise                              = trace (show "neither") updateRelations s rest attachingNode updatedOutscope
   -- ^ skipping this relation because the target node is not on the RF of the SDRS
-  where sdrsWithRightArgUpdate = updateRightArgs s dv updatedOutscope -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
-        swapRels = calcLeftArgRels s dv
-        sdrsWithRemovedSwapRels = removeRels sdrsWithRightArgUpdate swapRels -- 3. 
-        sdrsWithSwapRels = addCDUs sdrsWithRemovedSwapRels updatedOutscope swapRels -- 4. 
-        sdrsWithRel = addCDU sdrsWithSwapRels updatedOutscope (Relation rel dv attachingNode) -- 5. step - new relation
-        sdrsWithNewConj = addCDU s (lookupKey s dv) (Relation rel dv attachingNode) -- FIX order?
+  where sdrsWithRightArgUpdate = trace "update" updateRightArgs s dv updatedOutscope -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
+        swapRels = trace "swapRels" calcLeftArgRels s dv
+        sdrsWithRemovedSwapRels = trace "removeRels" removeRels sdrsWithRightArgUpdate swapRels -- 3. 
+        sdrsWithSwapRels = trace "addswapRels" addCDUs sdrsWithRemovedSwapRels updatedOutscope swapRels -- 4. 
+        sdrsWithRel = trace "addRel" addCDU sdrsWithSwapRels updatedOutscope (Relation rel dv attachingNode) -- 5. step - new relation
+        sdrsWithNewConj = trace "addConj" addCDU s (lookupKey s dv) (Relation rel dv attachingNode) -- FIX order?
+
+
+
