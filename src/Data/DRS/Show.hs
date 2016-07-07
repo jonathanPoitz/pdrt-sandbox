@@ -20,6 +20,7 @@ module Data.DRS.Show
 , printDRS
 , showMerge
 , printMerge
+, showDRSDebug
 , showDRSBetaReduct
 , printDRSBetaReduct
 , showDRSRefBetaReduct
