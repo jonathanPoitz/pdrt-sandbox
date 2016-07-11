@@ -54,7 +54,7 @@ instance {-# OVERLAPPING #-} (Show a) => Show [(a,SDRSFormula)] where
     | mpos == 0 = '\n' : showConcat (showModifier ("( " ++ show l ++ " ,") mpos form) ")\n" ++ show ts
     | otherwise = '\n' : showConcat (showModifier ("( " ++ show l ++ " ,") mpos form) (DRS.showPadding ")\n") ++ show ts
     where form = showFormula f
-          mpos = modifierPos form
+          mpos = modifierPos' form
 
 instance {-# OVERLAPPING #-} Show [SDRSFormula] where
   show fs = '\n' : unlines (map showFormula fs)
@@ -76,8 +76,8 @@ class ShowableSDRS s where
 -- | Derive appropriate instances of 'ShowableSDRS'.
 instance ShowableSDRS SDRS where
   resolve s = s
--- instance (ShowableSDRS s) => ShowableSDRS (DRS -> s) where
---   resolve s
+--instance (ShowableSDRS s) => ShowableSDRS (DRS -> s) where
+--  resolve s 
 
 -- | Derive appropriate instances of 'Show' for 'ShowableSDRS's.
 
@@ -280,8 +280,8 @@ showUnspecFunction f ll = foldr ((++) . ((flip showUnspecFunc) ll)) "" f
 ---------------------------------------------------------------------------
 showUnspecFunc :: (DisVar,SDRSFormula) -> DisVar -> String
 showUnspecFunc (dv,sf@(EDU _)) ll
-  | ll == dv      = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
-  | otherwise     = showModifier (show dv ++ ":") (modifierPos form) form
+  | ll == dv      = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos' form) form
+  | otherwise     = showModifier (show dv ++ ":") (modifierPos' form) form
   where form = showUnspecFormula sf dv
 showUnspecFunc (dv,sf) ll = showFunc (dv,sf) ll
 
@@ -290,20 +290,20 @@ showUnspecFunc (dv,sf) ll = showFunc (dv,sf) ll
 ---------------------------------------------------------------------------
 showFunc :: (DisVar,SDRSFormula) -> DisVar -> String
 showFunc (dv,sf@(EDU _)) ll
-  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
-  | otherwise = showModifier (show dv ++ ":") (modifierPos form) form
+  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos' form) form
+  | otherwise = showModifier (show dv ++ ":") (modifierPos' form) form
   where form = showFormula sf
 showFunc (dv,sf@(CDU (Relation _ _ _))) ll
-  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
-  | otherwise = showModifier (show dv ++ ":") (modifierPos form) form
+  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos' form) form
+  | otherwise = showModifier (show dv ++ ":") (modifierPos' form) form
   where form = showFormula sf
 showFunc (dv,(CDU (And f1 f2))) ll
-  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
-  | otherwise = showModifier (show dv ++ ":") (modifierPos form) form
+  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos' form) form
+  | otherwise = showModifier (show dv ++ ":") (modifierPos' form) form
   where form = showConjunction (CDU f1) (CDU f2)
 showFunc (dv,(CDU (Not f1))) ll
-  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
-  | otherwise = showModifier (show dv ++ ":") (modifierPos form) form
+  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos' form) form
+  | otherwise = showModifier (show dv ++ ":") (modifierPos' form) form
   where form = showNegation (CDU f1)
 
 ---------------------------------------------------------------------------
@@ -312,8 +312,8 @@ showFunc (dv,(CDU (Not f1))) ll
 ---------------------------------------------------------------------------
 showFunc' :: (DisVar,SDRSFormula) -> DisVar -> String
 showFunc' (dv,sf@(EDU _)) ll
-  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos form) form
-  | otherwise = showModifier (show dv ++ ":") (modifierPos form) form
+  | ll == dv  = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos' form) form
+  | otherwise = showModifier (show dv ++ ":") (modifierPos' form) form
   where form = showFormula sf
 showFunc' (_,sf@(CDU (Relation _ _ _))) _ = form
   where form = showFormula sf
@@ -338,10 +338,10 @@ showUnspecFormula :: SDRSFormula -> DisVar -> String
 showUnspecFormula (EDU _) dv          = "K" ++ show dv
 showUnspecFormula sf _ = showFormula sf
 
-modifierPos :: String -> Int
-modifierPos s
-  | (length (lines s)) > 1 = 2
-  | otherwise              = 0
+--modifierPos :: String -> Int
+--modifierPos' s
+--  | (length (lines s)) > 1 = 2
+--  | otherwise              = 0
 
 modifierPos' :: String -> Int
 modifierPos' s
@@ -350,9 +350,9 @@ modifierPos' s
 
 showConjunction :: SDRSFormula -> SDRSFormula -> String
 showConjunction f1 f2
-  | lf1 > 1  && lf2 == 1 = showConcat form1 (showModifier opAnd (modifierPos form1) (showPadding form2))
-  | lf1 == 1  && lf2 > 1 = showConcat (showPadding form1) (showModifier opAnd (modifierPos form2) form2)
-  | otherwise            = showConcat form1 (showModifier opAnd (modifierPos form2) form2)
+  | lf1 > 1  && lf2 == 1 = showConcat form1 (showModifier opAnd (modifierPos' form1) (showPadding form2))
+  | lf1 == 1  && lf2 > 1 = showConcat (showPadding form1) (showModifier opAnd (modifierPos' form2) form2)
+  | otherwise            = showConcat form1 (showModifier opAnd (modifierPos' form2) form2)
   where form1 = showFormula f1
         form2 = showFormula f2
         lf1 = length (lines form1)
@@ -363,7 +363,7 @@ showNegation f
   | mpos == 0 = showModifier opNot mpos (showConcat (showModifier "(" mpos form) ")\n")
   | otherwise = showModifier opNot mpos (showConcat (showModifier "(" mpos form) (DRS.showPadding ")\n"))
   where form = showFormula f
-        mpos = modifierPos form
+        mpos = modifierPos' form
 
 ---------------------------------------------------------------------------
 -- | Shows the discourse variables @dvs$ of an 'SDRS', using 'String' @d@ 
