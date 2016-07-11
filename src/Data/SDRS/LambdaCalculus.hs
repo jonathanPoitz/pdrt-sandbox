@@ -67,7 +67,7 @@ sdrsAlphaConvertDRS s@(SDRS m l) dv cm = SDRS m' l
         conv key (EDU d) = EDU $ renameSubDRS d gd' cm
           where gd' = foldl (<<+>>) (DRS [] []) accDRSs'
                 accDRSs' = accessibleDRSs s key
-        conv _ sf            = sf
+        conv _ sf        = sf
         -- ^ the SDRSFormula labeled by @key@ was not a EDU, skip it.
 
 ---------------------------------------------------------------------------
@@ -75,7 +75,7 @@ sdrsAlphaConvertDRS s@(SDRS m l) dv cm = SDRS m' l
 -- @cm@, DRS-alpha-converts all 'DRSs' labeled by the 'DisVar's in @dvs@.
 ---------------------------------------------------------------------------
 sdrsAlphaConvertDRSs :: SDRS -> [DisVar] -> [(DRSRef,DRSRef)] -> SDRS
-sdrsAlphaConvertDRSs s [] _                    = s
+sdrsAlphaConvertDRSs s [] _         = s
 sdrsAlphaConvertDRSs s (dv:rest) cm = sdrsAlphaConvertDRSs (sdrsAlphaConvertDRS s dv cm) rest cm
 
 ---------------------------------------------------------------------------

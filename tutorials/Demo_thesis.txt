@@ -1,0 +1,14 @@
+ex_to4 = sdrsfullal07_to4 
+EmbedBoxes ex_to4
+
+EmbedGraph ex_to4
+iOutscopesMap ex_to4
+iOutscopesFrom 7 ex_to4
+iOutscopesFrom 0 ex_to4
+outscopesFrom 0 ex_to4
+outscopesFrom 3 ex_to4
+
+:t sdrs_because
+:t sdrs_because drs1
+:t sdrs_because drs1 drs2
+EmbedBoxes $ sdrs_because drs1 drs2

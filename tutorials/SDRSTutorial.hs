@@ -73,9 +73,9 @@ _al07_5 = DRS [DRSRef "x4", DRSRef "t"]
                 ,Rel (DRSRel "dancing_competition") [DRSRef "t"]
                 ,Rel (DRSRel "win") [DRSRef "x4", DRSRef "t"]]
 
-_al07_6 = DRS [DRSRef "x4"]
-                [Rel (DRSRel "=") [DRSRef "x4", DRSRef "x"]
-                ,Rel (DRSRel "dance_well") [DRSRef "x4"]]
+_al07_6 = DRS [DRSRef "x5"]
+                [Rel (DRSRel "=") [DRSRef "x5", DRSRef "x"]
+                ,Rel (DRSRel "dance_well") [DRSRef "x5"]]
 
 
 ------
