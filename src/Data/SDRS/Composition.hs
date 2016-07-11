@@ -44,13 +44,13 @@ drsToSDRS d = SDRS (M.fromList [(0, EDU d)]) 0
 ---------------------------------------------------------------------------
 addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
 addDRS s@(SDRS m _) d edges = pureSDRS
-  where updatedLast = (fst $ M.findMax m) + 1 -- new reference to last 
+  where updatedLast = (fst $ M.findMax m) + 1 -- before 1
+        updatedOutscope = (fst $ M.findMax m) + 2 -- before 1, FIX this hack
         sdrsWithRelations = updateRelations s edges updatedLast updatedOutscope -- 1. step update relations (this must be before new segment to ensure right calculation of RF)
         sdrsWithSegment = addEDU sdrsWithRelations updatedLast (EDU d) -- 2. step - new segment
         sdrsWithNewLast = updateLast sdrsWithSegment updatedLast -- 3. step new last
         pureSDRS = sdrsAlphaConvertDRS sdrsWithNewLast updatedLast drsRefConvMap -- 4. drsAlphaConv
         accDRSs = accessibleDRSs sdrsWithNewLast updatedLast -- note: testwise, before it was sdrsWithRealtions -> -- note: this only works because the new drs is not in the sdrs yet, however the relation using its label is! this is of importance since in order to calculate the list of accessible drs, the new relation has to be there (as opposed to the new drs which first needs to be drsref-adjusted before being added)
-        updatedOutscope = (fst $ M.findMax m) + 2 -- FIX this hack
         drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefs2
         drsRefs1 = concat $ map drsUniverse $ accDRSs
         drsRefs2 = drsUniverse d
@@ -81,32 +81,40 @@ addSDRS s1@(SDRS m1 _) s2 edges = pureSDRS
         
 ---------------------------------------------------------------------------
 -- | adds one or more relations to the 'SDRS' @s@ between the newly added 'DisVar'
--- @attachingNode@ and one or several target nodes on the right frontier of @s@.
+-- @newNode@ and one or several target nodes on the right frontier of @s@.
+-- This involves making the necessary adjustments to the discourse structure
+-- that depend on the place of attachment and the kind of attaching relation(s).
+---------------------------------------------------------------------------
+updateRelations :: SDRS -> [(DisVar, SDRSRelation)] -> DisVar -> DisVar -> SDRS
+updateRelations _ [] _ _                    = error "Specify at least one relation!"
+updateRelations s (t:[]) newNode newOutsc   = updateRelation s t newNode newOutsc
+updateRelations s (t:rest) newNode newOutsc = updateRelations (updateRelation s t newNode newOutsc) rest newNode newOutsc
+
+---------------------------------------------------------------------------
+-- | Adds a relation to the 'SDRS' @s@ between the newly added 'DisVar'
+-- @newNode@ and one target node on the right frontier of @s@.
 -- This involves making the necessary adjustments to the discourse structure
 -- that depend on the place of attachment and the kind of attaching relation.
 ---------------------------------------------------------------------------
-updateRelations :: SDRS -> [(DisVar, SDRSRelation)] -> DisVar -> DisVar -> SDRS
-updateRelations s [] _ _                   = s
-updateRelations s ((dv, rel):rest) attachingNode updatedOutscope
-  | isOnRF s dv && isRoot s dv             = trace (show "root") updateRelations sdrsWithRel rest attachingNode updatedOutscope
+updateRelation :: SDRS -> (DisVar,SDRSRelation) -> DisVar -> DisVar -> SDRS
+updateRelation s (dv,rel) newNode newOutsc
+  | isOnRF s dv && isRoot s dv             = trace (show "root") sdrsWithRel
   -- ^ the target node is the root node of the SDRS
-  | isOnRF s dv && (not $ hasParents s dv) = trace (show "below root") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
+  | isOnRF s dv && (not $ hasParents s dv) = trace (show "below root") sdrsWithNewConj
   -- ^ the target node is not the root node of the SDRS, but it is right underneath it (does not have incoming edges)
   | isOnRF s dv && isCrd rel &&
-    isTopic rel                            = trace (show "not root, topic") updateRelations sdrsWithRel rest attachingNode updatedOutscope
+    isTopic rel                            = trace (show "not root, topic") sdrsWithRel
   -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint
-  | isOnRF s dv && isCrd rel               = trace (show "not root, normal crd") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
+  | isOnRF s dv && isCrd rel               = trace (show "not root, normal crd") sdrsWithNewConj
   -- ^ the target node is not the root node and the relation is coordinating, but doesn't impose a topic constraint
-  | isOnRF s dv                            = trace (show "not root, sub") updateRelations sdrsWithNewConj rest attachingNode updatedOutscope
+  | isOnRF s dv                            = trace (show "not root, sub") sdrsWithNewConj
   -- ^ the target node is not the root node and the relation is subordinating
-  | otherwise                              = trace (show "neither") updateRelations s rest attachingNode updatedOutscope
+  | otherwise                              = trace (show "neither") s
   -- ^ skipping this relation because the target node is not on the RF of the SDRS
-  where sdrsWithRightArgUpdate = trace "update" updateRightArgs s dv updatedOutscope -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
+  where sdrsWithRightArgUpdate = trace "update" updateRightArgs s dv newOutsc -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
         swapRels = trace "swapRels" calcLeftArgRels s dv
         sdrsWithRemovedSwapRels = trace "removeRels" removeRels sdrsWithRightArgUpdate swapRels -- 3. 
-        sdrsWithSwapRels = trace "addswapRels" addCDUs sdrsWithRemovedSwapRels updatedOutscope swapRels -- 4. 
-        sdrsWithRel = trace "addRel" addCDU sdrsWithSwapRels updatedOutscope (Relation rel dv attachingNode) -- 5. step - new relation
-        sdrsWithNewConj = trace "addConj" addCDU s (lookupKey s dv) (Relation rel dv attachingNode) -- FIX order?
-
-
+        sdrsWithSwapRels = trace "addswapRels" addCDUs sdrsWithRemovedSwapRels newOutsc swapRels -- 4. 
+        sdrsWithRel = trace "addRel" addCDU sdrsWithSwapRels newOutsc (Relation rel dv newNode) -- 5. step - new relation
+        sdrsWithNewConj = trace "addConj" addCDU s (lookupKey s dv) (Relation rel dv newNode) -- FIX order?
 
