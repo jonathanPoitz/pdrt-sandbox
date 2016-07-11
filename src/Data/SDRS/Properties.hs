@@ -18,22 +18,29 @@ module Data.SDRS.Properties
 , validLast
 , sfsStrucIsomorphic
 , sfsSemIsomorphic
+, isWellformedSDRS
 ) where
 
 import qualified Data.Map as M
 import Data.List
+--import Debug.Trace
 
 import Data.SDRS.DataType
 import Data.SDRS.Structure
 import Data.SDRS.DiscourseGraph
---import Data.SDRS.LambdaCalculus
+import Data.SDRS.Binding
 
 import Data.DRS.Properties
 import Data.DRS.Merge
 import Data.DRS.Structure
+--import Data.DRS.Show
 
 ---------------------------------------------------------------------------
--- | Checks, given 'SDRS' @s@, whether all its embedded 'DRS's are proper.
+-- | Checks, given 'SDRS' @s@, whether each of its embedded 'DRS's @d@ is /proper/, where:
+--
+-- ['DRS' @d@ is proper /iff/]
+--
+--  * @d@ does not contain any free variables.
 ---------------------------------------------------------------------------
 sdrsProperDRSs :: SDRS -> Bool
 sdrsProperDRSs s = proper $ segments s
@@ -46,7 +53,12 @@ sdrsProperDRSs s = proper $ segments s
          where accDRSs = accessibleDRSs s dv
        
 ---------------------------------------------------------------------------
--- | Checks, given 'SDRS' s@@, whether all its embedded 'DRS's are pure.
+-- | Checks, given 'SDRS' s@@, whether each of its embedded 'DRS's @d@ is /pure/, where:
+--
+-- ['DRS' @d@ is pure /iff/]
+--
+--  * @d@ does not contain any otiose declarations of discourse referents
+--    (i.e., @d@ does not contain any unbound, duplicate uses of referents).
 ---------------------------------------------------------------------------
 sdrsPureDRSs :: SDRS -> Bool
 sdrsPureDRSs s = pure' $ segments s
@@ -75,9 +87,11 @@ sdrsUniqueDRSRefs s = universes == nub universes
 -- TODO interactions with root/rf
 ---------------------------------------------------------------------------
 validLast :: SDRS -> Bool
-validLast s@(SDRS m l) = isSegment (m M.! l) &&
-                         any (\(CDU (Relation _ _ dv')) -> dv' == l) allRelations &&
-                         not (any (\(CDU (Relation _ dv _)) -> dv == l) allRelations) -- why doesn't "not $ any (\(Relation _ dv _) -> dv == l) allRelations" work?
+validLast s@(SDRS m l) 
+  | M.lookup l m == Nothing = False
+  | otherwise               = isSegment (m M.! l) &&
+                              --any (\(CDU (Relation _ _ dv')) -> dv' == l) allRelations &&
+                              not (any (\(CDU (Relation _ dv _)) -> dv == l) allRelations)
   where isSegment :: SDRSFormula -> Bool
         isSegment (EDU _) = True
         isSegment _       = False -- isn't there an easier way? but idk how to pattern match on EDU when not in a function. note, this also ignores the possibility that the last node is introduced in a rec. SDRSFormula
@@ -137,6 +151,26 @@ sfsSemIsomorphic (SDRS m _) dv1 dv2
                                                compareCDU a1' a2'
         compareCDU (Not n1) (Not n2) = compareCDU n1 n2
         compareCDU _ _ = False
+
+---------------------------------------------------------------------------
+-- | Checks for the well-formedness of an 'SDRS'.
+---------------------------------------------------------------------------
+--isWellformedSDRS :: SDRS -> Bool
+--isWellformedSDRS s = validLast s &&
+--                     noSelfRefs s &&
+--                     sdrsPureDRSs s &&
+--                     sdrsProperDRSs s &&
+--                     allRelArgsBound s &&
+--                     allSegmentsBound s
+
+
+isWellformedSDRS :: SDRS -> [Bool]
+isWellformedSDRS s = validLast s :
+                     noSelfRefs s :
+                     sdrsPureDRSs s :
+                     sdrsProperDRSs s :
+                     allRelArgsBound s :
+                     allSegmentsBound s : []
 
 ---------------------------------------------------------------------------
 -- | Checks whether all Segments are attached to a node that's on the RF of
