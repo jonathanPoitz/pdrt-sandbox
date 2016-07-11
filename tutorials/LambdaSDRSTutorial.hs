@@ -30,3 +30,12 @@ sdrs_because p q = SDRS (M.fromList
   [(0, CDU $ Relation (relationFromRelName "Explanation") 1 2),
    (1, EDU p),
    (2, EDU q)]) 2
+
+drs1 = DRS [DRSRef "x"] 
+                  [Rel (DRSRel "John") [DRSRef "x"]
+                  ,Rel (DRSRel "happy") [DRSRef "x"]]
+
+drs2 = DRS [DRSRef "x1", DRSRef "y"] 
+                  [Rel (DRSRel "=") [DRSRef "x1", DRSRef "x"]
+                  ,Rel (DRSRel "Mary") [DRSRef "y"]
+                  ,Rel (DRSRel "see") [DRSRef "x1", DRSRef "y"]]
