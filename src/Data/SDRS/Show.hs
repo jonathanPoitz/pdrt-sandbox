@@ -44,7 +44,7 @@ import qualified Data.Map as Map
 -- | Derive an instance of the 'Show' typeclass for 'SDRS'.
 ---------------------------------------------------------------------------
 instance Show SDRS where
-  show s = '\n' : showSDRS (EmbedGraph s)
+  show s = '\n' : showSDRS (Boxes s)
 
 -- DEBUG // DEBUG // DEBUG --
 -- XXX: This is for DEBUGGING only (for now)
@@ -89,18 +89,14 @@ instance ShowableSDRS SDRS where
 data SDRSNotation s =
   Set s      -- ^ Set notation
   | Linear s -- ^ Linear notation
-  | Boxes s  -- ^ Box notation
-  | EmbedBoxes s  -- ^ embedded Box notation
-  | Graph s  -- ^ underspecified Box notation
-  | EmbedGraph s  -- ^ embedded Box notation
+  | Boxes s  -- ^ embedded Box notation
+  | Underspec s  -- ^ underspecified Box notation
   | Debug s  -- ^ Debug notation
 
 -- | Derive an instance of Show for 'SDRSNotation'.
 instance (ShowableSDRS s) => Show (SDRSNotation s) where
   show (Boxes s)  = '\n' : showSDRS (Boxes           (resolve s))
-  show (EmbedBoxes s)  = '\n' : showSDRS (EmbedBoxes (resolve s))  
-  show (Graph s)  = '\n' : showSDRS (Graph           (resolve s))
-  show (EmbedGraph s)  = '\n' : showSDRS (EmbedGraph (resolve s))  
+  show (Underspec s)  = '\n' : showSDRS (Underspec   (resolve s))
   show (Linear s) = '\n' : showSDRS (Linear          (resolve s))
   show (Set s)    = '\n' : showSDRS (Set             (resolve s))
   show (Debug s)  = '\n' : showSDRS (Debug           (resolve s))
@@ -112,10 +108,8 @@ showSDRS :: SDRSNotation SDRS -> String
 showSDRS n = 
   case n of
     (Boxes s)  -> showSDRSBox s
-    (EmbedBoxes s)  -> showEmbeddedSDRSBox s
-    (Graph s)  -> showSDRSGraph s
-    (EmbedGraph s)  -> showEmbeddedSDRSGraph s
-    (Linear s) -> showSDRSBox s -- showSDRSLinear s ++ "\n"
+    (Underspec s)  -> showSDRSUnderspec s
+    (Linear s) -> showSDRSLinear s -- showSDRSLinear s ++ "\n"
     (Set s)    -> showSDRSBox s -- showSDRSSet s ++ "\n"
     (Debug s)  -> showSDRSDebug s -- showSDRSDebug s ++ "\n"
 
@@ -162,26 +156,26 @@ showSDRSDebug (SDRS m l) = "SDRS" ++ " " ++ "[" ++ intercalate "," (map showTupl
 -- | Shows an 'SDRS' in 'Boxes' notation.
 ---------------------------------------------------------------------------
 
-showSDRSBox :: SDRS -> String
-showSDRSBox (SDRS f ll) = showHorizontalLine l boxTopLeft boxTopRight
-  ++ showContent l vl ++ showHorizontalLine l boxMiddleLeft boxMiddleRight
-  ++ showContent l fl ++ showHorizontalLine l boxBottomLeft boxBottomRight
-  where vl
-          | not(null dvs) = showDisVars dvs "  "
-          | otherwise     = " "
-          where dvs = Map.keys f
-        fl = showFunction (Map.toList f) ll
-        l = 4 + maximum (map length (lines vl) `union` map length (lines fl))
+--showSDRSBox :: SDRS -> String
+--showSDRSBox (SDRS f ll) = showHorizontalLine l boxTopLeft boxTopRight
+--  ++ showContent l vl ++ showHorizontalLine l boxMiddleLeft boxMiddleRight
+--  ++ showContent l fl ++ showHorizontalLine l boxBottomLeft boxBottomRight
+--  where vl
+--          | not(null dvs) = showDisVars dvs "  "
+--          | otherwise     = " "
+--          where dvs = Map.keys f
+--        fl = showFunction (Map.toList f) ll
+--        l = 4 + maximum (map length (lines vl) `union` map length (lines fl))
 
 ---------------------------------------------------------------------------
 -- | Shows an 'SDRS' in 'EmbedBoxes' notation.
 -- TODO needs to be decomposed to be more readable
 ---------------------------------------------------------------------------
-showEmbeddedSDRSBox :: SDRS -> String
-showEmbeddedSDRSBox s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good dummy value and isn't there another way of writing (-1)
+showSDRSBox :: SDRS -> String
+showSDRSBox s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good dummy value and isn't there another way of writing (-1)
   where outscopedDVs = [root s]
         -- ^ the root node as the first box to draw
-        -- v the recursive function that draws a box for a given set of disVars 
+        -- v the recursive function that draws a box for a given set of disVars, the second DisVar is the parent label (needed for putting the relation in the box itself)
         showSubBox :: [DisVar] -> DisVar -> String
         showSubBox dvs fromDV = showHorizontalLine l boxTopLeft boxTopRight ++
                            showContent l disVarsString ++
@@ -214,8 +208,8 @@ showEmbeddedSDRSBox s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good d
 -- | Shows an 'SDRS' in 'EmbedGraph' notation.
 -- TODO needs to be decomposed to be more readable
 ---------------------------------------------------------------------------
-showEmbeddedSDRSGraph :: SDRS -> String
-showEmbeddedSDRSGraph s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good dummy value and isn't there another way of writing (-1)
+showSDRSUnderspec :: SDRS -> String
+showSDRSUnderspec s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good dummy value and isn't there another way of writing (-1)
   where outscopedDVs = [root s]
         -- ^ the root node as the first box to draw
         -- v the recursive function that draws a box for a given set of disVars 
@@ -248,32 +242,55 @@ showEmbeddedSDRSGraph s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good
         -- ^ the outscopes map that governs the embedding structure of the boxes
 
 ---------------------------------------------------------------------------
--- | Shows an underspecified version of the 'SDRS'
+-- | Shows an 'SDRS' in linear, underspecified Boxes notation.
+-- TODO needs to be decomposed to be more readable
 ---------------------------------------------------------------------------
-showSDRSGraph :: SDRS -> String
-showSDRSGraph (SDRS f ll) = showHorizontalLine l boxTopLeft boxTopRight
-  ++ showContent l vl ++ showHorizontalLine l boxMiddleLeft boxMiddleRight
-  ++ showContent l fl ++ showHorizontalLine l boxBottomLeft boxBottomRight
-  where vl
-          | not(null dvs) = showDisVars dvs "  "
-          | otherwise     = " "
-          where dvs = Map.keys f
-        fl = showUnspecFunction (Map.toList f) ll
-        l = 4 + maximum (map length (lines vl) `union` map length (lines fl))
+showSDRSLinear :: SDRS -> String
+showSDRSLinear s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good dummy value and isn't there another way of writing (-1)
+  where outscopedDVs = [root s]
+        -- ^ the root node as the first box to draw
+        -- v the recursive function that draws a box for a given set of disVars 
+        showSubBox :: [DisVar] -> DisVar -> String
+        showSubBox dvs fromDV = showHorizontalLine l boxTopLeft boxTopRight ++
+                           showContent l disVarsString ++
+                           showHorizontalLine l boxMiddleLeft boxMiddleRight ++
+                           showContent l contentString ++
+                           showHorizontalLine l boxBottomLeft boxBottomRight
+          where disVarsString = case (null dvs) of
+                                 True -> " "
+                                 False -> showDisVars dvs "  "
+                -- ^ the "universe" of this box
+                contentString = showSubUnspecFunction (Map.toList (Map.filterWithKey (\k _ -> k `elem` dvs) f)) ++
+                                case (Map.lookup fromDV f) of
+                                  Just sf -> showFunc' (fromDV,sf) ll
+                                  Nothing -> ""
+                                -- ^ takes care of relation that needs to be embedded outside of the box
+                -- ^ the content of this box which recursively calls showSubBox
+                showSubUnspecFunction :: [(DisVar,SDRSFormula)] -> String
+                showSubUnspecFunction f' = foldr ((++) . (showSubUnspecFunc)) "" f'
+                showSubUnspecFunc :: (DisVar,SDRSFormula) -> String
+                showSubUnspecFunc t@(dv,_)
+                  | dv `Map.member` outscopesMap = showModifier (show dv ++ ":") (modifierPos' form) form
+                  | otherwise                    = showLinearFunc t ll
+                  where form = showSubBox (outscopesMap Map.! dv) dv
+                -- v for calculating the max length of the outer box
+                l = 4 + maximum (map length (lines disVarsString) `union` map length (lines contentString))
+        outscopesMap = Map.fromList $ iOutscopesMap s
+        -- ^ the outscopes map that governs the embedding structure of the boxes
 
 ---------------------------------------------------------------------------
 -- **  Showing the subparts of an SDRS
 ---------------------------------------------------------------------------
 
-showFunction :: [(DisVar,SDRSFormula)] -> DisVar -> String
-showFunction f ll = foldr ((++) . ((flip showFunc) ll)) "" f
+--showFunction :: [(DisVar,SDRSFormula)] -> DisVar -> String
+--showFunction f ll = foldr ((++) . ((flip showFunc) ll)) "" f
 
 ---------------------------------------------------------------------------
 -- **  Showing the subparts of an 'SDRS' in underspecified form, i.e., with
 -- the 'DRS's replaced by placeholders.
 ---------------------------------------------------------------------------
-showUnspecFunction :: [(DisVar,SDRSFormula)] -> DisVar -> String
-showUnspecFunction f ll = foldr ((++) . ((flip showUnspecFunc) ll)) "" f
+--showUnspecFunction :: [(DisVar,SDRSFormula)] -> DisVar -> String
+--showUnspecFunction f ll = foldr ((++) . ((flip showUnspecFunc) ll)) "" f
 
 ---------------------------------------------------------------------------
 -- | Helper function for showUnspecFunction
@@ -284,6 +301,16 @@ showUnspecFunc (dv,sf@(EDU _)) ll
   | otherwise     = showModifier (show dv ++ ":") (modifierPos' form) form
   where form = showUnspecFormula sf dv
 showUnspecFunc (dv,sf) ll = showFunc (dv,sf) ll
+
+---------------------------------------------------------------------------
+-- | Helper function
+---------------------------------------------------------------------------
+showLinearFunc :: (DisVar,SDRSFormula) -> DisVar -> String
+showLinearFunc (dv,sf@(EDU _)) ll
+  | ll == dv      = showModifier ("*" ++ show dv ++ "*" ++ ":") (modifierPos' form) form
+  | otherwise     = showModifier (show dv ++ ":") (modifierPos' form) form
+  where form = showLinearFormula sf dv
+showLinearFunc (dv,sf) ll = showFunc (dv,sf) ll
 
 ---------------------------------------------------------------------------
 -- | Helper function for showFunction and showUnspecFunction
@@ -334,9 +361,13 @@ showFormula (CDU (Relation r dv1 dv2)) = relName r ++ "(" ++ show dv1 ++ "," ++ 
 showFormula (CDU (And f1 f2))          = showConjunction (CDU f1) (CDU f2) 
 showFormula (CDU (Not f1))             = showNegation (CDU f1)
 
+showLinearFormula :: SDRSFormula -> DisVar -> String
+showLinearFormula (EDU d) _ = (showDRS $ DRS.Linear d) ++ "\n"
+showLinearFormula sf _      = showFormula sf
+
 showUnspecFormula :: SDRSFormula -> DisVar -> String
-showUnspecFormula (EDU _) dv          = "K" ++ show dv
-showUnspecFormula sf _ = showFormula sf
+showUnspecFormula (EDU _) dv = "K" ++ show dv -- ++ "\n" -- why does this do anything?
+showUnspecFormula sf _       = showFormula sf
 
 --modifierPos :: String -> Int
 --modifierPos' s
@@ -345,7 +376,7 @@ showUnspecFormula sf _ = showFormula sf
 
 modifierPos' :: String -> Int
 modifierPos' s
-  | (length (lines s)) > 1 = (length (lines s)) `div` 2
+  | (length (lines s)) > 2 = (length (lines s)) `div` 2
   | otherwise              = 0
 
 showConjunction :: SDRSFormula -> SDRSFormula -> String
