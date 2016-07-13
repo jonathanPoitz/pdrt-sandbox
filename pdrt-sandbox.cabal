@@ -57,7 +57,7 @@ library
                        Data.PDRS.Structure, Data.PDRS.Translate,
                        Data.PDRS.Variables, Data.SDRS, Data.SDRS.Binding,
                        Data.SDRS.Composition, Data.SDRS.DataType, 
-                       Data.SDRS.DiscourseGraph, Data.SDRS.LambdaCalculus,
+                       Data.SDRS.DiscourseStructure, Data.SDRS.LambdaCalculus,
                        Data.SDRS.Properties, Data.SDRS.Relation
                        Data.SDRS.Show, Data.SDRS.Input.String, Data.SDRS.Structure
   ghc-options:         -Wall -Werror 

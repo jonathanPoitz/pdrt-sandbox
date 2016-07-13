@@ -23,7 +23,7 @@ import Debug.Trace
 import Data.SDRS.Show()
 
 import Data.SDRS.DataType
-import Data.SDRS.DiscourseGraph
+import Data.SDRS.DiscourseStructure
 import Data.SDRS.Structure
 import Data.SDRS.LambdaCalculus
 import Data.SDRS.Relation

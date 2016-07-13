@@ -27,7 +27,7 @@ import Data.DRS.Show hiding (DRSNotation (..))
 import qualified Data.DRS.Show as DRS
 
 import Data.SDRS.DataType
-import Data.SDRS.DiscourseGraph
+import Data.SDRS.DiscourseStructure
 
 import Data.List (intercalate, union)
 import qualified Data.Map as Map

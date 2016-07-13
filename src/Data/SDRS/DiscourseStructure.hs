@@ -1,5 +1,5 @@
 {- |
-Module      :  Data.SDRS.DiscourseGraph
+Module      :  Data.SDRS.DiscourseStructure
 Copyright   :  (c) Jonathan Poitz, Harm Brouwer and Noortje Venhuizen
 License     :  Apache-2.0
 
@@ -7,10 +7,10 @@ Maintainer  :  jonathanpoitz@gmail.com, me@hbrouwer.eu, n.j.venhuizen@rug.nl
 Stability   :  provisional
 Portability :  portable
 
-SDRS discourse graph
+SDRS discourse structure
 -}
 
-module Data.SDRS.DiscourseGraph
+module Data.SDRS.DiscourseStructure
 ( 
   accessibleDRSs
 , accessibleDRSDVs
@@ -189,7 +189,9 @@ isOnRF s dv  = dv `elem` rf s
 -- one root node, only the first one in the list will be returned. 
 ---------------------------------------------------------------------------
 root :: SDRS -> DisVar
-root s = head $ [ d | d <- cduDVs, iOutscopesFrom d s == Nothing]
+root s 
+  | null cduDVs = head $ M.keys $ sdrsMap s -- if the SDRS is a singleton, then there are no outscopes, thus get the only label
+  | otherwise   = head $ [ d | d <- cduDVs, iOutscopesFrom d s == Nothing]
   where cduDVs = M.keys $ M.fromList $ iOutscopesMap s
 
 ---------------------------------------------------------------------------

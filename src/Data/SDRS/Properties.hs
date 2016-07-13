@@ -27,7 +27,7 @@ import Data.List
 
 import Data.SDRS.DataType
 import Data.SDRS.Structure
-import Data.SDRS.DiscourseGraph
+import Data.SDRS.DiscourseStructure
 import Data.SDRS.Binding
 
 import Data.DRS.Properties

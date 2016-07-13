@@ -28,7 +28,7 @@ import Data.DRS.Merge
 
 import Data.SDRS.DataType
 import Data.SDRS.Structure
-import Data.SDRS.DiscourseGraph
+import Data.SDRS.DiscourseStructure
 
 ---------------------------------------------------------------------------
 -- | Returns whether 'DRSRef' @r@ is bound in the 'SDRS' @s@ relative to its
