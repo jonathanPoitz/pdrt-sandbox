@@ -447,12 +447,58 @@ sdrsfullal07_wo5 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Ela
 
 
 ---------------------------------------------------------------------------
--- | Example sentences
+-- | Example sentences, Demo
 ---------------------------------------------------------------------------
+
+d1 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "John") [DRSRef "x"],
+                       Rel (DRSRel "Maria") [DRSRef "y"], 
+                       Rel (DRSRel "invite") [DRSRef "x", DRSRef "y"]]
+
+s1 = drsToSDRS d1
+
+d2 = DRS [] [Rel (DRSRel "make_pasta") [DRSRef "x"]]
+
+s2 = addDRS s1 d2 [(0, relationFromRelName "Elaboration")]
+
+rf2 = rf s2
+
+d3 = DRS [DRSRef "x"] [Rel (DRSRel "person") [DRSRef "x"],
+                       Rel (DRSRel "ring_bell") [DRSRef "x"]]
+
+s3a = addDRS s2 d3 [(0, relationFromRelName "Narration")]
+s3 = renameDisVars s3a [(0,1),(1,2),(2,0)]
+
+rf3 = rf s3
+
+accs3_3 = accessibleDRSs s3 3
+
+isXBoundIn2 = sdrsBoundRef (DRSRef "x") 1 s3
+
+freeRefs = sdrsFreeRefs s3
+
+isS3Proper = sdrsProperDRSs s3
+
+isS3Pure = sdrsPureDRSs s3
+
+--areDRSRefsUniqueS3 = sdrsUniqueDRSRefs s3
+
+--s3Unique = sdrsAlphaConvertDRS s3 3 [(DRSRef "x1",DRSRef "x2")]
+
+d4 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "man") [DRSRef "x"],
+                                   Rel (DRSRel "glass") [DRSRef "y"],
+                                   Rel (DRSRel "drop") [DRSRef "x", DRSRef "y"]]
+
+d5 = DRS [] [Rel (DRSRel "break") [(DRSRef "y")]]
+
+
+d45 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "man") [DRSRef "x"],
+                                   Rel (DRSRel "glass") [DRSRef "y"],
+                                   Rel (DRSRel "drop") [DRSRef "x", DRSRef "y"],
+                                   Rel (DRSRel "break") [DRSRef "y"]]
 
 -- If Mary sees a cat, she pets it. But if Peter sees it, he takes it home. 
 -- It started raining. After he finished his shower, Peter noticed.
--- 
+
 
 ---------------------------------------------------------------------------
 -- | Merges

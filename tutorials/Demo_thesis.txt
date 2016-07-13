@@ -1,14 +1,56 @@
-ex_to4 = sdrsfullal07_to4 
-EmbedBoxes ex_to4
+ex_11 = sdrsfullal07_to4 
+EmbedBoxes ex_11
 
-EmbedGraph ex_to4
-iOutscopesMap ex_to4
-iOutscopesFrom 7 ex_to4
-iOutscopesFrom 0 ex_to4
-outscopesFrom 0 ex_to4
-outscopesFrom 3 ex_to4
+EmbedGraph ex_11
+iOutscopesMap ex_11
+iOutscopesFrom 7 ex_11
+iOutscopesFrom 0 ex_11
+outscopesFrom 0 ex_11
+outscopesFrom 3 ex_11
 
 :t sdrs_because
 :t sdrs_because drs1
 :t sdrs_because drs1 drs2
 EmbedBoxes $ sdrs_because drs1 drs2
+
+----
+
+John had dinner with Maria. He made pasta. Then somebody rang the bell.
+
+let d1 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "John") [DRSRef "x"], Rel (DRSRel "Maria") [DRSRef "y"], Rel (DRSRel "invite") [DRSRef "x", DRSRef "y"]]
+
+let s1 = drsToSDRS d1
+
+let d2 = DRS [] [Rel (DRSRel "make_pasta") [DRSRef "x"]]
+
+let s2 = addDRS s1 d1 [(0, relationFromRelName "Elaboration")]
+
+rf s2
+
+let d3 = DRS [DRSRef "x"] [Rel (DRSRel "person") [DRSRef "x"], Rel (DRSRel "ring_bell") [DRSRef "x"]]
+
+s3 = addDRS s2 d3 [(0, relationFromRelName "Narration")]
+
+rf s3
+
+accessibleDRSs s3 3
+
+sdrsBoundRef (DRSRef "x") 2 s3
+
+sdrsFreeRefs s3
+
+sdrsProperDRSs s3
+
+sdrsPureDRSs s3
+
+sdrsUniqueDRSRefs s3
+
+sdrsAlphaConvertDRS s3 3 [(DRSRef "x1",DRSRef "x2")]
+
+---
+coll slides:
+
+let s1 = drsToSDRS _al07_1
+let s2 = addDRS s1 _al07_2 [(0, relationFromRelName "Elaboration")]
+let s3 = addDRS s2 _al07_5 [(1, relationFromRelName "Narration")]
+let exampleDRS2 = DRS [] [Imp (DRS [DRSRef "x",DRSRef "y"] [Rel (DRSRel "John") [DRSRef "x"],Rel (DRSRel "Maria") [DRSRef "y"],Rel (DRSRel "invite") [DRSRef "x",DRSRef "y"]]) (DRS [] [Rel (DRSRel "make_pasta") [DRSRef "x"]])]
