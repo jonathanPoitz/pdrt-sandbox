@@ -15,6 +15,7 @@ module Data.SDRS.DiscourseStructure
   accessibleDRSs
 , accessibleDRSDVs
 , rf
+, rfSimple
 , inferLast
 , isOnRF
 , iOutscopesMap
@@ -24,10 +25,6 @@ module Data.SDRS.DiscourseStructure
 , isRoot
 , hasParents
 , iOutscopesFrom
-, subordLefts
-, subordRights
-, coordLefts
-, coordRights
 ) where
 
 import qualified Data.Map as M
@@ -86,13 +83,28 @@ rf s@(SDRS _ l)
         lastRelStart = head $ subordLefts l s
         walkEdges :: Maybe DisVar -> [DisVar]
         walkEdges Nothing   = []
-        walkEdges (Just dv) = parents `union` walkEdges ioutscope
-          where parents = ss ++ ioutscopeList
-                ioutscope = iOutscopesFrom dv s
+        walkEdges (Just dv) = sls `union` ioutscopeList `union` walkEdges ioutscope
+          where ioutscope = iOutscopesFrom dv s
                 ioutscopeList = case ioutscope of
                                   Nothing -> []
                                   Just n  -> [n]
-                ss = subordLefts dv s
+                sls = subordLefts dv s
+
+
+---------------------------------------------------------------------------
+-- | Simple version of rf, used in the thesis.
+---------------------------------------------------------------------------
+rfSimple :: SDRS -> [DisVar]
+rfSimple s@(SDRS _ l) = l : walkEdges (Just l)
+  where walkEdges :: Maybe DisVar -> [DisVar]
+        walkEdges Nothing   = []
+        walkEdges (Just dv) = sls `union` ioutscopeList `union` walkEdges ioutscope
+          where ioutscope = iOutscopesFrom dv s
+                ioutscopeList = case ioutscope of
+                                  Nothing -> []
+                                  Just n  -> [n]
+                sls = subordLefts dv s
+
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS', returns a map from 'DisVar's to 'DisVar's that it outscopes
@@ -127,42 +139,6 @@ outscopesFrom dv s = outscope dv
                           Nothing   -> []
                           Just dv'' -> dv'' : outscope dv''
           where newOutscope = iOutscopesFrom dv' s
-
----------------------------------------------------------------------------
--- | Given an 'SDRS' and a 'DisVar' @dv@, returns all 'DisVar's that stand in a
--- subordinating relation with @dv@ as its right node.
----------------------------------------------------------------------------
-subordLefts :: DisVar -> SDRS -> [DisVar]
-subordLefts dv s = ss
-  where rs = map snd $ relations s
-        ss = [ dv1 | CDU (Relation rel dv1 dv2) <- rs, isSub rel, dv2 == dv]
-
----------------------------------------------------------------------------
--- | Given an 'SDRS' and a 'DisVar' @dv@, returns all 'DisVar's that stand in a
--- subordinating relation with @dv@ as its left node.
----------------------------------------------------------------------------
-subordRights :: DisVar -> SDRS -> [DisVar]
-subordRights dv s = ss
-  where rs = map snd $ relations s
-        ss = [ dv2 | CDU (Relation rel dv1 dv2) <- rs, isSub rel, dv1 == dv]
-
----------------------------------------------------------------------------
--- | Given an 'SDRS' and a 'DisVar' @dv@, returns all 'DisVar's that stand in a
--- coordinating relation with @dv@ as its right node.
----------------------------------------------------------------------------
-coordLefts :: DisVar -> SDRS -> [DisVar]
-coordLefts dv s = ss
-  where rs = map snd $ relations s
-        ss = [ dv1 | CDU (Relation rel dv1 dv2) <- rs, isCrd rel, dv2 == dv]
-
----------------------------------------------------------------------------
--- | Given an 'SDRS' and a 'DisVar' @dv@, returns all 'DisVar's that stand in a
--- coordinating relation with @dv@ as its left node.
----------------------------------------------------------------------------
-coordRights :: DisVar -> SDRS -> [DisVar]
-coordRights dv s = ss
-  where rs = map snd $ relations s
-        ss = [ dv2 | CDU (Relation rel dv1 dv2) <- rs, isCrd rel, dv1 == dv]
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' @s@, infers the last node from the discourse structure
