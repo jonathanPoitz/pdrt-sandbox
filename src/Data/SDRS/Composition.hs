@@ -19,7 +19,7 @@ module Data.SDRS.Composition
 ) where
 
 import qualified Data.Map as M
-import Debug.Trace
+--import Debug.Trace
 import Data.SDRS.Show()
 
 import Data.SDRS.DataType
@@ -98,23 +98,23 @@ updateRelations s (t:rest) newNode newOutsc = updateRelations (updateRelation s 
 ---------------------------------------------------------------------------
 updateRelation :: SDRS -> (DisVar,SDRSRelation) -> DisVar -> DisVar -> SDRS
 updateRelation s (dv,rel) newNode newOutsc
-  | isOnRF s dv && isRoot s dv             = trace (show "root") sdrsWithRel
+  | isOnRF s dv && isRoot s dv             = sdrsWithRel
   -- ^ the target node is the root node of the SDRS
-  | isOnRF s dv && (not $ hasParents s dv) = trace (show "below root") sdrsWithNewConj
+  | isOnRF s dv && (not $ hasParents s dv) = sdrsWithNewConj
   -- ^ the target node is not the root node of the SDRS, but it is right underneath it (does not have incoming edges)
   | isOnRF s dv && isCrd rel &&
-    isTopic rel                            = trace (show "not root, topic") sdrsWithRel
+    isTopic rel                            = sdrsWithRel
   -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint
-  | isOnRF s dv && isCrd rel               = trace (show "not root, normal crd") sdrsWithNewConj
+  | isOnRF s dv && isCrd rel               = sdrsWithNewConj
   -- ^ the target node is not the root node and the relation is coordinating, but doesn't impose a topic constraint
-  | isOnRF s dv                            = trace (show "not root, sub") sdrsWithNewConj
+  | isOnRF s dv                            = sdrsWithNewConj
   -- ^ the target node is not the root node and the relation is subordinating
-  | otherwise                              = trace (show "neither") s
+  | otherwise                              = s
   -- ^ skipping this relation because the target node is not on the RF of the SDRS
-  where sdrsWithRightArgUpdate = trace "update" updateRightArgs s dv newOutsc -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
-        swapRels = trace "swapRels" calcLeftArgRels s dv
-        sdrsWithRemovedSwapRels = trace "removeRels" removeRels sdrsWithRightArgUpdate swapRels -- 3. 
-        sdrsWithSwapRels = trace "addswapRels" addCDUs sdrsWithRemovedSwapRels newOutsc swapRels -- 4. 
-        sdrsWithRel = trace "addRel" addCDU sdrsWithSwapRels newOutsc (Relation rel dv newNode) -- 5. step - new relation
-        sdrsWithNewConj = trace "addConj" addCDU s (lookupKey s dv) (Relation rel dv newNode) -- FIX order?
+  where sdrsWithRightArgUpdate = updateRightArgs s dv newOutsc -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
+        swapRels = calcLeftArgRels s dv
+        sdrsWithRemovedSwapRels = removeRels sdrsWithRightArgUpdate swapRels -- 3. 
+        sdrsWithSwapRels = addCDUs sdrsWithRemovedSwapRels newOutsc swapRels -- 4. 
+        sdrsWithRel = addCDU sdrsWithSwapRels newOutsc (Relation rel dv newNode) -- 5. step - new relation
+        sdrsWithNewConj = addCDU s (lookupKey s dv) (Relation rel dv newNode) -- FIX order?
 

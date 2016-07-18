@@ -18,34 +18,40 @@ EmbedBoxes $ sdrs_because drs1 drs2
 John had dinner with Maria. He made pasta. Then somebody rang the bell.
 
 let d1 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "John") [DRSRef "x"], Rel (DRSRel "Maria") [DRSRef "y"], Rel (DRSRel "invite") [DRSRef "x", DRSRef "y"]]
-
-let s1 = drsToSDRS d1
-
-let d2 = DRS [] [Rel (DRSRel "make_pasta") [DRSRef "x"]]
-
-let s2 = addDRS s1 d1 [(0, relationFromRelName "Elaboration")]
-
+d1
+let s1 = renameDisVars (drsToSDRS d1) [(0,1)]
+s1
+let d2 = DRS [DRSRef "x1"] [Rel (DRSRel "=") [DRSRef "x1", DRSRef "x"], Rel (DRSRel "make_pasta") [DRSRef "x"]]
+d2
+let s2 = addDRS s1 d2 [(1, relationFromRelName "Elaboration")]
+s2
 rf s2
-
 let d3 = DRS [DRSRef "x"] [Rel (DRSRel "person") [DRSRef "x"], Rel (DRSRel "ring_bell") [DRSRef "x"]]
-
-s3 = addDRS s2 d3 [(0, relationFromRelName "Narration")]
-
+d3
+let s3 = addDRS s2 d3 [(1, relationFromRelName "Narration")]
+s3
 rf s3
-
 accessibleDRSs s3 3
-
-sdrsBoundRef (DRSRef "x") 2 s3
-
+sdrsBoundRef (DRSRef "x") 1 s3
 sdrsFreeRefs s3
-
 sdrsProperDRSs s3
-
 sdrsPureDRSs s3
-
 sdrsUniqueDRSRefs s3
+let s3b = sdrsAlphaConvertDRS s3 3 [(DRSRef "x1",DRSRef "x2")]
+s3b
+sdrsUniqueDRSRefs s3b
+---
+let sm1 = drsToSDRS d1
+sm1
+let sm1a = drsToSDRS d2
+sm1a
+let d2alt = DRS [] [Rel (DRSRel "heat_up_pizza") [DRSRef "x"]]
+d2alt
+let sm1b = addDRS sm1a d2alt [(0, relationFromRelName "Alternation")]
+sm1b
+let sm2 = addSDRS sm1 sm1b [(0, relationFromRelName "Elaboration")]
+sm2
 
-sdrsAlphaConvertDRS s3 3 [(DRSRef "x1",DRSRef "x2")]
 
 ---
 coll slides:

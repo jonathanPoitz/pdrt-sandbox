@@ -24,8 +24,12 @@ drs3 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "man") [(DRSRef "x")],
                                      Rel (DRSRel "glass") [(DRSRef "y")],
                                      Rel (DRSRel "drop") [(DRSRef "x"), (DRSRef "y")]]
 
-drs4 = DRS [DRSRef "z"] [Rel (DRSRel "=") [(DRSRef "z"), (DRSRef "y")], 
-                         Rel (DRSRel "break") [(DRSRef "z")]]
+drs4 = DRS [] [Rel (DRSRel "break") [(DRSRef "y")]]
+
+drs5 = DRS [DRSRef "x"] [Rel (DRSRel "John") [(DRSRef "x")],
+                                     Rel (DRSRel "make_dinner") [(DRSRef "x")]]
+
+drs6 = DRS [] [Rel (DRSRel "make_pasta") [(DRSRef "x")]]
 
 drs3b = DRS [DRSRef "x", DRSRef "y", DRSRef "x1", DRSRef "y1"] [Rel (DRSRel "man") [(DRSRef "x")],
                                      Rel (DRSRel "glass") [(DRSRef "y")],
@@ -34,8 +38,8 @@ drs3b = DRS [DRSRef "x", DRSRef "y", DRSRef "x1", DRSRef "y1"] [Rel (DRSRel "man
 drs4b = DRS [DRSRef "z", DRSRef "z1"] [Rel (DRSRel "=") [(DRSRef "z"), (DRSRef "y")], 
                          Rel (DRSRel "break") [(DRSRef "z")]]
 
-drs5 = DRS [DRSRef "x"] [Rel (DRSRel "Fred") [(DRSRef "x")], 
-                         Rel (DRSRel "has_bad_mood") [(DRSRef "x")]]
+--drs5 = DRS [DRSRef "x"] [Rel (DRSRel "Fred") [(DRSRef "x")], 
+                         --Rel (DRSRel "has_bad_mood") [(DRSRef "x")]]
 
 -- | empty DRS
 exampleDRS1 = DRS [] []
@@ -52,30 +56,24 @@ _al07_1 = DRS [DRSRef "x", DRSRef "y"]
                 ,Rel (DRSRel "great") [DRSRef "y"]
                 ,Rel (DRSRel "have") [DRSRef "x", DRSRef "y"]]
 
-_al07_2 = DRS [DRSRef "x1", DRSRef "z"]
-                [Rel (DRSRel "=") [DRSRef "x1", DRSRef "x"]
-                ,Rel (DRSRel "meal") [DRSRef "z"]
+_al07_2 = DRS [DRSRef "z"]
+                [Rel (DRSRel "meal") [DRSRef "z"]
                 ,Rel (DRSRel "great") [DRSRef "z"]
-                ,Rel (DRSRel "have") [DRSRef "x1", DRSRef "z"]]
+                ,Rel (DRSRel "have") [DRSRef "x", DRSRef "z"]]
 
-_al07_3 = DRS [DRSRef "x2", DRSRef "r"]
-                [Rel (DRSRel "=") [DRSRef "x2", DRSRef "x"]
-                ,Rel (DRSRel "salmon") [DRSRef "r"]
-                ,Rel (DRSRel "eat") [DRSRef "x2", DRSRef "r"]]
+_al07_3 = DRS [DRSRef "r"]
+                [Rel (DRSRel "salmon") [DRSRef "r"]
+                ,Rel (DRSRel "eat") [DRSRef "x", DRSRef "r"]]
 
-_al07_4 = DRS [DRSRef "x3", DRSRef "s"]
-                [Rel (DRSRel "=") [DRSRef "x3", DRSRef "x"]
-                ,Rel (DRSRel "cheese") [DRSRef "s"]
-                ,Rel (DRSRel "devour") [DRSRef "x3", DRSRef "s"]]
+_al07_4 = DRS [DRSRef "s"]
+                [Rel (DRSRel "cheese") [DRSRef "s"]
+                ,Rel (DRSRel "devour") [DRSRef "x", DRSRef "s"]]
 
-_al07_5 = DRS [DRSRef "x4", DRSRef "t"]
-                [Rel (DRSRel "=") [DRSRef "x4", DRSRef "x"]
-                ,Rel (DRSRel "dancing_competition") [DRSRef "t"]
-                ,Rel (DRSRel "win") [DRSRef "x4", DRSRef "t"]]
+_al07_5 = DRS [DRSRef "t"]
+                [Rel (DRSRel "dancing_competition") [DRSRef "t"]
+                ,Rel (DRSRel "win") [DRSRef "x", DRSRef "t"]]
 
-_al07_6 = DRS [DRSRef "x5"]
-                [Rel (DRSRel "=") [DRSRef "x5", DRSRef "x"]
-                ,Rel (DRSRel "dance_well") [DRSRef "x5"]]
+_al07_6 = DRS [] [Rel (DRSRel "dance_well") [DRSRef "x5"]]
 
 
 ------
@@ -163,13 +161,17 @@ recsf4 = CDU $ Not (Not (Not $ Relation (relationFromRelName "Explanation") 2 4)
 ---------------------------------------------------------------------------
 -- | SDRSs
 ---------------------------------------------------------------------------
-sdrsmerge1 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Result") 1 2)),
-                                    (1, EDU drs3),
-                                    (2, EDU drs4)]) 2
+exSDRS1 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 2)),
+                                    (1, EDU drs0),
+                                    (2, EDU drs0)]) 2
 
-sdrsmerge2 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Result") 1 2)),
-                                    (1, EDU drs3b),
-                                    (2, EDU drs4b)]) 2
+exSDRS2 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Elaboration") 1 2)
+                                            (Relation (relationFromRelName "Result") 2 3))),
+                                    (1, EDU drs0),
+                                    (2, EDU drs0),
+                                    (3, EDU drs0)]) 3
+
+exSDRS3 = addDRS exSDRS1 drs0 [(2, relationFromRelName "Narration")]
 
 sdrs1 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Result") 1 2)),
                                     (1, EDU drs3),
@@ -221,8 +223,8 @@ sdrsdanlos4 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Commenta
                                             (4, EDU drs0)]) 4
 
 sdrsfullal07_to2 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration") 1 2)),
-                                (1, EDU _al07_1),
-                                (2, EDU _al07_2)]) 2
+                                     (1, EDU _al07_1),
+                                     (2, EDU _al07_2)]) 2
 
 sdrsfullal07_to3 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Elaboration") 1 2) (Relation (relationFromRelName "Elaboration") 2 3))),
                                 (1, EDU _al07_1),
@@ -450,23 +452,25 @@ sdrsfullal07_wo5 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Ela
 -- | Example sentences, Demo
 ---------------------------------------------------------------------------
 
-d1 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "John") [DRSRef "x"],
-                       Rel (DRSRel "Maria") [DRSRef "y"], 
-                       Rel (DRSRel "invite") [DRSRef "x", DRSRef "y"]]
+d1 = DRS [DRSRef "x"] [Rel (DRSRel "John") [DRSRef "x"],
+                       Rel (DRSRel "have_dinner") [DRSRef "x"]]
 
-s1 = drsToSDRS d1
+s1 = renameDisVars (drsToSDRS d1) [(0,1)]
 
-d2 = DRS [] [Rel (DRSRel "make_pasta") [DRSRef "x"]]
+d2 = DRS [] [Rel (DRSRel "eat_pasta") [DRSRef "x"]]
+d2a = DRS [] [Rel (DRSRel "feel_good") [DRSRef "x"]]
+d2b = DRS [] [Rel (DRSRel "have_cramps") [DRSRef "x"]]
 
-s2 = addDRS s1 d2 [(0, relationFromRelName "Elaboration")]
+s2' = addDRS s1 d2 [(1, relationFromRelName "Elaboration")]
+s2 = renameDisVars s2' [(3,0)]
 
 rf2 = rf s2
 
 d3 = DRS [DRSRef "x"] [Rel (DRSRel "person") [DRSRef "x"],
                        Rel (DRSRel "ring_bell") [DRSRef "x"]]
 
-s3a = addDRS s2 d3 [(0, relationFromRelName "Narration")]
-s3 = renameDisVars s3a [(0,1),(1,2),(2,0)]
+s3 = addDRS s2 d3 [(1, relationFromRelName "Narration")]
+--s3 = renameDisVars s3' [(4,0),(1,2),(2,0)]
 
 rf3 = rf s3
 
@@ -496,9 +500,28 @@ d45 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "man") [DRSRef "x"],
                                    Rel (DRSRel "drop") [DRSRef "x", DRSRef "y"],
                                    Rel (DRSRel "break") [DRSRef "y"]]
 
--- If Mary sees a cat, she pets it. But if Peter sees it, he takes it home. 
--- It started raining. After he finished his shower, Peter noticed.
+exampleSDRS1 = SDRS (M.fromList [
+  (0, CDU (Relation (relationFromRelName "Elaboration") 1 2)),
+  (1, EDU d1),
+  (2, EDU d2)]) 2
 
+exampleSDRS1u x = SDRS (M.fromList [
+  (0, CDU (Relation (relationFromRelName "Elaboration") 1 2)),
+  (1, EDU x),
+  (2, EDU d2)]) 2
+
+---------------------------------------------------------------------------
+-- | * addSDRS
+---------------------------------------------------------------------------
+
+--[1 John has dinner.]  [2 The next day, he either feels good]  [3 or he has stomach cramps.]
+
+sm1' = drsToSDRS d1
+sm1 = renameDisVars sm1' [(0,1)]
+sm1a = drsToSDRS d2a
+sm1b' = addDRS sm1a d2b [(0, relationFromRelName "Alternation")]
+sm1b = renameDisVars sm1b' [(2,1),(0,2),(1,3)]
+sm2 = addSDRS sm1 sm1b [(1, relationFromRelName "Result")]
 
 ---------------------------------------------------------------------------
 -- | Merges

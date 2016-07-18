@@ -35,7 +35,7 @@ module Data.SDRS.Structure
 
 import Data.SDRS.DataType
 import qualified Data.Map as M
-import Debug.Trace
+--import Debug.Trace
 
 ---------------------------------------------------------------------------
 -- * Exported
@@ -189,6 +189,7 @@ removeRelFromSF _ sf = sf
 ---------------------------------------------------------------------------
 -- | Calculates all relations within an 'SDRS' @s@ that have the 'DisVar' @old@
 -- as their left argument.
+-- TODO use relation traversal functions here?
 ---------------------------------------------------------------------------
 calcLeftArgRels :: SDRS -> DisVar -> [CDU]
 calcLeftArgRels (SDRS m _) old = reverse $ M.foldl putSwapRel [] m -- needs to be reversed in order to get right ordering in conjunction later
@@ -220,7 +221,7 @@ calcRightArgRels (SDRS m _) old = reverse $ M.foldl putSwapRel [] m -- needs to 
 ---------------------------------------------------------------------------
 addCDUs :: SDRS -> DisVar -> [CDU] -> SDRS
 addCDUs s _ []           = s
-addCDUs s new (cdu:rest)  = addCDUs (addCDU s new cdu) new rest
+addCDUs s new (cdu:rest) = addCDUs (addCDU s new cdu) new rest
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' @s@, adds a CDU @cdu@ as a new conjunct to an
@@ -231,8 +232,8 @@ addCDUs s new (cdu:rest)  = addCDUs (addCDU s new cdu) new rest
 addCDU :: SDRS -> DisVar -> CDU -> SDRS
 addCDU (SDRS m l) new cdu 
   | new `M.member` m = SDRS (M.insert new newSF m) l
-  | otherwise      = SDRS (M.insert new (CDU cdu) m) l
-  where newSF = trace "here?" CDU $ And (extractCDU $ m M.! new) cdu
+  | otherwise        = SDRS (M.insert new (CDU cdu) m) l
+  where newSF = CDU $ And (extractCDU $ m M.! new) cdu
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' @s@, a 'DisVar' @new@ and an 'SDRSFormula' @edu@, adds
@@ -250,13 +251,13 @@ updateRightArgs :: SDRS -> DisVar -> DisVar -> SDRS
 updateRightArgs (SDRS m l) old new = SDRS (M.map updateR m) l
   where updateR :: SDRSFormula -> SDRSFormula
         updateR edu@(EDU {}) = edu
-        updateR (CDU cdu) = CDU $ updateCDU cdu
+        updateR (CDU cdu)    = CDU $ updateCDU cdu
         updateCDU :: CDU -> CDU
         updateCDU r@(Relation rel dv1 dv2)
-          | dv2 == old           = Relation rel dv1 new
-          | otherwise            = r
-        updateCDU (And sf1 sf2)    = And (updateCDU sf1) (updateCDU sf2)
-        updateCDU (Not sf1)        = Not (updateCDU sf1)
+          | dv2 == old = Relation rel dv1 new
+          | otherwise = r
+        updateCDU (And sf1 sf2) = And (updateCDU sf1) (updateCDU sf2)
+        updateCDU (Not sf1)     = Not (updateCDU sf1)
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' @s@ and the unique description of one of its embedded 
