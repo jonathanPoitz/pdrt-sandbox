@@ -102,8 +102,7 @@ updateRelation s (dv,rel) newNode newOutsc
   -- ^ the target node is the root node of the SDRS
   | isOnRF s dv && (not $ hasParents s dv) = sdrsWithNewConj
   -- ^ the target node is not the root node of the SDRS, but it is right underneath it (does not have incoming edges)
-  | isOnRF s dv && isCrd rel &&
-    isTopic rel                            = sdrsWithRel
+  | isOnRF s dv && isTopic rel             = sdrsWithRel
   -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint
   | isOnRF s dv && isCrd rel               = sdrsWithNewConj
   -- ^ the target node is not the root node and the relation is coordinating, but doesn't impose a topic constraint

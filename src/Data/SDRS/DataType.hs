@@ -145,11 +145,12 @@ type RelName = String
 -- | relation types
 ---------------------------------------------------------------------------
 relations :: [SDRSRelation]
+--                         label reltype isStruc isTopic          
 relations = [SDRSRelation "elaboration" Sub False False,
              SDRSRelation "entity_elaboration" Sub False False,
              SDRSRelation "comment" Sub False False,
              SDRSRelation "flashback" Sub False False,
-             SDRSRelation "background" Sub False False,
+             SDRSRelation "background" Sub False True,
              SDRSRelation "goal" Sub False False,
              SDRSRelation "explanation" Sub False False,
              SDRSRelation "attribution" Sub False False,
