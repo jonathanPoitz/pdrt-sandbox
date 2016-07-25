@@ -16,15 +16,31 @@ module Data.SDRS.Input.String
 ) where
 
 import Data.Char (isSpace, isDigit, isAlpha)
-import Data.SDRS.DataType
-import Data.DRS.Input.String
 import qualified Data.Map as M
 
+import Data.DRS.Input.String
+
+import Data.SDRS.DataType
+
+---------------------------------------------------------------------------
+-- ** String to SDRS conversion
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+-- | Transforms a 'String' representation of an SDRS into a 'DRS'.
+---------------------------------------------------------------------------
 stringToSDRS :: String -> SDRS
 stringToSDRS s
   | felicitousBracketing s  = parseSDRS (filter (not . isSpace) s)
   | otherwise               = error "infelicitous bracketing"
 
+---------------------------------------------------------------------------
+-- ** Auxiliary functions for string parsing
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+-- | Converts a 'String' into an 'SDRS'.
+---------------------------------------------------------------------------
 parseSDRS :: String -> SDRS
 parseSDRS [] = SDRS M.empty $ -1
 parseSDRS s@(b:_)
@@ -33,7 +49,7 @@ parseSDRS s@(b:_)
   where s' = dropOuterBrackets s
 
 ---------------------------------------------------------------------------
--- | parses map of an 'SDRS'.
+-- | Parses the map of an 'SDRS'.
 ---------------------------------------------------------------------------
 parseMap :: String -> M.Map DisVar SDRSFormula
 parseMap [] = M.empty
@@ -62,7 +78,7 @@ parseMap s@(b:_)
                   where splitRel = splitOn ',' s''
 
 ---------------------------------------------------------------------------
--- | parses last node of an 'SDRS'.
+-- | Parses the last node of an 'SDRS'.
 ---------------------------------------------------------------------------
 parseLast :: String -> DisVar
 parseLast [] = -1 -- FIX

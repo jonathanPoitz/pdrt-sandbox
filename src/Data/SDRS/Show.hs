@@ -187,10 +187,9 @@ showSDRSBox s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good dummy val
                                  False -> showDisVars dvs "  "
                 -- ^ the "universe" of this box
                 contentString = showSubFunction (Map.toList (Map.filterWithKey (\k _ -> k `elem` dvs) f)) ++
-                                case (Map.lookup fromDV f) of
+                                case (Map.lookup fromDV f) of -- takes care of relation that needs to be embedded outside of the box
                                   Just sf -> showFunc' (fromDV,sf) ll
                                   Nothing -> ""
-                                -- ^ takes care of relation that needs to be embedded outside of the box
                 -- ^ the content of this box which recursively calls showSubBox
                 showSubFunction :: [(DisVar,SDRSFormula)] -> String
                 showSubFunction f' = foldr ((++) . (showSubFunc)) "" f'
@@ -224,10 +223,9 @@ showSDRSUnderspec s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good dum
                                  False -> showDisVars dvs "  "
                 -- ^ the "universe" of this box
                 contentString = showSubUnspecFunction (Map.toList (Map.filterWithKey (\k _ -> k `elem` dvs) f)) ++
-                                case (Map.lookup fromDV f) of
+                                case (Map.lookup fromDV f) of -- takes care of relation that needs to be embedded outside of the box
                                   Just sf -> showFunc' (fromDV,sf) ll
                                   Nothing -> ""
-                                -- ^ takes care of relation that needs to be embedded outside of the box
                 -- ^ the content of this box which recursively calls showSubBox
                 showSubUnspecFunction :: [(DisVar,SDRSFormula)] -> String
                 showSubUnspecFunction f' = foldr ((++) . (showSubUnspecFunc)) "" f'
@@ -261,10 +259,9 @@ showSDRSLinear s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good dummy 
                                  False -> showDisVars dvs "  "
                 -- ^ the "universe" of this box
                 contentString = showSubUnspecFunction (Map.toList (Map.filterWithKey (\k _ -> k `elem` dvs) f)) ++
-                                case (Map.lookup fromDV f) of
+                                case (Map.lookup fromDV f) of -- takes care of relation that needs to be embedded outside of the box
                                   Just sf -> showFunc' (fromDV,sf) ll
                                   Nothing -> ""
-                                -- ^ takes care of relation that needs to be embedded outside of the box
                 -- ^ the content of this box which recursively calls showSubBox
                 showSubUnspecFunction :: [(DisVar,SDRSFormula)] -> String
                 showSubUnspecFunction f' = foldr ((++) . (showSubUnspecFunc)) "" f'

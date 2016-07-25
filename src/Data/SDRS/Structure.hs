@@ -33,9 +33,10 @@ module Data.SDRS.Structure
 , negateRelation
 ) where
 
-import Data.SDRS.DataType
 import qualified Data.Map as M
 --import Debug.Trace
+
+import Data.SDRS.DataType
 
 ---------------------------------------------------------------------------
 -- * Exported

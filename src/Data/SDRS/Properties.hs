@@ -25,15 +25,15 @@ import qualified Data.Map as M
 import Data.List
 --import Debug.Trace
 
-import Data.SDRS.DataType
-import Data.SDRS.Structure
-import Data.SDRS.DiscourseStructure
-import Data.SDRS.Binding
-
 import Data.DRS.Properties
 import Data.DRS.Merge
 import Data.DRS.Structure
 --import Data.DRS.Show
+
+import Data.SDRS.DataType
+import Data.SDRS.Structure
+import Data.SDRS.DiscourseStructure
+import Data.SDRS.Binding
 
 ---------------------------------------------------------------------------
 -- | Checks, given 'SDRS' @s@, whether each of its embedded 'DRS's @d@ is /proper/, where:

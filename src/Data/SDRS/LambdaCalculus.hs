@@ -23,12 +23,12 @@ module Data.SDRS.LambdaCalculus
 import Data.List (union, insert, intersect)
 import qualified Data.Map as M
 
-import Data.SDRS.DataType
-import Data.SDRS.DiscourseStructure
-
 import Data.DRS.LambdaCalculus (renameSubDRS)
 import Data.DRS.Variables (increase)
 import Data.DRS.Merge ((<<+>>))
+
+import Data.SDRS.DataType
+import Data.SDRS.DiscourseStructure
 
 ---------------------------------------------------------------------------
 -- * Exported

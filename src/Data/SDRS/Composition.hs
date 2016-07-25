@@ -20,15 +20,15 @@ module Data.SDRS.Composition
 
 import qualified Data.Map as M
 --import Debug.Trace
-import Data.SDRS.Show()
 
+import Data.DRS.Structure
+
+--import Data.SDRS.Show()
 import Data.SDRS.DataType
 import Data.SDRS.DiscourseStructure
 import Data.SDRS.Structure
 import Data.SDRS.LambdaCalculus
 import Data.SDRS.Relation
-
-import Data.DRS.Structure
 
 ---------------------------------------------------------------------------
 -- | Builds a new 'SDRS' from a single 'DRS'.

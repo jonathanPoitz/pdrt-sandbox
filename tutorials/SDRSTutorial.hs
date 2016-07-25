@@ -56,6 +56,10 @@ _al07_1 = DRS [DRSRef "x", DRSRef "y"]
                 ,Rel (DRSRel "great") [DRSRef "y"]
                 ,Rel (DRSRel "have") [DRSRef "x", DRSRef "y"]]
 
+_al07_1b = DRS [DRSRef "x"]
+                [Rel (DRSRel "John") [DRSRef "x"]
+                ,Rel (DRSRel "has_great_eve") [DRSRef "x"]]
+
 _al07_2 = DRS [DRSRef "z"]
                 [Rel (DRSRel "meal") [DRSRef "z"]
                 ,Rel (DRSRel "great") [DRSRef "z"]
@@ -166,7 +170,7 @@ exSDRS1 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Elaboration"
                                     (2, EDU drs0)]) 2
 
 exSDRS2 = SDRS (M.fromList [(0, CDU (And (Relation (relationFromRelName "Elaboration") 1 2)
-                                            (Relation (relationFromRelName "Result") 2 3))),
+                                            (Relation (relationFromRelName "Elaboration") 2 3))),
                                     (1, EDU drs0),
                                     (2, EDU drs0),
                                     (3, EDU drs0)]) 3
@@ -370,11 +374,15 @@ sdrs_plaintiff = SDRS (M.fromList [(0, CDU (Not (Relation (relationFromRelName "
                                 (5, CDU (Relation (relationFromRelName "Topic") 0 4)),
                                 (7, CDU (Relation (relationFromRelName "Contrast") 4 6))]) 3
 
-sdrsRFExtBefore = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Explanation") 5 3)),
-                                    (5, CDU (Relation (relationFromRelName "Parallel") 1 2)),
+sdrsRFExtBefore = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Explanation") 4 3)),
+                                    (4, CDU (Relation (relationFromRelName "Parallel") 1 2)),
                                     (1, EDU drs0),
                                     (2, EDU drs0),
                                     (3, EDU drs0)]) 3
+
+sdrsRFExtBeforeBefore = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Parallel") 1 2)),
+                                    (1, EDU drs0),
+                                    (2, EDU drs0)]) 2
 
 ---------------------------------------------------------------------------
 -- | malformed SDRSs
@@ -455,6 +463,8 @@ sdrsfullal07_wo5 = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName "Ela
 d1 = DRS [DRSRef "x"] [Rel (DRSRel "John") [DRSRef "x"],
                        Rel (DRSRel "have_dinner") [DRSRef "x"]]
 
+d1b = DRS [] [Rel (DRSRel "have_dinner") [DRSRef "x"]]
+
 s1 = renameDisVars (drsToSDRS d1) [(0,1)]
 
 d2 = DRS [] [Rel (DRSRel "eat_pasta") [DRSRef "x"]]
@@ -514,14 +524,17 @@ exampleSDRS1u x = SDRS (M.fromList [
 -- | * addSDRS
 ---------------------------------------------------------------------------
 
---[1 John has dinner.]  [2 The next day, he either feels good]  [3 or he has stomach cramps.]
+--[1 John has a great evening.] [2 He has fish for dinner.] 
+-- [3 The next day, he either feels good]  [4 or he has stomach cramps.]
 
-sm1' = drsToSDRS d1
-sm1 = renameDisVars sm1' [(0,1)]
+sm1'' = drsToSDRS _al07_1b
+sm1' = addDRS sm1'' d1b [(0, relationFromRelName "Elaboration")]
+sm1 = renameDisVars sm1' [(2,0),(0,1),(1,2)]
 sm1a = drsToSDRS d2a
 sm1b' = addDRS sm1a d2b [(0, relationFromRelName "Alternation")]
 sm1b = renameDisVars sm1b' [(2,1),(0,2),(1,3)]
-sm2 = addSDRS sm1 sm1b [(1, relationFromRelName "Result")]
+sm2' = addSDRS sm1 sm1b [(1, relationFromRelName "Result")]
+sm2 = renameDisVars sm2' [(3,5),(4,3),(5,4)]
 
 ---------------------------------------------------------------------------
 -- | Merges
