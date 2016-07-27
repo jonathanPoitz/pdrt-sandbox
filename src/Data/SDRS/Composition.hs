@@ -115,5 +115,5 @@ updateRelation s (dv,rel) newNode newOutsc
         sdrsWithRemovedSwapRels = removeRels sdrsWithRightArgUpdate swapRels -- 3. 
         sdrsWithSwapRels = addCDUs sdrsWithRemovedSwapRels newOutsc swapRels -- 4. 
         sdrsWithRel = addCDU sdrsWithSwapRels newOutsc (Relation rel dv newNode) -- 5. step - new relation
-        sdrsWithNewConj = addCDU s (lookupKey s dv) (Relation rel dv newNode) -- FIX order?
+        sdrsWithNewConj = addCDU s (lookupKey s dv) (Relation rel dv newNode)
 

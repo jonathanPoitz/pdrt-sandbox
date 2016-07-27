@@ -31,6 +31,8 @@ module Data.SDRS.Structure
 , addCDUs
 , addCDU
 , negateRelation
+, renameDisVars
+--, normalize
 ) where
 
 import qualified Data.Map as M
@@ -280,6 +282,39 @@ negateRelation (SDRS m l) r dv1 dv2 = SDRS m' l
                       = Not $ neg' cdu' c
         neg' cdu' (And c1 c2)
                       = And (neg' cdu' c1) (neg' cdu' c2)
+
+---------------------------------------------------------------------------
+-- | Renames all embedded 'DisVar's of a given 'SDRS' on the basis of a
+-- conversion list.
+---------------------------------------------------------------------------
+renameDisVars :: SDRS -> [(DisVar,DisVar)] -> SDRS
+renameDisVars (SDRS m l) cm = SDRS (M.fromList (convert' (M.assocs m) cmMap)) (M.findWithDefault l l cmMap)
+  where cmMap = M.fromList cm
+        convert' :: [(DisVar, SDRSFormula)] -> M.Map DisVar DisVar -> [(DisVar, SDRSFormula)]
+        convert' [] _         = []
+        convert' (t:rest) cm' = (convertTuple t cm') : (convert' rest cm')
+        convertTuple :: (DisVar, SDRSFormula) -> M.Map DisVar DisVar -> (DisVar, SDRSFormula)
+        convertTuple (dv, sf@(EDU _)) cm' = (M.findWithDefault dv dv cm', sf)
+        convertTuple (dv, (CDU cdu)) cm'  = (M.findWithDefault dv dv cm', CDU $ convertCDU cdu cm')
+        convertCDU :: CDU -> M.Map DisVar DisVar -> CDU
+        convertCDU (Relation rel dv1 dv2) cm' = Relation rel (M.findWithDefault dv1 dv1 cm') (M.findWithDefault dv2 dv2 cm')
+        convertCDU (And cdu1 cdu2) cm'        = And (convertCDU cdu1 cm') (convertCDU cdu2 cm')
+        convertCDU (Not cdu1) cm'             = Not (convertCDU cdu1 cm')
+
+---------------------------------------------------------------------------
+-- | Normalizes the nodes in the 'SDRS' @s@, i.e., maps the @s@'s 'DisVar's
+-- to a sequence from 0 to n, where n is equal to the number of unique 'DisVar's
+-- in the 'SDRS'.
+-- FIX, make independent from discourseGraph
+---------------------------------------------------------------------------
+--normalize :: SDRS -> SDRS
+--normalize s = renameDisVars s normMap
+--  where build :: [DisVar] -> DisVar -> M.Map DisVar DisVar -> M.Map DisVar DisVar
+--        build [] _ cm'                     = cm'
+--        build (cur:rest) index cm' 
+--          | ((M.lookup cur g) == Nothing) = M.insert cur index (build rest (index + 1) cm')
+--          | otherwise                     = M.insert cur index (build (rest `union` (map fst $ g M.! cur)) (index + 1) cm')
+--        normMap = build [root s] 0 M.empty
 
 
 
