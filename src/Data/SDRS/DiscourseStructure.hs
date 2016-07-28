@@ -73,8 +73,8 @@ rf :: SDRS -> [DisVar]
 rf s@(SDRS _ l) 
   | length lastRels == 1 &&
     all (\(Relation r _ _) -> isSub r) lastRels && -- other way to do this that doesn't rely on lists?
-    M.member lastRelStart ioutscopes = l : walkEdges (Just l) `union` rf rewindedSDRSWithNewLast
-  | otherwise                        = l : walkEdges (Just l)
+    M.member lastRelStart ioutscopes = walkEdges (Just l) `union` rf rewindedSDRSWithNewLast
+  | otherwise                        = walkEdges (Just l)
   where ioutscopes = M.fromList $ iOutscopesMap s
         rewindedSDRSWithNewLast = updateLast rewindedSDRS rewindedLast 
         rewindedLast = inferLast rewindedSDRS
@@ -82,29 +82,29 @@ rf s@(SDRS _ l)
         lastRels = [rel | (rel@(Relation {})) <- calcRightArgRels s l]
         lastRelStart = head $ subordLefts l s
         walkEdges :: Maybe DisVar -> [DisVar]
-        walkEdges Nothing   = []
-        walkEdges (Just dv) = sls `union` ioutscopeList `union` walkEdges ioutscope
+        walkEdges Nothing = []
+        walkEdges (Just dv) = dv : (getSuper [dv]) ++ walkEdges ioutscope
           where ioutscope = iOutscopesFrom dv s
-                ioutscopeList = case ioutscope of
-                                  Nothing -> []
-                                  Just n  -> [n]
-                sls = subordLefts dv s
-
+        getSuper :: [DisVar] -> [DisVar]
+        getSuper [] = []
+        getSuper (dv:rest) = (case (subordLefts dv s) of
+                                [] -> []
+                                n  -> n ++ getSuper n) ++ getSuper rest
 
 ---------------------------------------------------------------------------
 -- | Simple version of rf, used in the thesis.
 ---------------------------------------------------------------------------
 rfSimple :: SDRS -> [DisVar]
-rfSimple s@(SDRS _ l) = l : walkEdges (Just l)
+rfSimple s@(SDRS _ l) = walkEdges (Just l)
   where walkEdges :: Maybe DisVar -> [DisVar]
-        walkEdges Nothing   = []
-        walkEdges (Just dv) = sls `union` ioutscopeList `union` walkEdges ioutscope
+        walkEdges Nothing = []
+        walkEdges (Just dv) = dv : (getSuper [dv]) ++ walkEdges ioutscope
           where ioutscope = iOutscopesFrom dv s
-                ioutscopeList = case ioutscope of
-                                  Nothing -> []
-                                  Just n  -> [n]
-                sls = subordLefts dv s
-
+        getSuper :: [DisVar] -> [DisVar]
+        getSuper [] = []
+        getSuper (dv:rest) = (case (subordLefts dv s) of
+                                [] -> []
+                                n  -> n ++ getSuper n) ++ getSuper rest
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS', returns a map from 'DisVar's to 'DisVar's that it outscopes
