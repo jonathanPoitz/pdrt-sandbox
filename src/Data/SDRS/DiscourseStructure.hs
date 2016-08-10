@@ -25,6 +25,7 @@ module Data.SDRS.DiscourseStructure
 , isRoot
 , hasParents
 , iOutscopesFrom
+, test
 ) where
 
 import qualified Data.Map as M
@@ -83,13 +84,13 @@ rf s@(SDRS _ l)
         lastRelStart = head $ subordLefts l s
         walkEdges :: Maybe DisVar -> [DisVar]
         walkEdges Nothing = []
-        walkEdges (Just dv) = dv : (getSuper [dv]) ++ walkEdges ioutscope
+        walkEdges (Just dv) = dv : (superords [dv]) ++ walkEdges ioutscope
           where ioutscope = iOutscopesFrom dv s
-        getSuper :: [DisVar] -> [DisVar]
-        getSuper [] = []
-        getSuper (dv:rest) = (case (subordLefts dv s) of
+        superords :: [DisVar] -> [DisVar]
+        superords [] = []
+        superords (dv:rest) = (case (subordLefts dv s) of
                                 [] -> []
-                                n  -> n ++ getSuper n) ++ getSuper rest
+                                n  -> n ++ superords n) ++ superords rest
 
 ---------------------------------------------------------------------------
 -- | Simple version of rf, used in the thesis.
@@ -98,13 +99,13 @@ rfSimple :: SDRS -> [DisVar]
 rfSimple s@(SDRS _ l) = walkEdges (Just l)
   where walkEdges :: Maybe DisVar -> [DisVar]
         walkEdges Nothing = []
-        walkEdges (Just dv) = dv : (getSuper [dv]) ++ walkEdges ioutscope
+        walkEdges (Just dv) = dv : (superords [dv]) ++ walkEdges ioutscope
           where ioutscope = iOutscopesFrom dv s
-        getSuper :: [DisVar] -> [DisVar]
-        getSuper [] = []
-        getSuper (dv:rest) = (case (subordLefts dv s) of
+        superords :: [DisVar] -> [DisVar]
+        superords [] = []
+        superords (dv:rest) = (case (subordLefts dv s) of
                                 [] -> []
-                                n  -> n ++ getSuper n) ++ getSuper rest
+                                n  -> n ++ superords n) ++ superords rest
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS', returns a map from 'DisVar's to 'DisVar's that it outscopes
