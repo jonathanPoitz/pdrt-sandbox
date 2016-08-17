@@ -13,19 +13,17 @@ SDRS discourse structure
 module Data.SDRS.DiscourseStructure
 ( 
   accessibleDRSs
-, accessibleDRSDVs
 , rf
 , rfSimple
 , inferLast
 , isOnRF
 , iOutscopesMap
+, iOutscopesFrom
 , outscopesFrom
 , RelName
 , root
 , isRoot
 , hasParents
-, iOutscopesFrom
-, test
 ) where
 
 import qualified Data.Map as M
@@ -67,7 +65,8 @@ accessibleDRSDVs s dv = nub $ walkEdges [dv]
                 ioutscope = iOutscopesFrom dv' s
 
 ---------------------------------------------------------------------------
--- | computes the right frontier of an 'SDRS', in order of locality
+-- | Computes the right frontier of an 'SDRS'. The order of the output list
+-- is from LAST to root node.
 -- TODO deuglify
 ---------------------------------------------------------------------------
 rf :: SDRS -> [DisVar]
@@ -108,7 +107,7 @@ rfSimple s@(SDRS _ l) = walkEdges (Just l)
                                 n  -> n ++ superords n) ++ superords rest
 
 ---------------------------------------------------------------------------
--- | Given an 'SDRS', returns a map from 'DisVar's to 'DisVar's that it outscopes
+-- | Given an 'SDRS', returns a map from 'DisVar's to 'DisVar's that it outscopes.
 ---------------------------------------------------------------------------
 iOutscopesMap :: SDRS -> [(DisVar,[DisVar])]
 iOutscopesMap (SDRS m _) = M.assocs $ M.foldlWithKey build M.empty m
@@ -119,8 +118,9 @@ iOutscopesMap (SDRS m _) = M.assocs $ M.foldlWithKey build M.empty m
         build acc _ _                            = acc
 
 ---------------------------------------------------------------------------
--- | Given an 'SDRS', returns the 'DisVar' that i-outscopes a given 'DisVar'.
--- If there is none, it is the root node, and the function returns Nothing.
+-- | Given an 'SDRS' @s@, returns the 'DisVar' that i-outscopes a given
+-- 'DisVar' @dv@. If there is none, @dv@ represents the root node, and the
+-- function returns Nothing.
 ---------------------------------------------------------------------------
 iOutscopesFrom :: DisVar -> SDRS -> Maybe DisVar
 iOutscopesFrom dv s = case (M.null ps) of
@@ -155,15 +155,15 @@ inferLast s@(SDRS m _) = walk (root s)
                 getNext (Not cdu1)          = getNext cdu1
 
 ---------------------------------------------------------------------------
--- | checks whether a given 'DisVar' @dv@ is on the right frontier of 
+-- | Checks whether a given 'DisVar' @dv@ is on the right frontier of 
 -- 'SDRS' @s@.
 ---------------------------------------------------------------------------
 isOnRF :: SDRS -> DisVar -> Bool
 isOnRF s dv  = dv `elem` rf s
 
 ---------------------------------------------------------------------------
--- | Return the root node of the discourse graph. If the graph has more than
--- one root node, only the first one in the list will be returned. 
+-- | Return the root node of the 'SDRS' @s@. If @s@ has more than one root,
+-- only the first in the list will be returned. 
 ---------------------------------------------------------------------------
 root :: SDRS -> DisVar
 root s 
@@ -172,13 +172,13 @@ root s
   where cduDVs = M.keys $ M.fromList $ iOutscopesMap s
 
 ---------------------------------------------------------------------------
--- | checks whether 'DisVar' @dv@ in 'SDRS' @s@ is the root node.
+-- | Checks whether 'DisVar' @dv@ in 'SDRS' @s@ is the root node.
 ---------------------------------------------------------------------------
 isRoot :: SDRS -> DisVar -> Bool
 isRoot s dv = dv == root s
 
 ---------------------------------------------------------------------------
--- | checks whether 'DisVar' @dv@ in 'SDRS' @s@ has any incoming edges.
+-- | Checks whether 'DisVar' @dv@ in 'SDRS' @s@ has any incoming edges.
 ---------------------------------------------------------------------------
 hasParents :: SDRS -> DisVar -> Bool
 hasParents (SDRS m _) dv = any incoming $ M.elems m

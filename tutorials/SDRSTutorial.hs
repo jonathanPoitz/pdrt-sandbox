@@ -18,7 +18,7 @@ drs1 = DRS [DRSRef "x"]
 -- | "A woman is sad."
 drs2 = DRS [DRSRef "x"] 
                   [Rel (DRSRel "woman") [DRSRef "x"]
-                  ,Rel (DRSRel "sad") [DRSRef "x"]]
+                  ,Rel (DRSRel "happy") [DRSRef "x"]]
 
 drs3 = DRS [DRSRef "x", DRSRef "y"] [Rel (DRSRel "man") [(DRSRef "x")],
                                      Rel (DRSRel "glass") [(DRSRef "y")],
@@ -384,6 +384,14 @@ sdrsRFExtBeforeBefore = SDRS (M.fromList [(0, CDU (Relation (relationFromRelName
                                     (1, EDU drs0),
                                     (2, EDU drs0)]) 2
 
+sdrsExtAcc = SDRS (M.fromList [(0, EDU $ DRS [DRSRef "s"] []),
+                               (1, EDU drs0),
+                               (2, EDU drs0),
+                               (3, EDU drs0),
+                               (4, CDU (Relation (relationFromRelName "Consequence") 0 1)),
+                               (5, CDU (Relation (relationFromRelName "Consequence") 2 3)),
+                               (6, CDU (Relation (relationFromRelName "Contrast") 4 5))]) 3
+
 ---------------------------------------------------------------------------
 -- | malformed SDRSs
 ---------------------------------------------------------------------------
@@ -544,6 +552,9 @@ sm2 = renameDisVars sm2' [(3,5),(4,3),(5,4)]
 --merge2NarElab = addSDRS sdrsmerge1 sdrsmerge2 [(0,relationFromRelName "Narration"),(2, relationFromRelName "Elaboration")]
 
 
-
+sdrs_because p q = SDRS (M.fromList
+  [(0, CDU $ Relation (relationFromRelName "Explanation") 1 2),
+   (1, EDU p),
+   (2, EDU q)]) 2
 
 

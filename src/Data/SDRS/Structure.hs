@@ -36,7 +36,6 @@ module Data.SDRS.Structure
 ) where
 
 import qualified Data.Map as M
---import Debug.Trace
 
 import Data.SDRS.DataType
 
@@ -265,7 +264,7 @@ updateRightArgs (SDRS m l) old new = SDRS (M.map updateR m) l
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS' @s@ and the unique description of one of its embedded 
 -- relations, i.e., an 'SDRSRelation' @r@ and its start and end 'DisVar'
--- @dv1@ and @dv2@, negates the 'CDU' of this relation.
+-- @dv1@ and @dv2@, negates the 'CDU' that embeds this relation.
 ---------------------------------------------------------------------------
 negateRelation :: SDRS -> SDRSRelation -> DisVar -> DisVar -> SDRS
 negateRelation (SDRS m l) r dv1 dv2 = SDRS m' l
@@ -284,8 +283,8 @@ negateRelation (SDRS m l) r dv1 dv2 = SDRS m' l
                       = And (neg' cdu' c1) (neg' cdu' c2)
 
 ---------------------------------------------------------------------------
--- | Renames all embedded 'DisVar's of a given 'SDRS' on the basis of a
--- conversion list.
+-- | Renames all embedded 'DisVar's of 'SDRS' @s@ on the basis of the
+-- conversion list @cm@.
 ---------------------------------------------------------------------------
 renameDisVars :: SDRS -> [(DisVar,DisVar)] -> SDRS
 renameDisVars (SDRS m l) cm = SDRS (M.fromList (convert' (M.assocs m) cmMap)) (M.findWithDefault l l cmMap)

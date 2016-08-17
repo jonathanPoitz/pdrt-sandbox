@@ -15,15 +15,12 @@ module Data.SDRS.Composition
   drsToSDRS 
 , addDRS
 , addSDRS
-, removeRels
 ) where
 
 import qualified Data.Map as M
---import Debug.Trace
 
 import Data.DRS.Structure
 
---import Data.SDRS.Show()
 import Data.SDRS.DataType
 import Data.SDRS.DiscourseStructure
 import Data.SDRS.Structure
@@ -31,16 +28,16 @@ import Data.SDRS.LambdaCalculus
 import Data.SDRS.Relation
 
 ---------------------------------------------------------------------------
--- | Builds a new 'SDRS' from a single 'DRS'.
+-- | Builds a new 'SDRS' from a 'DRS'.
 ---------------------------------------------------------------------------
 drsToSDRS :: DRS -> SDRS
 drsToSDRS d = SDRS (M.fromList [(0, EDU d)]) 0
 
 ---------------------------------------------------------------------------
--- | adds a 'DRS' to an 'SDRS' given a number of edges, represented by
--- tuples consisting of the target node and the relation to that node.
--- TODO is it possible that more than one new outscope will be created (i.e.
--- Narration twice with different target nodes?)?
+-- | Adds 'DRS' @d@ to 'SDRS' @s@ using a list of edges, represented by
+-- pairs consisting of the target node and the relation to that node. The
+-- target nodes must lie on the right frontier of the @s1@, otherwise the
+-- relation is skipped.
 ---------------------------------------------------------------------------
 addDRS :: SDRS -> DRS -> [(DisVar,SDRSRelation)] -> SDRS
 addDRS s@(SDRS m _) d edges = pureSDRS
@@ -56,12 +53,14 @@ addDRS s@(SDRS m _) d edges = pureSDRS
         drsRefs2 = drsUniverse d
 
 -------------------------------------------------------------------------
--- | Adds 'SDRS' @s2@ and 'SDRS' @s1@. @s2@ is attached with its root node
--- to a node @dv1@ that must be on the RF of @s1@, using relation @r@.  
+-- | Adds 'SDRS' @s2@ to 'SDRS' @s1@ using a list of edges, represented by
+-- pairs consisting of the target node and the relation to that node. The
+-- target nodes must lie on the right frontier of the @s1@, otherwise the
+-- relation is skipped.
 -------------------------------------------------------------------------
 addSDRS :: SDRS -> SDRS -> [(DisVar,SDRSRelation)] -> SDRS
 addSDRS s1@(SDRS m1 _) s2 edges = pureSDRS
-  where convMap = buildConvMap s1 s2 -- before 1
+  where convMap = buildDisVarConvMap s1 s2 -- before 1
         -- ^ a conversion map of all overlapping variables to new ones from both sdrss
         updatedLast = sdrsLast s2DVConv -- bw 1 and 2
         attachingNode = root s2DVConv -- bw 1 and 2

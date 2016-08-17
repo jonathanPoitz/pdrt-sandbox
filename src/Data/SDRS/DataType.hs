@@ -65,7 +65,7 @@ data RelType = Crd | Sub
   deriving (Eq, Read)
 
 ---------------------------------------------------------------------------
--- | given a relation name, returns the SDRSRelation with that name
+-- | Given a relation name, returns the 'SDRSRelation' with that name.
 ---------------------------------------------------------------------------
 relationFromRelName :: RelName -> SDRSRelation
 relationFromRelName l = if (length outRels > 1) || (length outRels == 0)
@@ -80,7 +80,7 @@ relationFromRelName l = if (length outRels > 1) || (length outRels == 0)
 type DisVar = Int
 
 ---------------------------------------------------------------------------
--- | An SDRS formula
+-- | An SDRS-Formula
 ---------------------------------------------------------------------------
 data SDRSFormula = 
   EDU DRS

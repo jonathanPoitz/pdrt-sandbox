@@ -14,9 +14,8 @@ module Data.SDRS.LambdaCalculus
 (
   sdrsAlphaConvertDRS
 , sdrsAlphaConvertDRSs
---, normalize
 , buildDRSRefConvMap
-, buildConvMap
+, buildDisVarConvMap
 ) where
 
 import Data.List (union, insert, intersect)
@@ -38,7 +37,7 @@ import Data.SDRS.DiscourseStructure
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
--- | For an 'SDRS' @s@, a 'DisVar' @dv@ and a DRSRef conversion map @cm@,
+-- | For an 'SDRS' @s@, a 'DisVar' @dv@ and a 'DRSRef' conversion map @cm@,
 -- DRS-alpha-converts all 'DRSs' labeled by @dv@.
 ---------------------------------------------------------------------------
 sdrsAlphaConvertDRS :: SDRS -> DisVar -> [(DRSRef,DRSRef)] -> SDRS
@@ -52,7 +51,7 @@ sdrsAlphaConvertDRS s@(SDRS m l) dv cm = SDRS m' l
         -- ^ the SDRSFormula labeled by @key@ was not a EDU, skip it.
 
 ---------------------------------------------------------------------------
--- | For an 'SDRS' @s@, a list of 'DisVar's @dvs@ and a DRSRef conversion map
+-- | For an 'SDRS' @s@, a list of 'DisVar's @dvs@ and a 'DRSRef' conversion map
 -- @cm@, DRS-alpha-converts all 'DRSs' labeled by the 'DisVar's in @dvs@.
 ---------------------------------------------------------------------------
 sdrsAlphaConvertDRSs :: SDRS -> [DisVar] -> [(DRSRef,DRSRef)] -> SDRS
@@ -83,8 +82,8 @@ buildDRSRefConvMap rs1 rs2 = build rsUnion rsOverlap
 -- | Builds a conversion map for all overlapping 'DisVar' from two 'SDRS's
 -- mapping each duplicate instance to a new variable.
 ---------------------------------------------------------------------------
-buildConvMap :: SDRS -> SDRS -> [(DisVar,DisVar)]
-buildConvMap (SDRS m1 _) (SDRS m2 _) = M.assocs $ build M.empty s1Keys s2Keys
+buildDisVarConvMap :: SDRS -> SDRS -> [(DisVar,DisVar)]
+buildDisVarConvMap (SDRS m1 _) (SDRS m2 _) = M.assocs $ build M.empty s1Keys s2Keys
   where build :: M.Map DisVar DisVar -> [DisVar] -> [DisVar] -> M.Map DisVar DisVar
         build cm _ []       = cm
         build cm keys1 (dv:rest)

@@ -16,7 +16,7 @@ module Data.SDRS.Binding
 , sdrsFreeRefs
 , sdrsBoundRef
 , noSelfRefs
-, allSegmentsBound
+, allEDUsBound
 ) where
 
 import qualified Data.Map as M
@@ -31,8 +31,8 @@ import Data.SDRS.Structure
 import Data.SDRS.DiscourseStructure
 
 ---------------------------------------------------------------------------
--- | Returns whether 'DRSRef' @r@ is bound in the 'SDRS' @s@ relative to its
--- introduction side labeled by 'DisVar' @dv@.
+-- | Returns whether 'DRSRef' @r@ is bound in the 'SDRS' @s@ relative to
+-- the DU labeled by 'DisVar' @dv@.
 ---------------------------------------------------------------------------
 sdrsBoundRef :: DRSRef -> DisVar -> SDRS -> Bool
 sdrsBoundRef r dv s@(SDRS m _)
@@ -51,18 +51,15 @@ sdrsBoundRef r dv s@(SDRS m _)
 sdrsFreeRefs :: SDRS -> [DRSRef]
 sdrsFreeRefs s = free $ segments s
   where free :: [(DisVar, SDRSFormula)] -> [DRSRef]
-        free []                    = []
+        free []                = []
         free ((dv,EDU d):rest) = drsFreeRefs d gd `union` free rest
           where gd = foldl (<<+>>) (DRS [] []) accDRSs
                 accDRSs = accessibleDRSs s dv
-        free (_:rest)              = free rest
+        free (_:rest)          = free rest
 
 ---------------------------------------------------------------------------
 -- | Checks if all relations in the 'SDRS' @s@ use labels as arguments
--- that are valid 'DisVar's, i.e. they are mapped to an 'SDRSFormula' in the
--- internal map of @s@.
--- CHECK If we define binding for DVs, then this would basically check whether
--- all DVs are bound 
+-- that are existing 'DisVar's.
 ---------------------------------------------------------------------------
 allRelArgsBound :: SDRS -> Bool
 allRelArgsBound s@(SDRS m _) = relVars `S.isProperSubsetOf` disVars
@@ -79,13 +76,13 @@ noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
         noSelfRef (dv0, CDU (Relation _ dv1 dv2)) = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
         noSelfRef (dv0, CDU (And sf1 sf2))        = noSelfRef (dv0,CDU sf1) && noSelfRef (dv0,CDU sf2)
         noSelfRef (dv0, CDU (Not sf1))            = noSelfRef (dv0,CDU sf1)
-        noSelfRef _                             = True  
+        noSelfRef _                               = True  
 
 ---------------------------------------------------------------------------
--- | Checks for the given 'SDRS' @s@ whether all Segments are bound as an 
+-- | Checks for the given 'SDRS' @s@ whether all EDUs are bound as an 
 -- argument in a relation.
 ---------------------------------------------------------------------------
-allSegmentsBound :: SDRS -> Bool
-allSegmentsBound s = allSegmentRelNames `S.isSubsetOf` allRelArgs
+allEDUsBound :: SDRS -> Bool
+allEDUsBound s = allSegmentRelNames `S.isSubsetOf` allRelArgs
   where allSegmentRelNames = S.fromList $ map fst $ segments s
         allRelArgs = S.fromList $ relArgs s

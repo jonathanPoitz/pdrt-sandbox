@@ -15,20 +15,16 @@ module Data.SDRS.Properties
   sdrsProperDRSs
 , sdrsPureDRSs
 , sdrsUniqueDRSRefs
-, validLast
 , sfsStrucIsomorphic
---, sfsSemIsomorphic
-, isWellformedSDRS
+, isInterpretableSDRS
 ) where
 
 import qualified Data.Map as M
 import Data.List
---import Debug.Trace
 
 import Data.DRS.Properties
 import Data.DRS.Merge
 import Data.DRS.Structure
---import Data.DRS.Show
 
 import Data.SDRS.DataType
 import Data.SDRS.Structure
@@ -71,7 +67,7 @@ sdrsPureDRSs s = pure' $ segments s
           where accUs = (concat $ map drsUniverse $ accessibleDRSs s dv) ++ (drsUniverse d)
 
 ---------------------------------------------------------------------------
--- | Checks if the 'SDRS' @s@ only has unique DRSRefs where, i.e.:
+-- | Checks if the 'SDRS' @s@ only has unique 'DRSRef's, i.e.:
 --
 --  * no embedded 'DRS' declares 'DRSRef's that are declared in any other
 -- embedded 'DRS' of @s@. 
@@ -98,9 +94,9 @@ validLast s@(SDRS m l)
         allRelations = map snd $ relations s
 
 ---------------------------------------------------------------------------
--- | Checks whether two subgraphes within the same 'SDRS's @s@ are structurally
+-- | Checks whether two subgraphs within the same 'SDRS' @s@ are structurally
 -- isomorphic, i.e., their graph structure does not differ except for different
--- labeling of DUs. These subgraphes are determined by their root nodes,
+-- labeling of DUs. These subgraphs are determined by their root nodes,
 -- two 'DisVar's @dv1@ and @dv2@ that are passed along to this function as well. 
 ---------------------------------------------------------------------------
 sfsStrucIsomorphic :: SDRS -> DisVar -> DisVar -> Bool
@@ -124,15 +120,15 @@ sfsStrucIsomorphic (SDRS m _) dv1 dv2
         compareCDU _ _ = False
 
 ---------------------------------------------------------------------------
--- | Checks for the well-formedness of an 'SDRS'.
+-- | Checks for the interpretability of an 'SDRS'.
 ---------------------------------------------------------------------------
-isWellformedSDRS :: SDRS -> Bool
-isWellformedSDRS s = validLast s &&
+isInterpretableSDRS :: SDRS -> Bool
+isInterpretableSDRS s = validLast s &&
                      noSelfRefs s &&
                      sdrsPureDRSs s &&
                      sdrsProperDRSs s &&
                      allRelArgsBound s &&
-                     allSegmentsBound s
+                     allEDUsBound s
 
 ---------------------------------------------------------------------------
 -- | Checks whether all Segments are attached to a node that's on the RF of
