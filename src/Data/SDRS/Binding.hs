@@ -16,7 +16,7 @@ module Data.SDRS.Binding
 , sdrsFreeRefs
 , sdrsBoundRef
 , noSelfRefs
-, allEDUsBound
+, allEDUsConnected
 ) where
 
 import qualified Data.Map as M
@@ -82,7 +82,7 @@ noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
 -- | Checks for the given 'SDRS' @s@ whether all EDUs are bound as an 
 -- argument in a relation.
 ---------------------------------------------------------------------------
-allEDUsBound :: SDRS -> Bool
-allEDUsBound s = allSegmentRelNames `S.isSubsetOf` allRelArgs
+allEDUsConnected :: SDRS -> Bool
+allEDUsConnected s = allSegmentRelNames `S.isSubsetOf` allRelArgs
   where allSegmentRelNames = S.fromList $ map fst $ segments s
         allRelArgs = S.fromList $ relArgs s

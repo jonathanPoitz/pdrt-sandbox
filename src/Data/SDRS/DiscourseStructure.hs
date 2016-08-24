@@ -95,7 +95,7 @@ rf s@(SDRS _ l)
 -- | Simple version of rf, used in the thesis.
 ---------------------------------------------------------------------------
 rfSimple :: SDRS -> [DisVar]
-rfSimple s@(SDRS _ l) = walkEdges (Just l)
+rfSimple s@(SDRS _ last) = walkEdges (Just last)
   where walkEdges :: Maybe DisVar -> [DisVar]
         walkEdges Nothing = []
         walkEdges (Just dv) = dv : (superords [dv]) ++ walkEdges ioutscope

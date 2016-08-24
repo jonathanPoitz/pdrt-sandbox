@@ -10,10 +10,10 @@ iOutscopesFrom 0 ex_11
 outscopesFrom 0 ex_11
 outscopesFrom 3 ex_11
 
-:t sdrs_because
-:t sdrs_because drs1
-:t sdrs_because drs1 drs2
-sdrs_because drs1 drs2
+  :t sdrs_because
+  :t sdrs_because drs1
+  :t sdrs_because drs1 drs2
+  sdrs_because drs1 drs2
 
 ----
 
@@ -64,6 +64,14 @@ let sm3 = addDRS sm2 d3' [(0, relationFromRelName "Alternation")]
 sm3
 let sm4 = addSDRS sm1 sm3 [(1, relationFromRelName "Result")]
 sm4
+let d3'' = DRS [DRSRef "x"] [Rel (DRSRel "John") [DRSRef "x"],Rel (DRSRel "sick") [DRSRef "x"]]
+let d2 = DRS [] [Rel (DRSRel "eat_fish") [DRSRef "x"]]
+let d4 = DRS [] [Rel (DRSRel "eat_pasta") [DRSRef "x"]]
+let sn1 = drsToSDRS d3''
+let sn2 = addDRS sn1 d4 [(0,relationFromRelName "Explanation")]
+let sn3 = addDRS sn2 d2 [(0,relationFromRelName "Explanation")]
+let sn4 = negateRelation sn3 (relationFromRelName "Explanation") 0 1
+
 === end ===
 
 
@@ -203,7 +211,7 @@ sdrsPureDRSs sdrs2
 |    └-------------------------------------┘ |
 └--------------------------------------------┘
 
-*Main> Linear ex11
+*Main> LinearDRSs ex11
 ┌--------------------------------------------------------┐
 | 0                                                      |
 ├--------------------------------------------------------┤

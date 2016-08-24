@@ -80,17 +80,16 @@ sdrsUniqueDRSRefs s = universes == nub universes
 -- | checks whether the 'SDRSFormula' pointed to by LAST is meaningful, i.e.
 --  * that it is an EDU, i.e. a EDU denoting a 'DRS', and
 --  * that it is part of a relation, in which it is not the left argument
--- TODO interactions with root/rf
 ---------------------------------------------------------------------------
 validLast :: SDRS -> Bool
 validLast s@(SDRS m l) 
   | M.lookup l m == Nothing = False
-  | otherwise               = isSegment (m M.! l) &&
-                              --any (\(CDU (Relation _ _ dv')) -> dv' == l) allRelations &&
+  | otherwise               = isEDU (m M.! l) &&
+                              any (\(CDU (Relation _ _ dv')) -> dv' == l) allRelations &&
                               not (any (\(CDU (Relation _ dv _)) -> dv == l) allRelations)
-  where isSegment :: SDRSFormula -> Bool
-        isSegment (EDU _) = True
-        isSegment _       = False -- use case instead? but watch out for npe
+  where isEDU :: SDRSFormula -> Bool
+        isEDU (EDU _) = True
+        isEDU _       = False -- use case instead? but watch out for npe
         allRelations = map snd $ relations s
 
 ---------------------------------------------------------------------------
@@ -107,28 +106,40 @@ sfsStrucIsomorphic (SDRS m _) dv1 dv2
   where sf1 = m M.! dv1
         sf2 = m M.! dv2
         comp :: SDRSFormula -> SDRSFormula -> Bool
-        comp (EDU _) (EDU _) = True -- check here for semantic isomorphism
+        comp (EDU _) (EDU _)       = True -- check here for semantic isomorphism
         comp (CDU cdu1) (CDU cdu2) = compareCDU cdu1 cdu2
-        comp _ _ = False
+        comp _ _                   = False
         compareCDU :: CDU -> CDU -> Bool
         compareCDU (Relation rel1 _ _) (Relation rel2 _ _)
           | rel1 == rel2 = True
           | otherwise    = False
-        compareCDU (And a1 a1') (And a2 a2') = compareCDU a1 a2 &&
-                                               compareCDU a1' a2'
-        compareCDU (Not n1) (Not n2) = compareCDU n1 n2
-        compareCDU _ _ = False
+        compareCDU (And a1 a1') (And a2 a2')
+                         = compareCDU a1 a2 && compareCDU a1' a2'
+        compareCDU (Not n1) (Not n2)
+                         = compareCDU n1 n2
+        compareCDU _ _   = False
 
 ---------------------------------------------------------------------------
--- | Checks for the interpretability of an 'SDRS'.
+-- | Checks for the interpretability of an 'SDRS' by wrapping multiple tests of
+-- binding and validity:
+--   1. embedded DRSs are pure, i.e., they don't contain otiose declarations of
+--      discourse referents
+--   2. embedded DRSs are proper, i.e., they don't contain free discourse referents
+--   3. all discourse variables in the SDRS are bound, i.e., all references to them
+--      from relations are actual discourse units
+--   4. valid LAST node, i.e., LAST is an EDU and occurs only at the end of relations
+--   5. no self-referencing relations, such as 3:Narration(4,4) or 3:Narration(3,4)
+--   6. all EDUs rhetorically connected to the SDRS (an SDRS can only be coherent if
+--      it represents a fully-connected discourse graph, i.e., all embedded DRSs are
+--      part of a relation)
 ---------------------------------------------------------------------------
 isInterpretableSDRS :: SDRS -> Bool
-isInterpretableSDRS s = validLast s &&
-                     noSelfRefs s &&
-                     sdrsPureDRSs s &&
-                     sdrsProperDRSs s &&
-                     allRelArgsBound s &&
-                     allEDUsBound s
+isInterpretableSDRS s = validLast s && -- LAST is EDU and occurs only at the end of relations
+                        noSelfRefs s && -- there are no circular relations
+                        sdrsPureDRSs s && -- all embedded DRSs are pure (no otiose declarations of DRSRefs)
+                        sdrsProperDRSs s && -- all embedded DRSs are proper (no free DRSRefs)
+                        allRelArgsBound s && -- all arguments of relations exist as actual EDUs
+                        allEDUsConnected s -- all EDUs are part of at least one relation
 
 ---------------------------------------------------------------------------
 -- | Checks whether all Segments are attached to a node that's on the RF of

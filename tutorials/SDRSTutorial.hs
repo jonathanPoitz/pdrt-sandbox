@@ -553,8 +553,8 @@ sm2 = renameDisVars sm2' [(3,5),(4,3),(5,4)]
 
 
 sdrs_because p q = SDRS (M.fromList
-  [(0, CDU $ Relation (relationFromRelName "Explanation") 1 2),
-   (1, EDU p),
-   (2, EDU q)]) 2
+  [(0, EDU p),
+   (1, EDU q),
+   (2, CDU $ Relation (relationFromRelName "Explanation") 0 1)]) 1
 
 

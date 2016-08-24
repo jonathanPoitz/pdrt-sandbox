@@ -125,18 +125,22 @@ type RelName = String
 ---------------------------------------------------------------------------
 relations :: [SDRSRelation]
 --                         label reltype isStruc isTopic          
-relations = [SDRSRelation "elaboration" Sub False False,
+relations = [
+             -- * Subordinating Relations --
+             SDRSRelation "explanation" Sub False False,
+             SDRSRelation "background" Sub False True,
+             SDRSRelation "elaboration" Sub False False,
              SDRSRelation "entity_elaboration" Sub False False,
              SDRSRelation "comment" Sub False False,
              SDRSRelation "flashback" Sub False False,
-             SDRSRelation "background" Sub False True,
              SDRSRelation "goal" Sub False False,
-             SDRSRelation "explanation" Sub False False,
              SDRSRelation "attribution" Sub False False,
-             SDRSRelation "narration" Crd False True,
-             SDRSRelation "contrast" Crd True False,
+             -- * Coordinating Relations --
+             SDRSRelation "consequence" Crd False False,
+             SDRSRelation "alternation" Crd False False,
              SDRSRelation "result" Crd False False,
              SDRSRelation "parallel" Crd True False,
-             SDRSRelation "continuation" Crd False True,
-             SDRSRelation "alternation" Crd False False,
-             SDRSRelation "consequence" Crd False False]
+             SDRSRelation "contrast" Crd True False,
+             SDRSRelation "narration" Crd False True,
+             SDRSRelation "continuation" Crd False True
+            ]

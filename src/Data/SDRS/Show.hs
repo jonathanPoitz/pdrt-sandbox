@@ -88,7 +88,7 @@ instance ShowableSDRS SDRS where
 ---------------------------------------------------------------------------
 data SDRSNotation s =
   Set s      -- ^ Set notation
-  | Linear s -- ^ Linear notation
+  | LinearDRSs s -- ^ LinearDRSs notation
   | Boxes s  -- ^ embedded Box notation
   | Underspec s  -- ^ underspecified Box notation
   | Debug s  -- ^ Debug notation
@@ -97,7 +97,7 @@ data SDRSNotation s =
 instance (ShowableSDRS s) => Show (SDRSNotation s) where
   show (Boxes s)  = '\n' : showSDRS (Boxes           (resolve s))
   show (Underspec s)  = '\n' : showSDRS (Underspec   (resolve s))
-  show (Linear s) = '\n' : showSDRS (Linear          (resolve s))
+  show (LinearDRSs s) = '\n' : showSDRS (LinearDRSs          (resolve s))
   show (Set s)    = '\n' : showSDRS (Set             (resolve s))
   show (Debug s)  = '\n' : showSDRS (Debug           (resolve s))
 
@@ -109,7 +109,7 @@ showSDRS n =
   case n of
     (Boxes s)  -> showSDRSBox s
     (Underspec s)  -> showSDRSUnderspec s
-    (Linear s) -> showSDRSLinear s -- showSDRSLinear s ++ "\n"
+    (LinearDRSs s) -> showSDRSLinear s -- showSDRSLinear s ++ "\n"
     (Set s)    -> showSDRSBox s -- showSDRSSet s ++ "\n"
     (Debug s)  -> showSDRSDebug s -- showSDRSDebug s ++ "\n"
 
@@ -240,7 +240,7 @@ showSDRSUnderspec s@(SDRS f ll) = showSubBox outscopedDVs (-1) -- not a good dum
         -- ^ the outscopes map that governs the embedding structure of the boxes
 
 ---------------------------------------------------------------------------
--- | Shows an 'SDRS' in linear, underspecified Boxes notation.
+-- | Shows an 'SDRS' in LinearDRSs, underspecified Boxes notation.
 -- TODO needs to be decomposed to be more readable
 ---------------------------------------------------------------------------
 showSDRSLinear :: SDRS -> String
