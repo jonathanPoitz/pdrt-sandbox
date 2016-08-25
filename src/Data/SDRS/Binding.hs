@@ -12,11 +12,11 @@ SDRS binding
 
 module Data.SDRS.Binding
 (
-  allRelArgsBound
-, sdrsFreeRefs
-, sdrsBoundRef
+  allEDUsConnected
+, allRelArgsBound
 , noSelfRefs
-, allEDUsConnected
+, sdrsBoundRef
+, sdrsFreeRefs
 ) where
 
 import qualified Data.Map as M
@@ -29,6 +29,40 @@ import Data.DRS.Merge
 import Data.SDRS.DataType
 import Data.SDRS.Structure
 import Data.SDRS.DiscourseStructure
+
+---------------------------------------------------------------------------
+-- * Exported
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+-- | Checks for the given 'SDRS' @s@ whether all EDUs are bound as an 
+-- argument in a relation.
+---------------------------------------------------------------------------
+allEDUsConnected :: SDRS -> Bool
+allEDUsConnected s = allSegmentRelNames `S.isSubsetOf` allRelArgs
+  where allSegmentRelNames = S.fromList $ map fst $ segments s
+        allRelArgs = S.fromList $ relArgs s
+
+---------------------------------------------------------------------------
+-- | Checks if all relations in the 'SDRS' @s@ use labels as arguments
+-- that are existing 'DisVar's.
+---------------------------------------------------------------------------
+allRelArgsBound :: SDRS -> Bool
+allRelArgsBound s@(SDRS m _) = relVars `S.isProperSubsetOf` disVars
+  where relVars = S.fromList $ relArgs s
+        disVars = S.fromList $ M.keys m
+
+---------------------------------------------------------------------------
+-- | Returns 'True' if the given 'SDRS' has no self-referencing relations
+-- such as 3:Narration(4,4) or 3:Narration(3,4), otherwise returns 'False'.
+---------------------------------------------------------------------------
+noSelfRefs :: SDRS -> Bool
+noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
+  where noSelfRef :: (DisVar, SDRSFormula) -> Bool
+        noSelfRef (dv0, CDU (Relation _ dv1 dv2)) = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
+        noSelfRef (dv0, CDU (And sf1 sf2))        = noSelfRef (dv0,CDU sf1) && noSelfRef (dv0,CDU sf2)
+        noSelfRef (dv0, CDU (Not sf1))            = noSelfRef (dv0,CDU sf1)
+        noSelfRef _                               = True  
 
 ---------------------------------------------------------------------------
 -- | Returns whether 'DRSRef' @r@ is bound in the 'SDRS' @s@ relative to
@@ -56,33 +90,3 @@ sdrsFreeRefs s = free $ segments s
           where gd = foldl (<<+>>) (DRS [] []) accDRSs
                 accDRSs = accessibleDRSs s dv
         free (_:rest)          = free rest
-
----------------------------------------------------------------------------
--- | Checks if all relations in the 'SDRS' @s@ use labels as arguments
--- that are existing 'DisVar's.
----------------------------------------------------------------------------
-allRelArgsBound :: SDRS -> Bool
-allRelArgsBound s@(SDRS m _) = relVars `S.isProperSubsetOf` disVars
-  where relVars = S.fromList $ relArgs s
-        disVars = S.fromList $ M.keys m
-
----------------------------------------------------------------------------
--- | Returns 'True' if the given 'SDRS' has no self-referencing relations
--- such as 3:Narration(4,4) or 3:Narration(3,4), otherwise returns 'False'.
----------------------------------------------------------------------------
-noSelfRefs :: SDRS -> Bool
-noSelfRefs (SDRS m _) = all noSelfRef (M.assocs m)
-  where noSelfRef :: (DisVar, SDRSFormula) -> Bool
-        noSelfRef (dv0, CDU (Relation _ dv1 dv2)) = dv1 /= dv2 && dv0 /= dv1 && dv0 /= dv2
-        noSelfRef (dv0, CDU (And sf1 sf2))        = noSelfRef (dv0,CDU sf1) && noSelfRef (dv0,CDU sf2)
-        noSelfRef (dv0, CDU (Not sf1))            = noSelfRef (dv0,CDU sf1)
-        noSelfRef _                               = True  
-
----------------------------------------------------------------------------
--- | Checks for the given 'SDRS' @s@ whether all EDUs are bound as an 
--- argument in a relation.
----------------------------------------------------------------------------
-allEDUsConnected :: SDRS -> Bool
-allEDUsConnected s = allSegmentRelNames `S.isSubsetOf` allRelArgs
-  where allSegmentRelNames = S.fromList $ map fst $ segments s
-        allRelArgs = S.fromList $ relArgs s

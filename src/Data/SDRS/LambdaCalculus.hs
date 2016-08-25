@@ -12,10 +12,10 @@ Lambda Calculus for SDRT
 
 module Data.SDRS.LambdaCalculus
 (
-  sdrsAlphaConvertDRS
-, sdrsAlphaConvertDRSs
+  buildDisVarConvMap
 , buildDRSRefConvMap
-, buildDisVarConvMap
+, sdrsAlphaConvertDRS
+, sdrsAlphaConvertDRSs
 ) where
 
 import Data.List (union, insert, intersect)
@@ -33,30 +33,19 @@ import Data.SDRS.DiscourseStructure
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
--- ** Alpha Conversion
+-- | Builds a conversion map for all overlapping 'DisVar' from two 'SDRS's
+-- mapping each duplicate instance to a new variable.
 ---------------------------------------------------------------------------
-
----------------------------------------------------------------------------
--- | For an 'SDRS' @s@, a 'DisVar' @dv@ and a 'DRSRef' conversion map @cm@,
--- DRS-alpha-converts all 'DRSs' labeled by @dv@.
----------------------------------------------------------------------------
-sdrsAlphaConvertDRS :: SDRS -> DisVar -> [(DRSRef,DRSRef)] -> SDRS
-sdrsAlphaConvertDRS s@(SDRS m l) dv cm = SDRS m' l
-  where m' = M.adjustWithKey conv dv m
-        conv :: DisVar -> SDRSFormula -> SDRSFormula
-        conv key (EDU d) = EDU $ renameSubDRS d gd' cm
-          where gd' = foldl (<<+>>) (DRS [] []) accDRSs'
-                accDRSs' = accessibleDRSs s key
-        conv _ sf        = sf
-        -- ^ the SDRSFormula labeled by @key@ was not a EDU, skip it.
-
----------------------------------------------------------------------------
--- | For an 'SDRS' @s@, a list of 'DisVar's @dvs@ and a 'DRSRef' conversion map
--- @cm@, DRS-alpha-converts all 'DRSs' labeled by the 'DisVar's in @dvs@.
----------------------------------------------------------------------------
-sdrsAlphaConvertDRSs :: SDRS -> [DisVar] -> [(DRSRef,DRSRef)] -> SDRS
-sdrsAlphaConvertDRSs s [] _         = s
-sdrsAlphaConvertDRSs s (dv:rest) cm = sdrsAlphaConvertDRSs (sdrsAlphaConvertDRS s dv cm) rest cm
+buildDisVarConvMap :: SDRS -> SDRS -> [(DisVar,DisVar)]
+buildDisVarConvMap (SDRS m1 _) (SDRS m2 _) = M.assocs $ build M.empty s1Keys s2Keys
+  where build :: M.Map DisVar DisVar -> [DisVar] -> [DisVar] -> M.Map DisVar DisVar
+        build cm _ []       = cm
+        build cm keys1 (dv:rest)
+          | dv `elem` keys1 = build (M.insert dv newMax cm) (insert newMax keys1) rest
+          | otherwise       = build cm keys1 rest
+          where newMax = maximum keys1 + 1
+        s1Keys = M.keys m1
+        s2Keys = M.keys m2
 
 ---------------------------------------------------------------------------
 -- | Given a list of all present 'DRSRef's @rs@ and a list of overlapping
@@ -79,16 +68,23 @@ buildDRSRefConvMap rs1 rs2 = build rsUnion rsOverlap
                   | otherwise    = dr
 
 ---------------------------------------------------------------------------
--- | Builds a conversion map for all overlapping 'DisVar' from two 'SDRS's
--- mapping each duplicate instance to a new variable.
+-- | For an 'SDRS' @s@, a 'DisVar' @dv@ and a 'DRSRef' conversion map @cm@,
+-- DRS-alpha-converts all 'DRSs' labeled by @dv@.
 ---------------------------------------------------------------------------
-buildDisVarConvMap :: SDRS -> SDRS -> [(DisVar,DisVar)]
-buildDisVarConvMap (SDRS m1 _) (SDRS m2 _) = M.assocs $ build M.empty s1Keys s2Keys
-  where build :: M.Map DisVar DisVar -> [DisVar] -> [DisVar] -> M.Map DisVar DisVar
-        build cm _ []       = cm
-        build cm keys1 (dv:rest)
-          | dv `elem` keys1 = build (M.insert dv newMax cm) (insert newMax keys1) rest
-          | otherwise       = build cm keys1 rest
-          where newMax = maximum keys1 + 1
-        s1Keys = M.keys m1
-        s2Keys = M.keys m2
+sdrsAlphaConvertDRS :: SDRS -> DisVar -> [(DRSRef,DRSRef)] -> SDRS
+sdrsAlphaConvertDRS s@(SDRS m l) dv cm = SDRS m' l
+  where m' = M.adjustWithKey conv dv m
+        conv :: DisVar -> SDRSFormula -> SDRSFormula
+        conv key (EDU d) = EDU $ renameSubDRS d gd' cm
+          where gd' = foldl (<<+>>) (DRS [] []) accDRSs'
+                accDRSs' = accessibleDRSs s key
+        conv _ sf        = sf
+        -- ^ the SDRSFormula labeled by @key@ was not a EDU, skip it.
+
+---------------------------------------------------------------------------
+-- | For an 'SDRS' @s@, a list of 'DisVar's @dvs@ and a 'DRSRef' conversion map
+-- @cm@, DRS-alpha-converts all 'DRSs' labeled by the 'DisVar's in @dvs@.
+---------------------------------------------------------------------------
+sdrsAlphaConvertDRSs :: SDRS -> [DisVar] -> [(DRSRef,DRSRef)] -> SDRS
+sdrsAlphaConvertDRSs s [] _         = s
+sdrsAlphaConvertDRSs s (dv:rest) cm = sdrsAlphaConvertDRSs (sdrsAlphaConvertDRS s dv cm) rest cm

@@ -12,12 +12,12 @@ SDRS relation
 
 module Data.SDRS.Relation
 (
-  isCrd
+  coordLefts
+, coordRights
+, isCrd
 , isSub
 , subordLefts
 , subordRights
-, coordLefts
-, coordRights
 ) where
 
 import Data.SDRS.DataType

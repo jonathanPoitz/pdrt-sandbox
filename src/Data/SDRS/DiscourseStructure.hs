@@ -13,22 +13,20 @@ SDRS discourse structure
 module Data.SDRS.DiscourseStructure
 ( 
   accessibleDRSs
-, rf
-, rfSimple
+, hasParents
 , inferLast
-, isOnRF
 , iOutscopesMap
 , iOutscopesFrom
-, outscopesFrom
-, RelName
-, root
 , isRoot
-, hasParents
+, isOnRF
+, outscopesFrom
+, rf
+, rfSimple
+, root
 ) where
 
 import qualified Data.Map as M
 import Data.List
---import Debug.Trace
 
 import Data.SDRS.DataType
 import Data.SDRS.Relation
@@ -48,63 +46,28 @@ accessibleDRSs s@(SDRS m _) dv = accDRSs
         accDRSs = [drs | (EDU drs) <- accDUs]
 
 ---------------------------------------------------------------------------
--- | helper function for accessibleDRSs
--- TODO make more effective. currently i don't know how to avoid all the recursion
--- TODO does "nub" always preserve order?
+-- | Checks whether 'DisVar' @dv@ in 'SDRS' @s@ has any incoming edges.
 ---------------------------------------------------------------------------
-accessibleDRSDVs :: SDRS -> DisVar -> [DisVar]
-accessibleDRSDVs s dv = nub $ walkEdges [dv]
-  where walkEdges :: [DisVar] -> [DisVar]
-        walkEdges []         = []
-        walkEdges (dv':rest) = ss ++ cs ++ walkEdges ss ++ walkEdges rest ++ walkEdges ios
-          where ss = subordLefts dv' s -- all sub relations with dv' as end node
-                cs = coordLefts dv' s
-                ios = case ioutscope of
-                        Nothing -> []
-                        Just n  -> [n]
-                ioutscope = iOutscopesFrom dv' s
+hasParents :: SDRS -> DisVar -> Bool
+hasParents (SDRS m _) dv = any incoming $ M.elems m
+  where incoming :: SDRSFormula -> Bool
+        incoming (CDU (Relation _ _ dv2)) = dv == dv2
+        incoming (CDU (And sf1 sf2))      = incoming (CDU sf1) || incoming (CDU sf2)
+        incoming (CDU (Not sf1))          = incoming (CDU sf1)
+        incoming (EDU _)                  = False
 
 ---------------------------------------------------------------------------
--- | Computes the right frontier of an 'SDRS'. The order of the output list
--- is from LAST to root node.
--- TODO deuglify
+-- | Given an 'SDRS' @s@, infers the last node from the discourse structure
 ---------------------------------------------------------------------------
-rf :: SDRS -> [DisVar]
-rf s@(SDRS _ l) 
-  | length lastRels == 1 &&
-    all (\(Relation r _ _) -> isSub r) lastRels && -- other way to do this that doesn't rely on lists?
-    M.member lastRelStart ioutscopes = walkEdges (Just l) `union` rf rewindedSDRSWithNewLast
-  | otherwise                        = walkEdges (Just l)
-  where ioutscopes = M.fromList $ iOutscopesMap s
-        rewindedSDRSWithNewLast = updateLast rewindedSDRS rewindedLast 
-        rewindedLast = inferLast rewindedSDRS
-        rewindedSDRS = removeRels s lastRels
-        lastRels = [rel | (rel@(Relation {})) <- calcRightArgRels s l]
-        lastRelStart = head $ subordLefts l s
-        walkEdges :: Maybe DisVar -> [DisVar]
-        walkEdges Nothing = []
-        walkEdges (Just dv) = dv : (superords [dv]) ++ walkEdges ioutscope
-          where ioutscope = iOutscopesFrom dv s
-        superords :: [DisVar] -> [DisVar]
-        superords [] = []
-        superords (dv:rest) = (case (subordLefts dv s) of
-                                [] -> []
-                                n  -> n ++ superords n) ++ superords rest
-
----------------------------------------------------------------------------
--- | Simple version of rf, used in the thesis.
----------------------------------------------------------------------------
-rfSimple :: SDRS -> [DisVar]
-rfSimple s@(SDRS _ last) = walkEdges (Just last)
-  where walkEdges :: Maybe DisVar -> [DisVar]
-        walkEdges Nothing = []
-        walkEdges (Just dv) = dv : (superords [dv]) ++ walkEdges ioutscope
-          where ioutscope = iOutscopesFrom dv s
-        superords :: [DisVar] -> [DisVar]
-        superords [] = []
-        superords (dv:rest) = (case (subordLefts dv s) of
-                                [] -> []
-                                n  -> n ++ superords n) ++ superords rest
+inferLast :: SDRS -> DisVar
+inferLast s@(SDRS m _) = walk (root s)
+  where walk :: DisVar -> DisVar
+        walk dv = case (m M.! dv) of (EDU _)   -> dv
+                                     (CDU cdu) -> walk $ getNext cdu
+          where getNext :: CDU -> DisVar
+                getNext (Relation _ _ next) = next
+                getNext (And _ cdu2)        = getNext cdu2
+                getNext (Not cdu1)          = getNext cdu1
 
 ---------------------------------------------------------------------------
 -- | Given an 'SDRS', returns a map from 'DisVar's to 'DisVar's that it outscopes.
@@ -142,24 +105,58 @@ outscopesFrom dv s = outscope dv
           where newOutscope = iOutscopesFrom dv' s
 
 ---------------------------------------------------------------------------
--- | Given an 'SDRS' @s@, infers the last node from the discourse structure
----------------------------------------------------------------------------
-inferLast :: SDRS -> DisVar
-inferLast s@(SDRS m _) = walk (root s)
-  where walk :: DisVar -> DisVar
-        walk dv = case (m M.! dv) of (EDU _)   -> dv
-                                     (CDU cdu) -> walk $ getNext cdu
-          where getNext :: CDU -> DisVar
-                getNext (Relation _ _ next) = next
-                getNext (And _ cdu2)        = getNext cdu2
-                getNext (Not cdu1)          = getNext cdu1
-
----------------------------------------------------------------------------
 -- | Checks whether a given 'DisVar' @dv@ is on the right frontier of 
 -- 'SDRS' @s@.
 ---------------------------------------------------------------------------
 isOnRF :: SDRS -> DisVar -> Bool
 isOnRF s dv  = dv `elem` rf s
+
+---------------------------------------------------------------------------
+-- | Computes the right frontier of an 'SDRS'. The order of the output list
+-- is from LAST to root node.
+---------------------------------------------------------------------------
+rf :: SDRS -> [DisVar]
+rf s@(SDRS _ l) 
+  | length lastRels == 1 &&
+    all (\(Relation r _ _) -> isSub r) lastRels && -- other way to do this that doesn't rely on lists?
+    M.member lastRelStart ioutscopes = walkEdges (Just l) `union` rf rewindedSDRSWithNewLast
+  | otherwise                        = walkEdges (Just l)
+  where ioutscopes = M.fromList $ iOutscopesMap s
+        rewindedSDRSWithNewLast = updateLast rewindedSDRS rewindedLast 
+        rewindedLast = inferLast rewindedSDRS
+        rewindedSDRS = removeRels s lastRels
+        lastRels = [rel | (rel@(Relation {})) <- calcRightArgRels s l]
+        lastRelStart = head $ subordLefts l s
+        walkEdges :: Maybe DisVar -> [DisVar]
+        walkEdges Nothing = []
+        walkEdges (Just dv) = dv : (superords [dv]) ++ walkEdges ioutscope
+          where ioutscope = iOutscopesFrom dv s
+        superords :: [DisVar] -> [DisVar]
+        superords [] = []
+        superords (dv:rest) = (case (subordLefts dv s) of
+                                [] -> []
+                                n  -> n ++ superords n) ++ superords rest
+
+---------------------------------------------------------------------------
+-- | Simple version of rf, used in the thesis.
+---------------------------------------------------------------------------
+rfSimple :: SDRS -> [DisVar]
+rfSimple s@(SDRS _ lastL) = walkEdges (Just lastL)
+  where walkEdges :: Maybe DisVar -> [DisVar]
+        walkEdges Nothing = []
+        walkEdges (Just dv) = dv : (superords [dv]) ++ walkEdges ioutscope
+          where ioutscope = iOutscopesFrom dv s
+        superords :: [DisVar] -> [DisVar]
+        superords [] = []
+        superords (dv:rest) = (case (subordLefts dv s) of
+                                [] -> []
+                                n  -> n ++ superords n) ++ superords rest
+
+---------------------------------------------------------------------------
+-- | Checks whether 'DisVar' @dv@ in 'SDRS' @s@ is the root node.
+---------------------------------------------------------------------------
+isRoot :: SDRS -> DisVar -> Bool
+isRoot s dv = dv == root s
 
 ---------------------------------------------------------------------------
 -- | Return the root node of the 'SDRS' @s@. If @s@ has more than one root,
@@ -172,18 +169,22 @@ root s
   where cduDVs = M.keys $ M.fromList $ iOutscopesMap s
 
 ---------------------------------------------------------------------------
--- | Checks whether 'DisVar' @dv@ in 'SDRS' @s@ is the root node.
+-- * Private
 ---------------------------------------------------------------------------
-isRoot :: SDRS -> DisVar -> Bool
-isRoot s dv = dv == root s
 
 ---------------------------------------------------------------------------
--- | Checks whether 'DisVar' @dv@ in 'SDRS' @s@ has any incoming edges.
+-- | helper function for accessibleDRSs
+-- TODO make more effective. currently i don't know how to avoid all the recursion
+-- TODO does "nub" always preserve order?
 ---------------------------------------------------------------------------
-hasParents :: SDRS -> DisVar -> Bool
-hasParents (SDRS m _) dv = any incoming $ M.elems m
-  where incoming :: SDRSFormula -> Bool
-        incoming (CDU (Relation _ _ dv2)) = dv == dv2
-        incoming (CDU (And sf1 sf2))        = incoming (CDU sf1) || incoming (CDU sf2)
-        incoming (CDU (Not sf1))            = incoming (CDU sf1)
-        incoming (EDU _)          = False
+accessibleDRSDVs :: SDRS -> DisVar -> [DisVar]
+accessibleDRSDVs s dv = nub $ walkEdges [dv]
+  where walkEdges :: [DisVar] -> [DisVar]
+        walkEdges []         = []
+        walkEdges (dv':rest) = ss ++ cs ++ walkEdges ss ++ walkEdges rest ++ walkEdges ios
+          where ss = subordLefts dv' s -- all sub relations with dv' as end node
+                cs = coordLefts dv' s
+                ios = case ioutscope of
+                        Nothing -> []
+                        Just n  -> [n]
+                ioutscope = iOutscopesFrom dv' s

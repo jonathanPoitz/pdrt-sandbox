@@ -12,9 +12,9 @@ SDRS composition
 
 module Data.SDRS.Composition
 (
-  drsToSDRS 
-, addDRS
+  addDRS
 , addSDRS
+, drsToSDRS 
 ) where
 
 import qualified Data.Map as M
@@ -28,10 +28,8 @@ import Data.SDRS.LambdaCalculus
 import Data.SDRS.Relation
 
 ---------------------------------------------------------------------------
--- | Builds a new 'SDRS' from a 'DRS'.
+-- * Exported
 ---------------------------------------------------------------------------
-drsToSDRS :: DRS -> SDRS
-drsToSDRS d = SDRS (M.fromList [(0, EDU d)]) 0
 
 ---------------------------------------------------------------------------
 -- | Adds 'DRS' @d@ to 'SDRS' @s@ using a list of edges, represented by
@@ -47,7 +45,7 @@ addDRS s@(SDRS m _) d edges = pureSDRS
         sdrsWithSegment = addEDU sdrsWithRelations updatedLast (EDU d) -- 2. step - new segment
         sdrsWithNewLast = updateLast sdrsWithSegment updatedLast -- 3. step new last
         pureSDRS = sdrsAlphaConvertDRS sdrsWithNewLast updatedLast drsRefConvMap -- 4. drsAlphaConv
-        accDRSs = accessibleDRSs sdrsWithNewLast updatedLast -- note: testwise, before it was sdrsWithRealtions -> -- note: this only works because the new drs is not in the sdrs yet, however the relation using its label is! this is of importance since in order to calculate the list of accessible drs, the new relation has to be there (as opposed to the new drs which first needs to be drsref-adjusted before being added)
+        accDRSs = accessibleDRSs sdrsWithNewLast updatedLast
         drsRefConvMap = buildDRSRefConvMap drsRefs1 drsRefs2
         drsRefs1 = concat $ map drsUniverse $ accDRSs
         drsRefs2 = drsUniverse d
@@ -79,6 +77,16 @@ addSDRS s1@(SDRS m1 _) s2 edges = pureSDRS
         pureSDRS = sdrsAlphaConvertDRSs sdrsMerged newDRSKeys drsRefConvMap -- 5.
         
 ---------------------------------------------------------------------------
+-- | Builds a new 'SDRS' from a 'DRS'.
+---------------------------------------------------------------------------
+drsToSDRS :: DRS -> SDRS
+drsToSDRS d = SDRS (M.fromList [(0, EDU d)]) 0
+        
+---------------------------------------------------------------------------
+-- * Private
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
 -- | adds one or more relations to the 'SDRS' @s@ between the newly added 'DisVar'
 -- @newNode@ and one or several target nodes on the right frontier of @s@.
 -- This involves making the necessary adjustments to the discourse structure
@@ -97,18 +105,12 @@ updateRelations s (t:rest) newNode newOutsc = updateRelations (updateRelation s 
 ---------------------------------------------------------------------------
 updateRelation :: SDRS -> (DisVar,SDRSRelation) -> DisVar -> DisVar -> SDRS
 updateRelation s (dv,rel) newNode newOutsc
-  | isOnRF s dv && isRoot s dv             = sdrsWithRel
-  -- ^ the target node is the root node of the SDRS
-  | isOnRF s dv && (not $ hasParents s dv) = sdrsWithNewConj
-  -- ^ the target node is not the root node of the SDRS, but it is right underneath it (does not have incoming edges)
-  | isOnRF s dv && isTopic rel             = sdrsWithRel
-  -- ^ the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint
-  | isOnRF s dv && isCrd rel               = sdrsWithNewConj
-  -- ^ the target node is not the root node and the relation is coordinating, but doesn't impose a topic constraint
-  | isOnRF s dv                            = sdrsWithNewConj
-  -- ^ the target node is not the root node and the relation is subordinating
-  | otherwise                              = s
-  -- ^ skipping this relation because the target node is not on the RF of the SDRS
+  | isOnRF s dv && isRoot s dv             = sdrsWithRel -- the target node is the root node of the SDRS
+  | isOnRF s dv && (not $ hasParents s dv) = sdrsWithNewConj -- the target node is not the root node of the SDRS, but it is right underneath it (does not have incoming edges)
+  | isOnRF s dv && isTopic rel             = sdrsWithRel -- the target node is not the root node and the relation is a coordinating rel. that imposes a topic constraint
+  | isOnRF s dv && isCrd rel               = sdrsWithNewConj -- the target node is not the root node and the relation is coordinating, but doesn't impose a topic constraint
+  | isOnRF s dv                            = sdrsWithNewConj -- the target node is not the root node and the relation is subordinating
+  | otherwise                              = s -- skipping this relation because the target node is not on the RF of the SDRS
   where sdrsWithRightArgUpdate = updateRightArgs s dv newOutsc -- 2. step - update all occurrences of dv as a right arg of a relation by replacing it with new outscoping label
         swapRels = calcLeftArgRels s dv
         sdrsWithRemovedSwapRels = removeRels sdrsWithRightArgUpdate swapRels -- 3. 

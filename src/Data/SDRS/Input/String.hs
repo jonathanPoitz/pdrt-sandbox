@@ -23,6 +23,10 @@ import Data.DRS.Input.String
 import Data.SDRS.DataType
 
 ---------------------------------------------------------------------------
+-- | TODO: Still work in progress, 'And' and 'Not' don't work yet
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
 -- ** String to SDRS conversion
 ---------------------------------------------------------------------------
 
@@ -85,8 +89,3 @@ parseLast [] = -1 -- FIX
 parseLast s
   | all isDigit s = read s
   | otherwise     = error "infelicitous input string"
-
-
-
-
-
