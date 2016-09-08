@@ -1,4 +1,4 @@
-pdrt-sandbox
+pdrt-sandbox (with sdrt)
 ============
 
 Synopsis
@@ -18,6 +18,8 @@ The implementation includes a translation from PDRT to DRT and First-order
 Logic, composition via different types of merge, and unresolved structures
 based on Montague Semantics, defined as Haskell functions.
 
+Furthermore, this implementation includes a preliminary version of Segmented Discourse Representation Theory (Asher & Lascarides 2003). This theory, SDRT for short, is an extension of DRT adding a rhetorical structure on top of DRT formalizations. This allows to make predictions about felicitous attachment of new content to the discourse and about correct binding of discourse referents. 
+
 References
 ----------
 
@@ -32,6 +34,8 @@ References
                      
 * N. J. Venhuizen, J. Bos, P. Hendriks and H. Brouwer. *How and why
   conventional implicatures project*, 2014.
+
+* N. Asher and A. Lascarides. *Logics of Conversation*, Cambridge University Press, 2003
 
 License
 -------
